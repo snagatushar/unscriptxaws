@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut, User } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 
 const navLinks = [
   { name: 'Home', path: '/' },
+  { name: 'Events', path: '/events' },
   { name: 'About', path: '/about' },
   { name: 'Contact', path: '/contact' },
 ];
@@ -14,12 +16,23 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const { user, profile, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const getDashboardLink = () => {
+    if (!profile) return '/dashboard';
+    switch (profile.role) {
+      case 'admin': return '/admin';
+      case 'coordinator': return '/payments';
+      case 'reviewer': return '/content';
+      default: return '/dashboard';
+    }
+  };
 
   return (
     <nav className={cn(
@@ -47,12 +60,31 @@ export default function Navbar() {
               />
             </Link>
           ))}
-          <Link
-            to="/login"
-            className="px-6 py-2 bg-fest-gold hover:bg-fest-gold-light text-fest-dark text-sm font-bold uppercase tracking-widest rounded-full transition-all glow-gold"
-          >
-            Login/Signup
-          </Link>
+          
+          {user ? (
+            <div className="flex items-center gap-4">
+              <Link
+                to={getDashboardLink()}
+                className="flex items-center gap-2 px-6 py-2 bg-fest-gold hover:bg-fest-gold-light text-fest-dark text-sm font-bold uppercase tracking-widest rounded-full transition-all glow-gold"
+              >
+                <User size={16} /> Dashboard
+              </Link>
+              <button
+                onClick={signOut}
+                className="p-2 text-white/50 hover:text-white transition-colors"
+                title="Logout"
+              >
+                <LogOut size={20} />
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="px-6 py-2 bg-fest-gold hover:bg-fest-gold-light text-fest-dark text-sm font-bold uppercase tracking-widest rounded-full transition-all glow-gold"
+            >
+              Login/Signup
+            </Link>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -78,13 +110,32 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
-          <Link
-            to="/login"
-            onClick={() => setIsOpen(false)}
-            className="w-full py-3 bg-fest-pink text-center text-white font-bold uppercase tracking-widest rounded-xl"
-          >
-            Login/Signup
-          </Link>
+          
+          {user ? (
+            <div className="flex flex-col gap-4">
+              <Link
+                to={getDashboardLink()}
+                onClick={() => setIsOpen(false)}
+                className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+              >
+                <User size={18} /> Dashboard
+              </Link>
+              <button
+                onClick={() => { signOut(); setIsOpen(false); }}
+                className="w-full py-3 flex justify-center items-center gap-2 glass text-white font-bold uppercase tracking-widest rounded-xl text-sm"
+              >
+                <LogOut size={16} /> Logout
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              onClick={() => setIsOpen(false)}
+              className="w-full py-3 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+            >
+              Login/Signup
+            </Link>
+          )}
         </motion.div>
       )}
     </nav>

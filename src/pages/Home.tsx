@@ -1,11 +1,15 @@
 import { motion } from 'motion/react';
 import Hero from '../components/Hero';
 import EventCard from '../components/EventCard';
-import { EVENTS } from '../constants';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, Music, Zap, Palette } from 'lucide-react';
+import { ArrowRight, Sparkles, Music, Zap, Palette, Loader2 } from 'lucide-react';
+import { useEvents, useCommittee, useGeneralRules } from '../hooks/useSupabase';
 
 export default function Home() {
+  const { events, loading: eventsLoading } = useEvents();
+  const { committee, loading: committeeLoading } = useCommittee();
+  const { rules, loading: rulesLoading } = useGeneralRules();
+
   return (
     <main>
       <Hero />
@@ -34,6 +38,62 @@ export default function Home() {
         </div>
       </section>
 
+      {/* About Section */}
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">About The Event</h2>
+            <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-8">
+              UNSCRIPTED 2026: <br /> <span className="text-white/80">Where Talent Meets Opportunity</span>
+            </h3>
+            <p className="text-white/60 text-lg leading-relaxed">
+              UNSCRIPTED is the premier annual cultural festival uniting creatives, technologists, and innovators globally. It's a three-day celebration blending technology, art, dance, and music into a single spectacular dimension. Prepare to break the norms, go unscripted, and witness history in the making.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* About the College Section */}
+      <section className="py-20 px-6 bg-black/50 border-y border-white/5">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex-1"
+          >
+            <div className="w-full aspect-video rounded-[2rem] overflow-hidden border-4 border-white/10 relative">
+               <div className="absolute inset-0 bg-fest-gold/20 mix-blend-overlay"></div>
+               <img src="https://picsum.photos/seed/college/800/400" alt="College Campus" className="w-full h-full object-cover" />
+            </div>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex-1"
+          >
+            <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">About the College</h2>
+            <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-6">
+              A Legacy of <span className="text-fest-gold-light italic">Excellence</span>
+            </h3>
+            <p className="text-white/60 text-lg leading-relaxed mb-6">
+              Founded on the principles of innovation and integrity, our institution has been at the forefront of quality education for decades. We believe in nurturing raw talent and providing a dynamic environment where ideas flourish.
+            </p>
+            <div className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest text-white/50">
+               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">A++</span> NAAC Grade</div>
+               <div className="w-1 h-1 bg-white/20 rounded-full"></div>
+               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">Top 10</span> State Rank</div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Featured Events */}
       <section className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
@@ -48,9 +108,120 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {EVENTS.slice(0, 3).map((event, i) => (
-              <EventCard key={event.id} event={event} index={i} />
-            ))}
+            {eventsLoading ? (
+              <div className="col-span-full flex justify-center py-20">
+                 <Loader2 className="animate-spin text-fest-gold" size={48} />
+              </div>
+            ) : events.length > 0 ? (
+              events.slice(0, 3).map((event, i) => (
+                <EventCard key={event.id} event={event} index={i} />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-10 glass rounded-3xl">
+                <p className="text-white/40 font-bold uppercase tracking-widest text-sm">No events announced yet.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Universal Rules Section */}
+      <section className="py-24 px-6 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="glass rounded-[3rem] p-12 md:p-20 relative overflow-hidden border border-white/5">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-fest-gold to-transparent opacity-30" />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+              <div className="lg:col-span-1">
+                <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">The Playbook</h2>
+                <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-6">Universal <br/><span className="text-fest-gold-light">Guidelines</span></h3>
+                <p className="text-white/40 leading-relaxed md:text-lg">
+                  To ensure a fair and spectacular experience for everyone, please adhere to these core festival regulations.
+                </p>
+              </div>
+
+              <div className="lg:col-span-2 space-y-4">
+                {rulesLoading ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="animate-spin text-fest-gold/20" size={32} />
+                  </div>
+                ) : rules.length > 0 ? (
+                  rules.map((rule, index) => (
+                    <motion.div
+                      key={rule.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                      className="flex gap-6 p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-colors group"
+                    >
+                      <span className="text-2xl font-display font-black text-white/10 group-hover:text-fest-gold transition-colors">
+                        {(index + 1).toString().padStart(2, '0')}
+                      </span>
+                      <p className="text-white/70 text-sm md:text-base leading-relaxed pt-1">
+                        {rule.rule_text}
+                      </p>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="p-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
+                     <p className="text-white/20 uppercase tracking-widest text-xs font-bold">Standard rules pending upload</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Organizing Committee Section */}
+      <section className="py-24 px-6 relative overflow-hidden bg-white/5">
+        <div className="max-w-7xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="mb-16"
+          >
+            <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">The Architects</h2>
+            <h3 className="text-4xl md:text-7xl font-display font-extrabold tracking-tighter">Organizing <span className="text-fest-gold-light italic">Committee</span></h3>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12">
+            {committeeLoading ? (
+              <div className="col-span-full flex justify-center py-20">
+                <Loader2 className="animate-spin text-fest-gold" size={48} />
+              </div>
+            ) : committee.length > 0 ? (
+              committee.map((member, i) => (
+                <motion.div
+                  key={member.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  viewport={{ once: true }}
+                  className="group"
+                >
+                  <div className="relative mb-6 mx-auto w-40 h-40 md:w-56 md:h-56">
+                    <div className="absolute inset-0 bg-fest-gold/20 rounded-full blur-2xl group-hover:bg-fest-gold/40 transition-all -z-10" />
+                    <div className="w-full h-full rounded-full border-2 border-white/10 p-2 group-hover:border-fest-gold/50 transition-all">
+                      <img 
+                        src={member.image_url} 
+                        alt={member.name} 
+                        className="w-full h-full object-cover rounded-full filter grayscale group-hover:grayscale-0 transition-all duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  </div>
+                  <h4 className="text-xl md:text-2xl font-display font-bold text-white group-hover:text-fest-gold transition-colors">{member.name}</h4>
+                  <p className="text-white/40 text-xs md:text-sm uppercase tracking-[0.2em] font-bold mt-2">{member.role}</p>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-10 glass rounded-3xl">
+                <p className="text-white/40 font-bold uppercase tracking-widest text-sm">Committee list coming soon.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -1,10 +1,67 @@
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Mail, Lock, User, ArrowRight, Github, Chrome } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  
+  // Form state
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const navigate = useNavigate();
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (error) throw error;
+        toast.success('Successfully logged in!');
+        navigate(-1); // Go back to previous page or dashboard
+      } else {
+        if (!name.trim()) {
+          throw new Error('Name is required for signup');
+        }
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: name }
+          }
+        });
+        if (error) throw error;
+        toast.success('Signup successful! Welcome to UNSCRIPTED.');
+        // Auto signin might trigger based on supbase confirm email settings
+        if (supabase.auth.getSession) {
+            navigate('/');
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuth = async (provider: 'google') => {
+    try {
+      await supabase.auth.signInWithOAuth({ provider });
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
   return (
     <main className="pt-32 pb-24 px-6 min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -24,13 +81,16 @@ export default function Login() {
           </p>
         </div>
 
-        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+        <form className="space-y-6" onSubmit={handleAuth}>
           {!isLogin && (
             <div className="relative group">
               <User className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-cyan transition-colors" size={18} />
               <input
                 type="text"
                 placeholder="Full Name"
+                required={!isLogin}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-cyan transition-colors text-white placeholder:text-white/20"
               />
             </div>
@@ -41,6 +101,9 @@ export default function Login() {
             <input
               type="email"
               placeholder="Email Address"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-cyan transition-colors text-white placeholder:text-white/20"
             />
           </div>
@@ -50,44 +113,58 @@ export default function Login() {
             <input
               type="password"
               placeholder="Password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-cyan transition-colors text-white placeholder:text-white/20"
             />
           </div>
 
           {isLogin && (
             <div className="text-right">
-              <button className="text-xs text-white/40 hover:text-fest-pink transition-colors uppercase tracking-widest font-bold">
+              <button 
+                type="button" 
+                onClick={() => toast('Forgot password flow coming soon', { icon: '🚧' })}
+                className="text-xs text-white/40 hover:text-fest-pink transition-colors uppercase tracking-widest font-bold"
+              >
                 Forgot Password?
               </button>
             </div>
           )}
 
-          <button className="w-full py-5 bg-fest-purple text-white font-black uppercase tracking-[0.3em] text-lg rounded-2xl hover:bg-fest-pink transition-all glow-purple flex items-center justify-center gap-3">
-            {isLogin ? 'LOGIN' : 'SIGN UP'} <ArrowRight size={20} />
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full py-5 bg-fest-purple text-white font-black uppercase tracking-[0.3em] text-lg rounded-2xl hover:bg-fest-pink transition-all glow-purple flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'PROCESSING...' : (isLogin ? 'LOGIN' : 'SIGN UP')} {!loading && <ArrowRight size={20} />}
           </button>
         </form>
 
         <div className="mt-10">
           <div className="relative flex items-center justify-center mb-8">
             <div className="absolute w-full h-px bg-white/10" />
-            <span className="relative px-4 bg-fest-dark/50 text-[10px] text-white/20 uppercase tracking-widest font-bold">Or continue with</span>
+            <span className="relative px-4 bg-[#111] text-[10px] text-white/20 uppercase tracking-widest font-bold z-10">Or continue with</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-3 py-3 glass rounded-xl hover:bg-white/10 transition-all text-sm font-bold">
-              <Chrome size={18} className="text-fest-cyan" /> Google
-            </button>
-            <button className="flex items-center justify-center gap-3 py-3 glass rounded-xl hover:bg-white/10 transition-all text-sm font-bold">
-              <Github size={18} className="text-fest-purple" /> GitHub
+          <div className="flex justify-center">
+            <button 
+              onClick={() => handleOAuth('google')}
+              type="button"
+              className="w-full flex items-center justify-center gap-3 py-4 glass rounded-2xl hover:bg-white/10 transition-all text-sm font-bold uppercase tracking-widest"
+            >
+              <Chrome size={20} className="text-fest-cyan shadow-glow-cyan" /> Continue with Google
             </button>
           </div>
         </div>
 
-        <div className="mt-10 text-center">
+        <div className="mt-10 text-center relative z-10">
           <p className="text-white/40 text-sm">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
             <button
               onClick={() => setIsLogin(!isLogin)}
+              type="button"
               className="text-fest-pink font-bold hover:underline"
             >
               {isLogin ? 'Sign Up' : 'Login'}

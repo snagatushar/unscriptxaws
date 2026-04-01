@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { EVENTS } from '../constants';
 import EventCard from '../components/EventCard';
-import { Search, Filter } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
+import { useEvents } from '../hooks/useSupabase';
 
-const categories = ['All', 'Music', 'Dance', 'Drama', 'Art', 'Tech', 'Gaming'];
+const categories = ['All', 'Music', 'Dance', 'Drama', 'Art', 'Tech', 'Gaming']; // We can keep these static filters or derive them from data
 
 export default function Events() {
+  const { events, loading } = useEvents();
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredEvents = EVENTS.filter(event => {
+  const filteredEvents = events.filter(event => {
     const matchesCategory = activeCategory === 'All' || event.category === activeCategory;
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          event.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -69,7 +70,11 @@ export default function Events() {
         </div>
 
         {/* Events Grid */}
-        {filteredEvents.length > 0 ? (
+        {loading ? (
+           <div className="flex justify-center py-24 w-full">
+             <Loader2 className="animate-spin text-fest-gold" size={48} />
+           </div>
+        ) : filteredEvents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredEvents.map((event, i) => (
               <EventCard key={event.id} event={event} index={i} />

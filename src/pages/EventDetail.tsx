@@ -1,12 +1,60 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { EVENTS } from '../constants';
-import { Calendar, MapPin, Clock, ArrowLeft, Trophy, Users, Info } from 'lucide-react';
+import { Calendar, Trophy, Users, ArrowLeft, Loader2, IndianRupee } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { DatabaseEvent } from '../types';
 
 export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const event = EVENTS.find(e => e.id === id);
+  const { user } = useAuth();
+  
+  const [event, setEvent] = useState<DatabaseEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchEvent() {
+      if (!id) return;
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('*, registrations(count)')
+          .eq('id', id)
+          .single();
+          
+        if (error) throw error;
+        
+        const participantsCount = data.registrations?.[0]?.count || 0;
+        setEvent({
+          id: data.id,
+          title: data.title,
+          category: data.category,
+          description: data.description,
+          base_prize: data.base_prize,
+          per_participant_bonus: data.per_participant_bonus,
+          image_url: data.image_url,
+          rules: data.rules,
+          participants_count: participantsCount,
+          total_prize: data.base_prize + (participantsCount * data.per_participant_bonus)
+        });
+      } catch (err) {
+        console.error('Failed to fetch event details', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEvent();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-fest-gold" size={48} />
+      </div>
+    );
+  }
 
   if (!event) {
     return (
@@ -37,7 +85,7 @@ export default function EventDetail() {
           >
             <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-white/10 glow-gold">
               <img
-                src={event.image}
+                src={event.image_url || 'https://picsum.photos/seed/eventdetail/1280/720'}
                 alt={event.title}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
@@ -49,9 +97,9 @@ export default function EventDetail() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: Calendar, label: 'Date', value: event.date, color: 'text-fest-gold' },
-                { icon: Clock, label: 'Time', value: event.time, color: 'text-fest-gold-light' },
-                { icon: MapPin, label: 'Venue', value: event.venue, color: 'text-fest-gold-dark' },
+                { icon: Trophy, label: 'Base Prize', value: `₹${event.base_prize}`, color: 'text-fest-gold' },
+                { icon: Users, label: 'Participants', value: event.participants_count, color: 'text-fest-cyan' },
+                { icon: IndianRupee, label: 'Total Prize', value: `₹${event.total_prize}`, color: 'text-fest-pink' },
               ].map((item, i) => (
                 <div key={i} className="glass p-6 rounded-2xl text-center">
                   <item.icon size={24} className={`${item.color} mx-auto mb-3`} />
@@ -60,20 +108,12 @@ export default function EventDetail() {
                 </div>
               ))}
             </div>
-
-            <div className="glass p-8 rounded-3xl">
-              <h3 className="text-xl font-display font-bold mb-6 flex items-center gap-3">
-                <Users size={20} className="text-fest-gold" /> Event Coordinators
-              </h3>
-              <div className="space-y-4">
-                {event.coordinators.map((coord, i) => (
-                  <div key={i} className="flex justify-between items-center p-4 bg-white/5 rounded-xl">
-                    <span className="font-medium">{coord.name}</span>
-                    <span className="text-fest-gold-light text-sm font-mono">{coord.contact}</span>
-                  </div>
-                ))}
-              </div>
+            
+            <div className="glass p-8 rounded-3xl text-sm leading-relaxed text-white/70">
+              <strong className="text-fest-gold">Prize Pool Formula:</strong><br/>
+              The prize pool increases dynamically! It starts at ₹{event.base_prize} and increases by ₹{event.per_participant_bonus} for every participant that successfully registers.
             </div>
+
           </motion.div>
 
           {/* Right: Details */}
@@ -86,45 +126,37 @@ export default function EventDetail() {
               <h1 className="text-5xl md:text-7xl font-display font-extrabold tracking-tighter mb-6">
                 {event.title}
               </h1>
-              <p className="text-white/60 text-lg leading-relaxed">
-                {event.longDescription}
+              <p className="text-white/60 text-lg leading-relaxed whitespace-pre-line">
+                {event.description}
               </p>
             </div>
 
-            <div className="space-y-8">
-              <h3 className="text-2xl font-display font-bold flex items-center gap-3">
-                <Info size={24} className="text-fest-gold" /> Rules & Regulations
-              </h3>
-              <div className="grid gap-4">
-                {event.rules.map((rule, i) => (
-                  <div key={i} className="flex gap-4 p-5 glass rounded-2xl hover:bg-white/10 transition-colors">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-fest-gold/20 flex items-center justify-center text-fest-gold font-bold text-xs">
-                      {i + 1}
-                    </div>
-                    <p className="text-white/80 text-sm leading-relaxed">{rule}</p>
-                  </div>
-                ))}
+            {event.rules && event.rules.length > 0 && (
+              <div className="space-y-6">
+                <h3 className="text-2xl font-display font-bold text-fest-gold uppercase tracking-wider">Event Rules</h3>
+                <ul className="space-y-4">
+                  {event.rules.map((rule, index) => (
+                    <motion.li 
+                      key={index}
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex gap-4 text-white/70 bg-white/5 p-4 rounded-2xl border border-white/5"
+                    >
+                      <span className="text-fest-gold font-bold">{index + 1}.</span>
+                      <span>{rule}</span>
+                    </motion.li>
+                  ))}
+                </ul>
               </div>
-            </div>
-
-            <div className="space-y-8">
-              <h3 className="text-2xl font-display font-bold flex items-center gap-3">
-                <Trophy size={24} className="text-fest-gold-light" /> Prizes
-              </h3>
-              <div className="grid gap-4">
-                {event.prizes.map((prize, i) => (
-                  <div key={i} className="p-5 glass rounded-2xl border-l-4 border-fest-gold font-bold text-fest-gold-light">
-                    {prize}
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
 
             <Link
-              to="/login"
+              to={user ? `/register/${event.id}` : '/login'}
               className="block w-full py-6 bg-fest-gold text-fest-dark text-center font-black uppercase tracking-[0.3em] text-xl rounded-2xl hover:scale-[1.02] transition-transform glow-gold"
             >
-              Register for this Event
+              {user ? 'Register for this Event' : 'Login to Register'}
             </Link>
           </motion.div>
         </div>

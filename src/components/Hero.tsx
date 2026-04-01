@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
-const slides = [
+const DEFAULT_SLIDES = [
   'https://picsum.photos/seed/fest1/1920/1080',
   'https://picsum.photos/seed/fest2/1920/1080',
   'https://picsum.photos/seed/fest3/1920/1080',
@@ -10,18 +11,42 @@ const slides = [
 
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [slides, setSlides] = useState<string[]>(DEFAULT_SLIDES);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const { data, error } = await supabase.storage.from('assets').list('hero');
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const urls = data
+            .filter(file => file.name !== '.emptyFolderPlaceholder')
+            .map(file => supabase.storage.from('assets').getPublicUrl(`hero/${file.name}`).data.publicUrl);
+
+          if (urls.length > 0) {
+            setSlides(urls);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching hero images:', error);
+      }
+    };
+
+    fetchImages();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 4000);
+    }, 2000); // Updated to 2 seconds as per requirement
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   return (
     <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
       {/* Background Slideshow */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-fest-dark">
         <AnimatePresence mode="wait">
           <motion.img
             key={currentSlide}
@@ -29,7 +54,7 @@ export default function Hero() {
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 0.4, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 2 }}
+            transition={{ duration: 1.5 }}
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
@@ -53,7 +78,7 @@ export default function Hero() {
           <p className="text-lg md:text-2xl text-white/70 max-w-2xl mx-auto mb-10 font-light italic">
             "Break the script, own your moment"
           </p>
-          
+
           <div className="flex flex-col md:flex-row items-center justify-center gap-6">
             <Link
               to="/events"
@@ -61,12 +86,7 @@ export default function Hero() {
             >
               Explore Events
             </Link>
-            <Link
-              to="/login"
-              className="px-10 py-4 glass text-white font-bold uppercase tracking-widest rounded-full hover:bg-white/10 transition-all"
-            >
-              Sign Up
-            </Link>
+
           </div>
         </motion.div>
       </div>

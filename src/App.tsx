@@ -14,6 +14,13 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 
+import ProtectedRoute from './components/ProtectedRoute';
+import UserDashboard from './pages/UserDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import PaymentReviewDashboard from './pages/PaymentReviewDashboard';
+import ContentReviewDashboard from './pages/ContentReviewDashboard';
+
+// Layout component to handle scroll restoration properly
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -38,12 +45,30 @@ function AnimatedRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventDetail />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register/:eventId" element={<ProtectedRoute><Register /></ProtectedRoute>} />
           <Route path="/rules" element={<Rules />} />
           <Route path="/faculty" element={<Faculty />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
+          
+          {/* Protected Dashboards */}
+          <Route 
+            path="/dashboard" 
+            element={<ProtectedRoute allowedRoles={['user', 'admin']}><UserDashboard /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/admin" 
+            element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/payments" 
+            element={<ProtectedRoute allowedRoles={['admin', 'coordinator']}><PaymentReviewDashboard /></ProtectedRoute>} 
+          />
+          <Route 
+            path="/content" 
+            element={<ProtectedRoute allowedRoles={['admin', 'reviewer']}><ContentReviewDashboard /></ProtectedRoute>} 
+          />
         </Routes>
       </motion.div>
     </AnimatePresence>
