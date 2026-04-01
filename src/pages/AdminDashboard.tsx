@@ -151,24 +151,24 @@ export default function AdminDashboard() {
             </motion.h1>
           </div>
           
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-3 md:gap-4">
             {activeTab === 'events' && (
-              <button onClick={() => setShowAddEvent(true)} className="flex items-center gap-2 px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
-                <Plus size={18} /> Add Event
+              <button onClick={() => setShowAddEvent(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-[10px] md:text-sm hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
+                <Plus size={16} /> Add Event
               </button>
             )}
             {activeTab === 'committee' && (
-              <button onClick={() => setShowAddMember(true)} className="flex items-center gap-2 px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
-                <Plus size={18} /> Add Member
+              <button onClick={() => setShowAddMember(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-[10px] md:text-sm hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
+                <Plus size={16} /> Add Member
               </button>
             )}
             {activeTab === 'rules' && (
-              <button onClick={() => setShowAddRule(true)} className="flex items-center gap-2 px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
-                <Plus size={18} /> Add Rule
+              <button onClick={() => setShowAddRule(true)} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-[10px] md:text-sm hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
+                <Plus size={16} /> Add Rule
               </button>
             )}
-            <button onClick={exportToExcel} className="flex items-center gap-2 px-6 py-3 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white rounded-xl font-bold uppercase tracking-widest text-sm transition-all border border-white/10">
-              <Download size={18} /> Export
+            <button onClick={exportToExcel} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-3 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white rounded-xl font-bold uppercase tracking-widest text-[10px] md:text-sm transition-all border border-white/10">
+              <Download size={16} /> Export
             </button>
           </div>
         </header>
@@ -306,57 +306,99 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Logic for Add Modals (simplified) */}
+      {/* Logic for Add Modals */}
       {showAddRule && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6 py-12">
           <div onClick={() => setShowAddRule(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-lg glass p-8 rounded-[2rem]">
-            <h2 className="text-2xl font-display font-bold mb-6">Add Universal Rule</h2>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            className="relative w-full max-w-lg glass p-6 md:p-8 rounded-2xl md:rounded-[2rem] max-h-full overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl md:text-2xl font-display font-bold uppercase tracking-tighter">Add Universal Rule</h2>
+              <button onClick={() => setShowAddRule(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
             <form onSubmit={handleAddRule} className="space-y-4">
-              <textarea placeholder="The Rule..." required className="w-full h-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold"
-                value={newRule.rule_text} onChange={e => setNewRule({...newRule, rule_text: e.target.value})} />
-              <input type="number" placeholder="Order" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold"
-                value={newRule.display_order} onChange={e => setNewRule({...newRule, display_order: parseInt(e.target.value)})} />
-              <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-bold uppercase rounded-xl">Save Rule</button>
+              <textarea 
+                placeholder="The Rule..." 
+                required 
+                className="w-full h-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm md:text-base resize-none"
+                value={newRule.rule_text} 
+                onChange={e => setNewRule({...newRule, rule_text: e.target.value})} 
+              />
+              <input 
+                type="number" 
+                placeholder="Order" 
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm md:text-base"
+                value={newRule.display_order} 
+                onChange={e => setNewRule({...newRule, display_order: parseInt(e.target.value)})} 
+              />
+              <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
+                Save Rule
+              </button>
             </form>
           </motion.div>
         </div>
       )}
 
-      {/* Note: Members and Events modals existing elsewhere in file or needing similar fix... */}
       {showAddEvent && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6 py-12">
           <div onClick={() => setShowAddEvent(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-2xl glass p-8 rounded-[2rem] max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-display font-bold mb-6">Create New Event</h2>
-            <form onSubmit={handleAddEvent} className="space-y-4 text-sm font-bold uppercase tracking-widest cursor-default">
-              <div className="grid grid-cols-2 gap-4">
-                <input placeholder="Title" required className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} />
-                <input placeholder="Category" required className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold" value={newEvent.category} onChange={e => setNewEvent({...newEvent, category: e.target.value})} />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            className="relative w-full max-w-2xl glass p-6 md:p-8 rounded-2xl md:rounded-[2rem] max-h-full overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl md:text-2xl font-display font-bold uppercase tracking-tighter">Create New Event</h2>
+              <button onClick={() => setShowAddEvent(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAddEvent} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input placeholder="Title" required className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} />
+                <input placeholder="Category" required className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm" value={newEvent.category} onChange={e => setNewEvent({...newEvent, category: e.target.value})} />
               </div>
-              <textarea placeholder="Description" required className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold resize-none" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} />
-              <div className="grid grid-cols-2 gap-4">
-                <input type="number" placeholder="Base Prize" required className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold" value={newEvent.base_prize} onChange={e => setNewEvent({...newEvent, base_prize: parseInt(e.target.value)})} />
-                <input type="number" placeholder="Bonus" required className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold" value={newEvent.per_participant_bonus} onChange={e => setNewEvent({...newEvent, per_participant_bonus: parseInt(e.target.value)})} />
+              <textarea placeholder="Description" required className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold resize-none text-sm" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="number" placeholder="Base Prize" required className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm" value={newEvent.base_prize} onChange={e => setNewEvent({...newEvent, base_prize: parseInt(e.target.value)})} />
+                <input type="number" placeholder="Bonus" required className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm" value={newEvent.per_participant_bonus} onChange={e => setNewEvent({...newEvent, per_participant_bonus: parseInt(e.target.value)})} />
               </div>
-              <input placeholder="Image URL" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold" value={newEvent.image_url} onChange={e => setNewEvent({...newEvent, image_url: e.target.value})} />
-              <textarea placeholder="Specific Rules (One per line)" className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold resize-none" value={newEvent.rules} onChange={e => setNewEvent({...newEvent, rules: e.target.value})} />
-              <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark rounded-xl">Create Event</button>
+              <input placeholder="Image URL" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm" value={newEvent.image_url} onChange={e => setNewEvent({...newEvent, image_url: e.target.value})} />
+              <textarea placeholder="Specific Rules (One per line)" className="w-full h-24 bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold resize-none text-sm" value={newEvent.rules} onChange={e => setNewEvent({...newEvent, rules: e.target.value})} />
+              <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
+                Create Event
+              </button>
             </form>
           </motion.div>
         </div>
       )}
 
       {showAddMember && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6 py-12">
           <div onClick={() => setShowAddMember(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative w-full max-w-lg glass p-8 rounded-[2rem]">
-            <h2 className="text-2xl font-display font-bold mb-6">Add Member</h2>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            className="relative w-full max-w-lg glass p-6 md:p-8 rounded-2xl md:rounded-[2rem] max-h-full overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl md:text-2xl font-display font-bold uppercase tracking-tighter">Add Member</h2>
+              <button onClick={() => setShowAddMember(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
             <form onSubmit={handleAddMember} className="space-y-4">
-              <input placeholder="Name" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
-              <input placeholder="Role" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold" value={newMember.role} onChange={e => setNewMember({...newMember, role: e.target.value})} />
-              <input placeholder="Image URL" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold" value={newMember.image_url} onChange={e => setNewMember({...newMember, image_url: e.target.value})} />
-              <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark rounded-xl">Save</button>
+              <input placeholder="Name" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} />
+              <input placeholder="Role" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm" value={newMember.role} onChange={e => setNewMember({...newMember, role: e.target.value})} />
+              <input placeholder="Image URL" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-fest-gold text-sm" value={newMember.image_url} onChange={e => setNewMember({...newMember, image_url: e.target.value})} />
+              <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
+                Save Member
+              </button>
             </form>
           </motion.div>
         </div>

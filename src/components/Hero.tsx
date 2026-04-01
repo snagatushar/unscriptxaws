@@ -39,7 +39,7 @@ export default function Hero() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 2000); // Updated to 2 seconds as per requirement
+    }, 2000); 
     return () => clearInterval(timer);
   }, [slides.length]);
 
@@ -69,24 +69,23 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
         >
-          <h2 className="text-fest-gold-light font-display font-medium tracking-[0.3em] uppercase mb-4 text-sm md:text-base">
+          <h2 className="text-fest-gold-light font-display font-medium tracking-[0.3em] uppercase mb-4 text-xs sm:text-sm md:text-base">
             The Online Edition 2026
           </h2>
-          <h1 className="text-6xl md:text-9xl font-display font-extrabold tracking-tighter mb-6 leading-none">
+          <h1 className="text-5xl sm:text-6xl md:text-9xl font-display font-extrabold tracking-tighter mb-6 leading-none">
             UN<span className="text-fest-gold text-glow-gold">SCRIPTED</span>
           </h1>
-          <p className="text-lg md:text-2xl text-white/70 max-w-2xl mx-auto mb-10 font-light italic">
+          <p className="text-sm sm:text-base md:text-2xl text-white/70 max-w-2xl mx-auto mb-10 font-light italic px-4">
             "Break the script, own your moment"
           </p>
 
-          <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-6">
             <Link
               to="/events"
-              className="px-10 py-4 bg-fest-gold text-fest-dark font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform glow-gold"
+              className="w-full sm:w-auto px-10 py-4 bg-fest-gold text-fest-dark font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform glow-gold text-sm md:text-base"
             >
               Explore Events
             </Link>
-
           </div>
         </motion.div>
       </div>

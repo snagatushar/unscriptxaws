@@ -109,11 +109,11 @@ export default function UserDashboard() {
            initial={{ opacity: 0, y: 20 }}
            animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-4xl md:text-6xl font-display font-bold mb-4 tracking-tighter">
+          <h1 className="text-3xl md:text-6xl font-display font-extrabold uppercase mb-4 tracking-tighter">
              My <span className="text-fest-gold">Dashboard</span>
           </h1>
-          <p className="text-white/60 mb-12 text-lg">
-             Manage your event registrations and subbmissions.
+          <p className="text-white/60 mb-8 md:mb-12 text-sm md:text-lg">
+             Manage your event registrations and submissions.
           </p>
         </motion.div>
 
@@ -133,12 +133,12 @@ export default function UserDashboard() {
                  className="glass rounded-3xl p-8 relative overflow-hidden flex flex-col"
               >
                   <div className="absolute top-0 right-0 p-4">
-                     <span className="text-xs uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full opacity-60">
+                     <span className="text-[10px] uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full opacity-60">
                         {reg.events.category}
                      </span>
                   </div>
 
-                  <h3 className="text-2xl font-display font-bold mb-4 pr-16 text-white group-hover:text-fest-gold transition-colors">
+                  <h3 className="text-xl md:text-2xl font-display font-bold mb-6 pr-16 text-white group-hover:text-fest-gold transition-colors leading-tight">
                      {reg.events.title}
                   </h3>
 

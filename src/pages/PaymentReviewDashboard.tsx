@@ -85,38 +85,38 @@ export default function PaymentReviewDashboard() {
   return (
     <main className="pt-32 pb-24 px-6 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-12">
-          <h1 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter">
+        <header className="mb-8 md:mb-12">
+          <h1 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter uppercase">
             Payment <span className="text-fest-gold">Review</span>
           </h1>
-          <p className="text-white/50 text-lg mt-2">Approve or reject participant registration payments.</p>
+          <p className="text-white/50 text-sm md:text-lg mt-2">Approve or reject participant registration payments.</p>
         </header>
 
         {/* Controls */}
-        <div className="flex flex-col md:flex-row justify-between gap-6 px-1 mb-8">
-          <div className="flex bg-white/5 rounded-full p-1 border border-white/10 w-fit">
+        <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-6 px-1 mb-8">
+          <div className="flex bg-white/5 rounded-2xl md:rounded-full p-1 border border-white/10 w-full md:w-fit">
              <button
                 onClick={() => setActiveTab('pending')}
-                className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'pending' ? 'bg-fest-gold text-fest-dark glow-gold' : 'text-white/60 hover:text-white'}`}
+                className={`flex-1 md:flex-none px-6 py-2.5 md:py-2 rounded-xl md:rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'pending' ? 'bg-fest-gold text-fest-dark glow-gold' : 'text-white/60 hover:text-white'}`}
              >
                 Pending
              </button>
              <button
                 onClick={() => setActiveTab('reviewed')}
-                className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'reviewed' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'}`}
+                className={`flex-1 md:flex-none px-6 py-2.5 md:py-2 rounded-xl md:rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'reviewed' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'}`}
              >
                 Reviewed
              </button>
           </div>
 
-          <div className="relative w-full md:w-72">
+          <div className="relative w-full md:w-80">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={16} />
             <input
               type="text"
-              placeholder="Search by name, email, event..."
+              placeholder="Search participants..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-fest-gold transition-colors"
+              className="w-full pl-10 pr-4 py-3.5 md:py-3 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl text-xs md:text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-fest-gold transition-colors"
             />
           </div>
         </div>

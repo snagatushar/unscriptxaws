@@ -15,8 +15,8 @@ export default function Home() {
       <Hero />
 
       {/* Stats Section */}
-      <section className="py-20 px-6 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+      <section className="py-12 md:py-20 px-6 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
           {[
             { label: 'Events', value: '25+' },
             { label: 'Colleges', value: '50+' },
@@ -29,17 +29,17 @@ export default function Home() {
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className="text-center p-8 glass rounded-3xl"
+              className="text-center p-6 md:p-8 glass rounded-3xl"
             >
-              <div className="text-4xl md:text-5xl font-display font-extrabold text-fest-gold mb-2">{stat.value}</div>
-              <div className="text-xs uppercase tracking-widest text-white/40">{stat.label}</div>
+              <div className="text-3xl md:text-5xl font-display font-extrabold text-fest-gold mb-2">{stat.value}</div>
+              <div className="text-[10px] uppercase tracking-widest text-white/40">{stat.label}</div>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* About Section */}
-      <section className="py-20 px-6">
+      <section className="py-16 md:py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -95,11 +95,11 @@ export default function Home() {
       </section>
 
       {/* Featured Events */}
-      <section className="py-24 px-6">
+      <section className="py-16 md:py-24 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 md:mb-16 gap-6">
             <div>
-              <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">Featured Highlights</h2>
+              <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4 text-xs md:text-sm">Featured Highlights</h2>
               <h3 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter">Experience the <span className="text-fest-gold-light italic">Magic</span></h3>
             </div>
             <Link to="/events" className="flex items-center gap-2 text-fest-gold-light font-bold uppercase tracking-widest text-sm hover:gap-4 transition-all">
@@ -126,16 +126,16 @@ export default function Home() {
       </section>
 
       {/* Universal Rules Section */}
-      <section className="py-24 px-6 relative overflow-hidden">
+      <section className="py-16 md:py-24 px-6 relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="glass rounded-[3rem] p-12 md:p-20 relative overflow-hidden border border-white/5">
+          <div className="glass rounded-[2rem] md:rounded-[3rem] p-8 md:p-20 relative overflow-hidden border border-white/5">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-fest-gold to-transparent opacity-30" />
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
               <div className="lg:col-span-1">
-                <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">The Playbook</h2>
-                <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-6">Universal <br/><span className="text-fest-gold-light">Guidelines</span></h3>
-                <p className="text-white/40 leading-relaxed md:text-lg">
+                <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4 text-xs md:text-sm">The Playbook</h2>
+                <h3 className="text-3xl md:text-5xl font-display font-extrabold tracking-tighter mb-6 uppercase">Universal <br/><span className="text-fest-gold-light text-glow-gold">Guidelines</span></h3>
+                <p className="text-white/40 leading-relaxed text-sm md:text-lg">
                   To ensure a fair and spectacular experience for everyone, please adhere to these core festival regulations.
                 </p>
               </div>
@@ -276,14 +276,14 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 px-6 text-center">
+      <section className="py-20 md:py-32 px-6 text-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           className="max-w-4xl mx-auto"
         >
-          <h2 className="text-5xl md:text-8xl font-display font-extrabold tracking-tighter mb-12">
+          <h2 className="text-4xl md:text-8xl font-display font-extrabold tracking-tighter mb-10 md:mb-12 uppercase">
             READY TO <span className="text-fest-gold text-glow-gold">SHINE?</span>
           </h2>
           <Link
