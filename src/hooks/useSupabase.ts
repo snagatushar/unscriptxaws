@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { DatabaseEvent, Faculty, CommitteeMember, GeneralRule } from '../types';
+import { DatabaseEvent, Faculty, CommitteeMember, GeneralRule, SiteContent } from '../types';
 
 export function useEvents() {
   const [events, setEvents] = useState<DatabaseEvent[]>([]);
@@ -23,11 +23,18 @@ export function useEvents() {
             title: row.title,
             category: row.category,
             description: row.description,
-            base_prize: row.base_prize,
-            per_participant_bonus: row.per_participant_bonus,
+            entry_fee: Number(row.entry_fee || 0),
             image_url: row.image_url,
+            rules: row.rules || [],
+            max_team_size: row.max_team_size,
+            payment_account_name: row.payment_account_name,
+            payment_account_number: row.payment_account_number,
+            payment_ifsc: row.payment_ifsc,
+            payment_upi_id: row.payment_upi_id,
+            drive_folder_id: row.drive_folder_id,
+            drive_embed_hint: row.drive_embed_hint,
+            is_active: row.is_active,
             participants_count: participantsCount,
-            total_prize: row.base_prize + (participantsCount * row.per_participant_bonus)
           };
         });
         
@@ -119,4 +126,32 @@ export function useGeneralRules() {
   }, []);
 
   return { rules, loading };
+}
+
+export function useSiteContent(contentKey: string) {
+  const [content, setContent] = useState<SiteContent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchContent() {
+      try {
+        const { data, error } = await supabase
+          .from('site_content')
+          .select('*')
+          .eq('content_key', contentKey)
+          .maybeSingle();
+
+        if (error) throw error;
+        setContent((data as SiteContent | null) || null);
+      } catch (error) {
+        console.error(`Error fetching site content for ${contentKey}:`, error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchContent();
+  }, [contentKey]);
+
+  return { content, loading };
 }

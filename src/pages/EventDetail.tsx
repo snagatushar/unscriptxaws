@@ -1,50 +1,73 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Calendar, Trophy, Users, ArrowLeft, Loader2, IndianRupee } from 'lucide-react';
+import { ArrowLeft, Loader2, IndianRupee } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { DatabaseEvent } from '../types';
+import { DatabaseEvent, QualificationStage } from '../types';
+
+type PublicEventResult = {
+  participant_name: string;
+  team_name: string | null;
+  qualification_stage: QualificationStage;
+};
 
 export default function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [event, setEvent] = useState<DatabaseEvent | null>(null);
+  const [results, setResults] = useState<PublicEventResult[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchEvent() {
       if (!id) return;
+
       try {
         const { data, error } = await supabase
           .from('events')
           .select('*, registrations(count)')
           .eq('id', id)
           .single();
-          
+
         if (error) throw error;
-        
+
         const participantsCount = data.registrations?.[0]?.count || 0;
         setEvent({
           id: data.id,
           title: data.title,
+          slug: data.slug,
           category: data.category,
           description: data.description,
-          base_prize: data.base_prize,
-          per_participant_bonus: data.per_participant_bonus,
+          entry_fee: Number(data.entry_fee || 0),
           image_url: data.image_url,
-          rules: data.rules,
+          rules: data.rules || [],
+          max_team_size: data.max_team_size,
+          payment_account_name: data.payment_account_name,
+          payment_account_number: data.payment_account_number,
+          payment_ifsc: data.payment_ifsc,
+          payment_upi_id: data.payment_upi_id,
+          drive_folder_id: data.drive_folder_id,
+          drive_embed_hint: data.drive_embed_hint,
+          is_active: data.is_active,
           participants_count: participantsCount,
-          total_prize: data.base_prize + (participantsCount * data.per_participant_bonus)
         });
+
+        const { data: resultData, error: resultError } = await supabase.rpc('get_public_event_results', {
+          target_event_id: data.id,
+        });
+        if (!resultError) {
+          setResults((resultData as PublicEventResult[]) || []);
+        }
       } catch (err) {
         console.error('Failed to fetch event details', err);
       } finally {
         setLoading(false);
       }
     }
+
     fetchEvent();
   }, [id]);
 
@@ -60,15 +83,19 @@ export default function EventDetail() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-6">
         <h1 className="text-4xl font-display font-bold">Event not found</h1>
-        <Link to="/events" className="px-8 py-3 bg-fest-pink rounded-full font-bold uppercase tracking-widest">Back to Events</Link>
+        <Link to="/events" className="px-8 py-3 bg-fest-pink rounded-full font-bold uppercase tracking-widest">
+          Back to Events
+        </Link>
       </div>
     );
   }
 
+  const qualifiedResults = results.filter((entry) => entry.qualification_stage !== 'eliminated');
+  const eliminatedResults = results.filter((entry) => entry.qualification_stage === 'eliminated');
+
   return (
     <main className="pt-24 pb-24 px-6 min-h-screen">
       <div className="max-w-7xl mx-auto">
-        {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mb-12 uppercase tracking-widest text-xs font-bold"
@@ -77,7 +104,6 @@ export default function EventDetail() {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 items-start">
-          {/* Left: Image & Info */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -95,28 +121,25 @@ export default function EventDetail() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 gap-3 md:gap-4">
               {[
-                { icon: Trophy, label: 'Base Prize', value: `₹${event.base_prize}`, color: 'text-fest-gold' },
-                { icon: Users, label: 'Participants', value: event.participants_count, color: 'text-fest-cyan' },
-                { icon: IndianRupee, label: 'Total Prize', value: `₹${event.total_prize}`, color: 'text-fest-pink' },
-              ].map((item, i) => (
-                <div key={i} className="glass p-4 md:p-6 rounded-2xl text-center">
+                { icon: IndianRupee, label: 'Entry Fee', value: `₹${event.entry_fee}`, color: 'text-fest-gold' },
+              ].map((item, index) => (
+                <div key={index} className="glass p-4 md:p-6 rounded-2xl text-center">
                   <item.icon size={20} className={`${item.color} mx-auto mb-2 md:mb-3`} />
                   <div className="text-[9px] md:text-[10px] uppercase tracking-widest text-white/40 mb-1">{item.label}</div>
                   <div className="text-xs md:text-sm font-bold">{item.value}</div>
                 </div>
               ))}
             </div>
-            
-            <div className="glass p-6 md:p-8 rounded-2xl md:rounded-3xl text-xs md:text-sm leading-relaxed text-white/70 border border-white/5">
-              <strong className="text-fest-gold uppercase tracking-widest text-[10px] block mb-2">Prize Pool Formula:</strong>
-              The prize pool increases dynamically! It starts at ₹{event.base_prize} and increases by ₹{event.per_participant_bonus} for every participant that successfully registers.
-            </div>
 
+            <div className="glass p-6 md:p-8 rounded-2xl md:rounded-3xl text-sm md:text-base leading-relaxed text-white/70 border border-white/5 ">
+              <strong className="text-fest-gold uppercase tracking-widest text-2xl md:text-3xl block mb-3">Caution:</strong>
+              Register for the event, upload your payment proof, wait for payment approval, and then upload your round
+              content only for this event when the upload window is opened.
+            </div>
           </motion.div>
 
-          {/* Right: Details */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -126,23 +149,33 @@ export default function EventDetail() {
               <h1 className="text-4xl md:text-7xl font-display font-extrabold tracking-tighter mb-4 md:mb-6 uppercase">
                 {event.title}
               </h1>
-              <p className="text-white/60 text-base md:text-lg leading-relaxed whitespace-pre-line">
-                {event.description}
-              </p>
+              <p className="text-white/60 text-base md:text-lg leading-relaxed whitespace-pre-line">{event.description}</p>
             </div>
+
+            {(event.payment_account_name || event.payment_account_number || event.payment_upi_id) && (
+              <div className="glass p-6 rounded-3xl border border-white/10">
+                <h3 className="text-2xl md:text-3xl font-bold text-fest-gold uppercase tracking-wider mb-4">Payment Details</h3>
+                <div className="space-y-3 text-base md:text-lg text-white/70">
+                  {event.payment_account_name && <p>Account Name: {event.payment_account_name}</p>}
+                  {event.payment_account_number && <p>Account Number: {event.payment_account_number}</p>}
+                  {event.payment_ifsc && <p>IFSC: {event.payment_ifsc}</p>}
+                  {event.payment_upi_id && <p>UPI ID: {event.payment_upi_id}</p>}
+                </div>
+              </div>
+            )}
 
             {event.rules && event.rules.length > 0 && (
               <div className="space-y-4 md:space-y-6">
-                <h3 className="text-xl md:text-2xl font-display font-bold text-fest-gold uppercase tracking-wider">Event Rules</h3>
+                <h3 className="text-2xl md:text-3xl font-display font-bold text-fest-gold uppercase tracking-wider">Event Rules</h3>
                 <ul className="space-y-3 md:space-y-4">
                   {event.rules.map((rule, index) => (
-                    <motion.li 
+                    <motion.li
                       key={index}
                       initial={{ opacity: 0, x: 20 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex gap-3 md:gap-4 text-white/70 bg-white/5 p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 text-sm md:text-base leading-relaxed"
+                      className="flex gap-3 md:gap-4 text-white/70 bg-white/5 p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/5 text-base md:text-lg leading-relaxed"
                     >
                       <span className="text-fest-gold font-bold">{(index + 1).toString().padStart(2, '0')}</span>
                       <span>{rule}</span>
@@ -153,11 +186,48 @@ export default function EventDetail() {
             )}
 
             <Link
-              to={user ? `/register/${event.id}` : '/login'}
+              to={`/register/${event.id}`}
               className="block w-full py-4 md:py-6 bg-fest-gold text-fest-dark text-center font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-lg md:text-xl rounded-xl md:rounded-2xl hover:scale-[1.02] transition-transform glow-gold"
             >
               {user ? 'Register' : 'Login to Register'}
             </Link>
+
+            {(qualifiedResults.length > 0 || eliminatedResults.length > 0) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="glass p-6 rounded-3xl border border-green-500/10">
+                  <h3 className="text-lg font-bold uppercase tracking-widest text-green-400 mb-4">Qualified</h3>
+                  <div className="space-y-3">
+                    {qualifiedResults.length > 0 ? (
+                      qualifiedResults.map((entry, index) => (
+                        <div key={`${entry.participant_name}-${index}`} className="rounded-2xl bg-white/5 p-4">
+                          <div className="font-bold">{entry.participant_name}</div>
+                          <div className="text-xs text-white/45 mt-1 uppercase tracking-widest">
+                            {entry.qualification_stage.replaceAll('_', ' ')}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-white/35">No qualified names published yet.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="glass p-6 rounded-3xl border border-red-500/10">
+                  <h3 className="text-lg font-bold uppercase tracking-widest text-red-400 mb-4">Eliminated</h3>
+                  <div className="space-y-3">
+                    {eliminatedResults.length > 0 ? (
+                      eliminatedResults.map((entry, index) => (
+                        <div key={`${entry.participant_name}-${index}`} className="rounded-2xl bg-white/5 p-4">
+                          <div className="font-bold">{entry.participant_name}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-white/35">No eliminated names published yet.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

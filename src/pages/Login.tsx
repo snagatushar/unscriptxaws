@@ -1,10 +1,24 @@
 import { motion } from 'motion/react';
-import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Github, Chrome } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Mail, Lock, User, ArrowRight, Chrome } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+
+function getAuthErrorMessage(err: any) {
+  const message = err?.message || '';
+
+  if (message.toLowerCase().includes('failed to fetch')) {
+    return 'Could not reach Supabase. Check your internet connection, Supabase project status, and Auth settings.';
+  }
+
+  if (message.toLowerCase().includes('network')) {
+    return 'Network error while contacting Supabase.';
+  }
+
+  return message || 'Authentication failed';
+}
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,20 +30,32 @@ export default function Login() {
   const [password, setPassword] = useState('');
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, profile, isLoading } = useAuth();
+  const nextPath = (location.state as { from?: string } | null)?.from;
+
+  useEffect(() => {
+    if (isLoading || !user) return;
+
+    navigate(nextPath || '/', { replace: true });
+  }, [user, isLoading, navigate, nextPath]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        throw new Error('Supabase environment variables are missing.');
+      }
+
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         if (error) throw error;
+
         toast.success('Successfully logged in!');
-        navigate(-1); // Go back to previous page or dashboard
       } else {
         if (!name.trim()) {
           throw new Error('Name is required for signup');
@@ -42,14 +68,12 @@ export default function Login() {
           }
         });
         if (error) throw error;
+
         toast.success('Signup successful! Welcome to UNSCRIPTED.');
-        // Auto signin might trigger based on supbase confirm email settings
-        if (supabase.auth.getSession) {
-            navigate('/');
-        }
+        setIsLogin(true);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Authentication failed');
+      toast.error(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -59,7 +83,7 @@ export default function Login() {
     try {
       await supabase.auth.signInWithOAuth({ provider });
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getAuthErrorMessage(err));
     }
   };
 

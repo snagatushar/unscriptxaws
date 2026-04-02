@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import Navbar from './components/Navbar';
@@ -19,6 +19,7 @@ import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PaymentReviewDashboard from './pages/PaymentReviewDashboard';
 import ContentReviewDashboard from './pages/ContentReviewDashboard';
+import AdminLogin from './pages/AdminLogin';
 
 // Layout component to handle scroll restoration properly
 function ScrollToTop() {
@@ -51,6 +52,7 @@ function AnimatedRoutes() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
           
           {/* Protected Dashboards */}
           <Route 
@@ -59,15 +61,15 @@ function AnimatedRoutes() {
           />
           <Route 
             path="/admin" 
-            element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} 
+            element={<ProtectedRoute allowedRoles={['admin']} redirectPath="/admin/login"><AdminDashboard /></ProtectedRoute>} 
           />
           <Route 
             path="/payments" 
-            element={<ProtectedRoute allowedRoles={['admin', 'coordinator']}><PaymentReviewDashboard /></ProtectedRoute>} 
+            element={<ProtectedRoute allowedRoles={['admin', 'payment_reviewer']} redirectPath="/admin/login"><PaymentReviewDashboard /></ProtectedRoute>} 
           />
           <Route 
             path="/content" 
-            element={<ProtectedRoute allowedRoles={['admin', 'reviewer']}><ContentReviewDashboard /></ProtectedRoute>} 
+            element={<ProtectedRoute allowedRoles={['admin', 'content_reviewer']} redirectPath="/admin/login"><ContentReviewDashboard /></ProtectedRoute>} 
           />
         </Routes>
       </motion.div>

@@ -1,31 +1,32 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-const DEFAULT_SLIDES = [
-  'https://picsum.photos/seed/fest1/1920/1080',
-  'https://picsum.photos/seed/fest2/1920/1080',
-  'https://picsum.photos/seed/fest3/1920/1080',
-];
-
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState<string[]>(DEFAULT_SLIDES);
+  const [slides, setSlides] = useState<{ image_url: string; duration_seconds: number }[]>([]);
 
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const { data, error } = await supabase.storage.from('assets').list('hero');
+        const { data, error } = await supabase
+          .from('hero_slideshow')
+          .select('image_url, duration_seconds')
+          .order('display_order', { ascending: true });
+        
         if (error) throw error;
-
         if (data && data.length > 0) {
-          const urls = data
-            .filter(file => file.name !== '.emptyFolderPlaceholder')
-            .map(file => supabase.storage.from('assets').getPublicUrl(`hero/${file.name}`).data.publicUrl);
+          const validSlides = data
+            .filter((slide) => Boolean(slide.image_url))
+            .map((slide) => ({
+              image_url: slide.image_url,
+              duration_seconds: Math.max(4, Number(slide.duration_seconds || 4)),
+            }));
 
-          if (urls.length > 0) {
-            setSlides(urls);
+          if (validSlides.length > 0) {
+            setSlides(validSlides);
+            setCurrentSlide(0);
           }
         }
       } catch (error) {
@@ -36,30 +37,48 @@ export default function Hero() {
     fetchImages();
   }, []);
 
+  const currentDuration = useMemo(
+    () => Math.max(4, slides[currentSlide]?.duration_seconds || 4),
+    [slides, currentSlide]
+  );
+
   useEffect(() => {
-    const timer = setInterval(() => {
+    if (slides.length <= 1) return;
+
+    const timer = window.setTimeout(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 2000); 
-    return () => clearInterval(timer);
-  }, [slides.length]);
+    }, currentDuration * 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [currentSlide, slides.length, currentDuration]);
+
+  useEffect(() => {
+    if (currentSlide >= slides.length) {
+      setCurrentSlide(0);
+    }
+  }, [currentSlide, slides.length]);
 
   return (
     <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
       {/* Background Slideshow */}
       <div className="absolute inset-0 z-0 bg-fest-dark">
-        <AnimatePresence mode="wait">
+        {slides.length > 0 ? (
           <motion.img
             key={currentSlide}
-            src={slides[currentSlide]}
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 0.4, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5 }}
-            className="w-full h-full object-cover"
+            src={slides[currentSlide]?.image_url}
+            initial={false}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0 }}
+            className="w-full h-full object-cover opacity-70"
             referrerPolicy="no-referrer"
+            onError={() => {
+              if (slides.length > 1) {
+                setCurrentSlide((prev) => (prev + 1) % slides.length);
+              }
+            }}
           />
-        </AnimatePresence>
-        <div className="absolute inset-0 bg-gradient-to-b from-fest-dark/80 via-fest-dark/40 to-fest-dark" />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-b from-fest-dark/60 via-transparent to-fest-dark/90" />
       </div>
 
       {/* Content */}

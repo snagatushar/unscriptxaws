@@ -1,17 +1,19 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];
+  redirectPath?: string;
 }
 
-export default function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, profile, loading } = useAuth();
+export default function ProtectedRoute({ children, allowedRoles, redirectPath = '/login' }: ProtectedRouteProps) {
+  const { user, profile, isLoading } = useAuth();
+  const location = useLocation();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin text-fest-gold" size={48} />
@@ -20,13 +22,20 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={redirectPath} replace state={{ from: location.pathname }} />;
   }
 
-  if (allowedRoles && profile) {
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-fest-gold" size={48} />
+      </div>
+    );
+  }
+
+  if (allowedRoles) {
     if (!allowedRoles.includes(profile.role)) {
-       // redirect based on role or home
-       return <Navigate to="/" replace />;
+      return <Navigate to={redirectPath} replace />;
     }
   }
 

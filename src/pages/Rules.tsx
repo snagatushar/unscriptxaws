@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
-import { ShieldAlert, Info, AlertCircle, CheckCircle } from 'lucide-react';
+import { ShieldAlert, Info, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { useGeneralRules } from '../hooks/useSupabase';
 
 const ruleCategories = [
   {
@@ -39,6 +40,8 @@ const ruleCategories = [
 ];
 
 export default function Rules() {
+  const { rules, loading } = useGeneralRules();
+
   return (
     <main className="pt-32 pb-24 px-6 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -61,7 +64,12 @@ export default function Rules() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {ruleCategories.map((category, i) => (
+          {loading ? (
+            <div className="col-span-full flex justify-center py-24">
+              <Loader2 className="animate-spin text-fest-gold" size={48} />
+            </div>
+          ) : (
+            ruleCategories.map((category, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 30 }}
@@ -76,7 +84,7 @@ export default function Rules() {
               </div>
               <h3 className="text-2xl font-display font-bold mb-8 uppercase tracking-widest">{category.title}</h3>
               <div className="space-y-6">
-                {category.rules.map((rule, j) => (
+                {(i === 0 && rules.length > 0 ? rules.map((rule) => rule.rule_text) : category.rules).map((rule, j) => (
                   <div key={j} className="flex gap-4 group">
                     <CheckCircle size={18} className={`${category.color} flex-shrink-0 mt-1 opacity-40 group-hover:opacity-100 transition-opacity`} />
                     <p className="text-white/60 text-sm leading-relaxed group-hover:text-white transition-colors">{rule}</p>
@@ -84,7 +92,8 @@ export default function Rules() {
                 ))}
               </div>
             </motion.div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Important Note */}

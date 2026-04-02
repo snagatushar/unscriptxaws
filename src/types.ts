@@ -1,21 +1,42 @@
+export type AppRole = 'admin' | 'payment_reviewer' | 'content_reviewer' | 'user';
+export type PaymentStatus = 'pending' | 'approved' | 'rejected';
+export type SubmissionStatus = 'locked' | 'ready' | 'submitted';
+export type ReviewStatus = 'not_started' | 'selected' | 'eliminated';
+export type QualificationStage =
+  | 'not_started'
+  | 'round_1_qualified'
+  | 'round_2_qualified'
+  | 'semifinal'
+  | 'final'
+  | 'eliminated';
+
 export interface DatabaseEvent {
   id: string;
   title: string;
+  slug?: string | null;
   category: string;
   description: string;
-  base_prize: number;
-  per_participant_bonus: number;
+  entry_fee: number;
   image_url: string | null;
-  participants_count?: number;
-  total_prize?: number;
   rules?: string[];
+  max_team_size?: number;
+  payment_account_name?: string | null;
+  payment_account_number?: string | null;
+  payment_ifsc?: string | null;
+  payment_upi_id?: string | null;
+  drive_folder_id?: string | null;
+  drive_embed_hint?: string | null;
+  is_active?: boolean;
+  participants_count?: number;
 }
 
 export interface Faculty {
-  id: string;
+  id?: string;
   name: string;
   designation: string;
-  image_url: string;
+  image_url?: string;
+  image?: string;
+  department?: string;
 }
 
 export interface CommitteeMember {
@@ -32,7 +53,24 @@ export interface GeneralRule {
   display_order: number;
 }
 
-// Keeping Original Event for specific usages initially if needed, but it should be migrated
+export interface HeroSlide {
+  id: string;
+  image_url: string;
+  duration_seconds: number;
+  display_order: number;
+}
+
+export interface SiteContent {
+  id?: string;
+  content_key: string;
+  title?: string | null;
+  subtitle?: string | null;
+  body?: string | null;
+  secondary_body?: string | null;
+  image_url?: string | null;
+  metadata?: Record<string, any>;
+}
+
 export interface Event {
   id: string;
   title: string;

@@ -3,12 +3,14 @@ import Hero from '../components/Hero';
 import EventCard from '../components/EventCard';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Music, Zap, Palette, Loader2 } from 'lucide-react';
-import { useEvents, useCommittee, useGeneralRules } from '../hooks/useSupabase';
+import { useEvents, useCommittee, useGeneralRules, useSiteContent } from '../hooks/useSupabase';
 
 export default function Home() {
   const { events, loading: eventsLoading } = useEvents();
   const { committee, loading: committeeLoading } = useCommittee();
   const { rules, loading: rulesLoading } = useGeneralRules();
+  const { content: aboutEvent } = useSiteContent('home_about_event');
+  const { content: aboutCollege } = useSiteContent('home_about_college');
 
   return (
     <main>
@@ -48,10 +50,10 @@ export default function Home() {
           >
             <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">About The Event</h2>
             <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-8">
-              UNSCRIPTED 2026: <br /> <span className="text-white/80">Where Talent Meets Opportunity</span>
+              {aboutEvent?.title || 'UNSCRIPTED 2026:'} <br /> <span className="text-white/80">{aboutEvent?.subtitle || 'Where Talent Meets Opportunity'}</span>
             </h3>
             <p className="text-white/60 text-lg leading-relaxed">
-              UNSCRIPTED is the premier annual cultural festival uniting creatives, technologists, and innovators globally. It's a three-day celebration blending technology, art, dance, and music into a single spectacular dimension. Prepare to break the norms, go unscripted, and witness history in the making.
+              {aboutEvent?.body || "UNSCRIPTED is the premier annual cultural festival uniting creatives, technologists, and innovators globally. It's a three-day celebration blending technology, art, dance, and music into a single spectacular dimension. Prepare to break the norms, go unscripted, and witness history in the making."}
             </p>
           </motion.div>
         </div>
@@ -68,7 +70,7 @@ export default function Home() {
           >
             <div className="w-full aspect-video rounded-[2rem] overflow-hidden border-4 border-white/10 relative">
                <div className="absolute inset-0 bg-fest-gold/20 mix-blend-overlay"></div>
-               <img src="https://picsum.photos/seed/college/800/400" alt="College Campus" className="w-full h-full object-cover" />
+               <img src={aboutCollege?.image_url || 'https://picsum.photos/seed/college/800/400'} alt="College Campus" className="w-full h-full object-cover" />
             </div>
           </motion.div>
           
@@ -80,15 +82,15 @@ export default function Home() {
           >
             <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">About the College</h2>
             <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-6">
-              A Legacy of <span className="text-fest-gold-light italic">Excellence</span>
+              {aboutCollege?.title || 'A Legacy of '}<span className="text-fest-gold-light italic">{aboutCollege?.subtitle || 'Excellence'}</span>
             </h3>
             <p className="text-white/60 text-lg leading-relaxed mb-6">
-              Founded on the principles of innovation and integrity, our institution has been at the forefront of quality education for decades. We believe in nurturing raw talent and providing a dynamic environment where ideas flourish.
+              {aboutCollege?.body || 'Founded on the principles of innovation and integrity, our institution has been at the forefront of quality education for decades. We believe in nurturing raw talent and providing a dynamic environment where ideas flourish.'}
             </p>
             <div className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest text-white/50">
-               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">A++</span> NAAC Grade</div>
+               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_one_value || 'A++')}</span> {String(aboutCollege?.metadata?.highlight_one_label || 'NAAC Grade')}</div>
                <div className="w-1 h-1 bg-white/20 rounded-full"></div>
-               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">Top 10</span> State Rank</div>
+               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_two_value || 'Top 10')}</span> {String(aboutCollege?.metadata?.highlight_two_label || 'State Rank')}</div>
             </div>
           </motion.div>
         </div>
@@ -187,7 +189,7 @@ export default function Home() {
             <h3 className="text-4xl md:text-7xl font-display font-extrabold tracking-tighter">Organizing <span className="text-fest-gold-light italic">Committee</span></h3>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 md:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
             {committeeLoading ? (
               <div className="col-span-full flex justify-center py-20">
                 <Loader2 className="animate-spin text-fest-gold" size={48} />
@@ -208,7 +210,7 @@ export default function Home() {
                       <img 
                         src={member.image_url} 
                         alt={member.name} 
-                        className="w-full h-full object-cover rounded-full filter grayscale group-hover:grayscale-0 transition-all duration-500"
+                        className="w-full h-full object-cover rounded-full transition-all duration-500"
                         referrerPolicy="no-referrer"
                       />
                     </div>

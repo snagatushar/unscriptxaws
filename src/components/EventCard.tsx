@@ -19,7 +19,6 @@ export default function EventCard({ event, index }: EventCardProps) {
       whileHover={{ y: -10 }}
       className="group relative bg-fest-card rounded-3xl overflow-hidden border border-white/10 hover:border-fest-gold/50 transition-all duration-500 flex flex-col"
     >
-      {/* Image Container */}
       <div className="relative h-64 overflow-hidden shrink-0">
         <motion.img
           whileHover={{ scale: 1.1 }}
@@ -35,19 +34,14 @@ export default function EventCard({ event, index }: EventCardProps) {
         </div>
       </div>
 
-      {/* Content */}
       <div className="p-6 flex flex-col flex-1">
-        <h3 className="text-2xl font-display font-bold mb-3 group-hover:text-fest-gold transition-colors">
-          {event.title}
-        </h3>
-        <p className="text-white/60 text-sm mb-6 line-clamp-2 flex-1">
-          {event.description}
-        </p>
+        <h3 className="text-2xl font-display font-bold mb-3 group-hover:text-fest-gold transition-colors">{event.title}</h3>
+        <p className="text-white/60 text-sm mb-6 line-clamp-2 flex-1">{event.description}</p>
 
         <div className="flex flex-col gap-3 mb-8">
           <div className="flex items-center gap-2 text-xs text-white/40">
             <Trophy size={14} className="text-fest-gold" />
-            <span>Prize Pool: <strong className="text-white">₹{event.total_prize || event.base_prize}</strong></span>
+            <span>Entry Fee: <strong className="text-white">₹{event.entry_fee}</strong></span>
           </div>
           <div className="flex items-center gap-2 text-xs text-white/40">
             <Users size={14} className="text-fest-cyan" />
@@ -64,7 +58,6 @@ export default function EventCard({ event, index }: EventCardProps) {
         </Link>
       </div>
 
-      {/* Glow Effect */}
       <div className="absolute -inset-px bg-gradient-to-br from-fest-gold/20 via-transparent to-fest-gold-dark/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -z-10" />
     </motion.div>
   );

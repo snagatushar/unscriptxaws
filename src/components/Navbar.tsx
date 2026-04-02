@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Menu, X, LogOut, User } from 'lucide-react';
+import { Menu, X, LogOut, User, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -14,9 +14,10 @@ const navLinks = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, isLoading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -24,15 +25,48 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    setIsOpen(false);
+    setIsProfileOpen(false);
+  }, [location.pathname]);
+
   const getDashboardLink = () => {
     if (!profile) return '/dashboard';
     switch (profile.role) {
       case 'admin': return '/admin';
-      case 'coordinator': return '/payments';
-      case 'reviewer': return '/content';
+      case 'payment_reviewer': return '/payments';
+      case 'content_reviewer': return '/content';
       default: return '/dashboard';
     }
   };
+
+  const getDashboardLabel = () => {
+    if (!profile) return 'Dashboard';
+    switch (profile.role) {
+      case 'admin': return 'System Admin';
+      case 'payment_reviewer': return 'Payments';
+      case 'content_reviewer': return 'Reviewer';
+      default: return 'Dashboard';
+    }
+  };
+
+  const showRegisteredEventsShortcut = !!profile && profile.role === 'user';
+
+  const isAdminArea =
+    location.pathname === '/admin/login' ||
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/payments') ||
+    location.pathname.startsWith('/content');
+
+  const hideAuthActionsOnPage = location.pathname === '/login';
+
+  if (isAdminArea) {
+    return null;
+  }
+
+  const showUserActions = !isLoading && !!user;
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Profile';
+  const showDashboardShortcut = !!profile && profile.role !== 'user';
 
   return (
     <nav className={cn(
@@ -61,21 +95,55 @@ export default function Navbar() {
             </Link>
           ))}
           
-          {user ? (
-            <div className="flex items-center gap-4">
-              <Link
-                to={getDashboardLink()}
-                className="flex items-center gap-2 px-6 py-2 bg-fest-gold hover:bg-fest-gold-light text-fest-dark text-sm font-bold uppercase tracking-widest rounded-full transition-all glow-gold"
-              >
-                <User size={16} /> Dashboard
-              </Link>
+          {hideAuthActionsOnPage ? null : showUserActions ? (
+            <div className="relative">
               <button
-                onClick={signOut}
-                className="p-2 text-white/50 hover:text-white transition-colors"
-                title="Logout"
+                onClick={() => setIsProfileOpen((current) => !current)}
+                className="flex items-center gap-3 px-4 py-2 bg-fest-gold hover:bg-fest-gold-light text-fest-dark text-sm font-bold rounded-full transition-all glow-gold"
               >
-                <LogOut size={20} />
+                <span className="w-8 h-8 rounded-full bg-fest-dark text-fest-gold flex items-center justify-center">
+                  <User size={16} />
+                </span>
+                <span className="max-w-32 truncate">{displayName}</span>
+                <ChevronDown size={16} />
               </button>
+
+              {isProfileOpen && (
+                <div className="absolute right-0 top-full mt-3 w-64 rounded-3xl border border-white/10 bg-[#111]/95 backdrop-blur-xl shadow-2xl p-4">
+                  <div className="px-2 pb-3 border-b border-white/10">
+                    <div className="font-bold text-white">{displayName}</div>
+                    <div className="text-xs text-white/45 mt-1">{user?.email}</div>
+                  </div>
+
+                  <div className="pt-3 space-y-2">
+                    {showRegisteredEventsShortcut && (
+                      <Link
+                        to="/dashboard"
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 text-white/80 text-sm font-medium transition-colors"
+                      >
+                        <LayoutDashboard size={16} /> Registered Events
+                      </Link>
+                    )}
+                    {showDashboardShortcut && (
+                      <Link
+                        to={getDashboardLink()}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 text-white/80 text-sm font-medium transition-colors"
+                      >
+                        <LayoutDashboard size={16} /> {getDashboardLabel()}
+                      </Link>
+                    )}
+                    <button
+                      onClick={async () => {
+                        setIsProfileOpen(false);
+                        await signOut();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-red-500/10 text-red-300 text-sm font-medium transition-colors"
+                    >
+                      <LogOut size={16} /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <Link
@@ -111,15 +179,30 @@ export default function Navbar() {
             </Link>
           ))}
           
-          {user ? (
+          {hideAuthActionsOnPage ? null : showUserActions ? (
             <div className="flex flex-col gap-4">
-              <Link
-                to={getDashboardLink()}
-                onClick={() => setIsOpen(false)}
-                className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
-              >
-                <User size={18} /> Dashboard
-              </Link>
+              <div className="glass rounded-2xl p-4 text-center">
+                <div className="text-sm font-bold text-white">{displayName}</div>
+                <div className="text-xs text-white/40 mt-1">{user?.email}</div>
+              </div>
+              {showRegisteredEventsShortcut && (
+                <Link
+                  to="/dashboard"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full py-3 flex justify-center items-center gap-2 bg-white/10 text-center text-white font-bold uppercase tracking-widest rounded-xl text-sm"
+                >
+                  <LayoutDashboard size={18} /> Registered Events
+                </Link>
+              )}
+              {showDashboardShortcut && (
+                <Link
+                  to={getDashboardLink()}
+                  onClick={() => setIsOpen(false)}
+                  className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                >
+                  <User size={18} /> {getDashboardLabel()}
+                </Link>
+              )}
               <button
                 onClick={() => { signOut(); setIsOpen(false); }}
                 className="w-full py-3 flex justify-center items-center gap-2 glass text-white font-bold uppercase tracking-widest rounded-xl text-sm"
