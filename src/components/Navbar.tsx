@@ -90,7 +90,7 @@ export default function Navbar() {
               <motion.span
                 className="absolute -bottom-1 left-0 w-0 h-0.5 bg-fest-gold transition-all group-hover:w-full"
                 initial={false}
-                animate={{ w: location.pathname === link.path ? '100%' : '0%' }}
+                animate={{ width: location.pathname === link.path ? '100%' : '0%' }}
               />
             </Link>
           ))}
