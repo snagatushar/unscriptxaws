@@ -1,9 +1,11 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 
-export default function Background() {
+// Memoized to prevent re-renders on every route change
+export default memo(function Background() {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-fest-dark">
-      {/* Animated Mesh Gradients */}
+    <div className="fixed inset-0 -z-10 overflow-hidden bg-fest-dark will-change-transform">
+      {/* Animated Mesh Gradients — GPU-accelerated via will-change */}
       <motion.div
         animate={{
           scale: [1, 1.2, 1],
@@ -15,7 +17,7 @@ export default function Background() {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-fest-gold/10 blur-[120px]"
+        className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-fest-gold/10 blur-[120px] will-change-transform"
       />
       <motion.div
         animate={{
@@ -28,7 +30,7 @@ export default function Background() {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-white/5 blur-[100px]"
+        className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-white/5 blur-[100px] will-change-transform"
       />
       <motion.div
         animate={{
@@ -41,15 +43,18 @@ export default function Background() {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-fest-gold-dark/10 blur-[110px]"
+        className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-fest-gold-dark/10 blur-[110px] will-change-transform"
       />
 
-      {/* Grain Texture Overlay */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      {/* Grain Texture Overlay — inline SVG data URI instead of external fetch */}
+      <div 
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")" }}
+      />
       
-      {/* Floating Particles (Simplified) */}
+      {/* Reduced particles from 20 to 10 for mobile performance */}
       <div className="absolute inset-0 pointer-events-none">
-        {[...Array(20)].map((_, i) => (
+        {[...Array(10)].map((_, i) => (
           <motion.div
             key={i}
             initial={{ 
@@ -72,4 +77,4 @@ export default function Background() {
       </div>
     </div>
   );
-}
+});

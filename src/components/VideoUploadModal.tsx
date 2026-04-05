@@ -33,8 +33,20 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
 
   const handleUpload = async () => {
     if (!file || !user) return;
-    setUploading(true);
 
+    // BUG-03 FIX: Validate file type and size before upload
+    const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
+    const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only MP4, WebM, and MOV are allowed.');
+      return;
+    }
+    if (file.size > MAX_VIDEO_SIZE) {
+      toast.error('File too large. Maximum video size is 500MB.');
+      return;
+    }
+
+    setUploading(true);
     const bucketName = getBucketName(eventTitle);
 
     try {
@@ -46,7 +58,8 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage.from('videos').getPublicUrl(uploadData.path);
+      // BUG-01 FIX: Use the correct dynamic bucket, not hardcoded 'videos'
+      const { data: { publicUrl } } = supabase.storage.from(bucketName).getPublicUrl(uploadData.path);
 
       const { error: dbError } = await supabase.from('submissions').insert({
         registration_id: registrationId,

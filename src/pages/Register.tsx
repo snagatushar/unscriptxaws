@@ -53,6 +53,22 @@ export default function Register() {
     if (!event) return toast.error('Event not found');
     if (!file) return toast.error('Please upload your payment screenshot');
 
+    // BUG-06 FIX: Payment screenshot must be under 100KB
+    const MAX_PAYMENT_SIZE = 100 * 1024; // 100KB
+    if (file.size > MAX_PAYMENT_SIZE) {
+      return toast.error('Payment screenshot must be under 100KB. Please compress the image.');
+    }
+    const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedImageTypes.includes(file.type)) {
+      return toast.error('Only JPG, PNG, or WebP images are allowed for payment proof.');
+    }
+
+    // BUG-05 FIX: Phone number validation
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length < 10 || phoneDigits.length > 13) {
+      return toast.error('Please enter a valid phone number (10-13 digits).');
+    }
+
     setSubmitting(true);
     try {
       const fileExt = file.name.split('.').pop();
@@ -66,7 +82,7 @@ export default function Register() {
         event_id: event.id,
         participant_name: profile?.full_name || user.user_metadata?.full_name || user.email,
         email: user.email,
-        phone,
+        phone: phoneDigits,
         college_name: collegeName || null,
         department: department || null,
         year_of_study: yearOfStudy || null,
@@ -80,21 +96,25 @@ export default function Register() {
         if (insertError.code === '23505') {
           throw new Error('You have already registered for this event.');
         }
-        throw insertError;
+        throw new Error('Registration failed. Please try again or contact support.');
       }
 
       if (profile && (phone !== profile.phone || collegeName !== profile.college_name)) {
-        await supabase.from('users').update({ phone, college_name: collegeName || null }).eq('id', user.id);
+        await supabase.from('users').update({ phone: phoneDigits, college_name: collegeName || null }).eq('id', user.id);
       }
 
       toast.success('Registration successful. Wait up to 24 hours for payment approval.');
       setSubmitted(true);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to submit registration');
+      // BUG-09 FIX: Don't leak raw Supabase error details
+      const msg = err.message || 'Failed to submit registration';
+      toast.error(msg);
+      if (err.code) console.error('Registration error:', err);
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (loadingConfig) {
     return (

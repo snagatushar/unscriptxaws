@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'motion/react';
+import { useState, useEffect, useMemo, memo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-export default function Hero() {
+const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slides, setSlides] = useState<{ image_url: string; duration_seconds: number }[]>([]);
 
@@ -37,6 +37,15 @@ export default function Hero() {
     fetchImages();
   }, []);
 
+  // Preload the next image in the slideshow
+  useEffect(() => {
+    if (slides.length > 1) {
+      const nextSlide = (currentSlide + 1) % slides.length;
+      const img = new Image();
+      img.src = slides[nextSlide].image_url;
+    }
+  }, [currentSlide, slides]);
+
   const currentDuration = useMemo(
     () => Math.max(4, slides[currentSlide]?.duration_seconds || 4),
     [slides, currentSlide]
@@ -52,33 +61,30 @@ export default function Hero() {
     return () => window.clearTimeout(timer);
   }, [currentSlide, slides.length, currentDuration]);
 
-  useEffect(() => {
-    if (currentSlide >= slides.length) {
-      setCurrentSlide(0);
-    }
-  }, [currentSlide, slides.length]);
-
   return (
-    <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+    <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-fest-dark">
       {/* Background Slideshow */}
-      <div className="absolute inset-0 z-0 bg-fest-dark">
-        {slides.length > 0 ? (
-          <motion.img
-            key={currentSlide}
-            src={slides[currentSlide]?.image_url}
-            initial={false}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0 }}
-            className="w-full h-full object-cover opacity-70"
-            referrerPolicy="no-referrer"
-            onError={() => {
-              if (slides.length > 1) {
-                setCurrentSlide((prev) => (prev + 1) % slides.length);
-              }
-            }}
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-b from-fest-dark/60 via-transparent to-fest-dark/90" />
+      <div className="absolute inset-0 z-0">
+        <AnimatePresence mode="wait">
+          {slides.length > 0 ? (
+            <motion.img
+              key={currentSlide}
+              src={slides[currentSlide]?.image_url}
+              initial={{ opacity: 0, scale: 1.1 }}
+              animate={{ opacity: 0.7, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.5, ease: "easeInOut" }}
+              className="absolute inset-0 w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+              loading="eager"
+              decoding="async"
+              fetchPriority={currentSlide === 0 ? "high" : "auto"}
+            />
+          ) : (
+             <div className="absolute inset-0 bg-fest-dark-light/20" />
+          )}
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-gradient-to-b from-fest-dark/60 via-transparent to-fest-dark/90 pointer-events-none" />
       </div>
 
       {/* Content */}
@@ -98,7 +104,7 @@ export default function Hero() {
             "Break the script, own your moment"
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-6">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-6 md:px-0">
             <Link
               to="/events"
               className="w-full sm:w-auto px-10 py-4 bg-fest-gold text-fest-dark font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform glow-gold text-sm md:text-base"
@@ -113,11 +119,13 @@ export default function Hero() {
       <motion.div
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/40"
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/40 pointer-events-none"
       >
         <span className="text-[10px] uppercase tracking-widest">Scroll</span>
         <div className="w-px h-12 bg-gradient-to-b from-white/40 to-transparent" />
       </motion.div>
     </section>
   );
-}
+};
+
+export default memo(Hero);

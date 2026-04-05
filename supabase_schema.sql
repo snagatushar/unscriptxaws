@@ -572,7 +572,230 @@ update storage.buckets
 set public = false
 where id = 'payments';
 
-drop policy if exists "public read payments bucket" on storage.objects;
+-- Blocked Domains table (Admins only)
+create table if not exists public.blocked_domains (
+  id uuid primary key default gen_random_uuid(),
+  domain text not null unique,
+  reason text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.blocked_domains enable row level security;
+
+create policy "admins manage blocked domains"
+on public.blocked_domains
+for all
+using (public.is_admin());
+
+create policy "public read blocked domains"
+on public.blocked_domains
+for select
+using (true);
+
+-- Submissions Table
+create table if not exists public.submissions (
+  id uuid primary key default gen_random_uuid(),
+  registration_id uuid not null references public.registrations(id) on delete cascade,
+  event_id uuid not null references public.events(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  file_url text not null,
+  submission_notes text,
+  submitted_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.submissions enable row level security;
+
+create policy "users read own submissions"
+on public.submissions
+for select
+using (auth.uid() = user_id or public.is_staff());
+
+create policy "users create own submissions"
+on public.submissions
+for insert
+with check (auth.uid() = user_id);
+
+create policy "users update own submissions"
+on public.submissions
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+-- Internal Reviews Table
+create table if not exists public.internal_reviews (
+  id uuid primary key default gen_random_uuid(),
+  registration_id uuid not null references public.registrations(id) on delete cascade,
+  reviewer_id uuid not null references public.users(id) on delete cascade,
+  score integer check (score >= 0 and score <= 100),
+  feedback text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.internal_reviews enable row level security;
+
+create policy "reviewers read relevant reviews"
+on public.internal_reviews
+for select
+using (public.is_staff());
+
+create policy "reviewers create reviews"
+on public.internal_reviews
+for insert
+with check (public.is_staff());
+
+create policy "reviewers update own reviews"
+on public.internal_reviews
+for update
+using (reviewer_id = auth.uid() or public.is_admin());
+
+-- Registration-Submission Sync Function
+create or replace function public.sync_registration_submission()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  update public.registrations
+  set 
+    submission_status = 'submitted',
+    submitted_at = now()
+  where id = new.registration_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists submissions_sync_trigger on public.submissions;
+create trigger submissions_sync_trigger
+after insert on public.submissions
+for each row execute procedure public.sync_registration_submission();
+
+-- Extend Audit Logging triggers
+drop trigger if exists internal_reviews_audit_log on public.internal_reviews;
+create trigger internal_reviews_audit_log
+after update or insert on public.internal_reviews
+for each row execute procedure public.log_registration_change(); -- Reusing the logger
+
+-- Restore Storage Policies (Crucial!)-- Audit Logs Table
+create table if not exists public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  action text not null,
+  table_name text not null,
+  record_id uuid not null,
+  actor_id uuid references public.users(id),
+  old_data jsonb,
+  new_data jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.audit_logs enable row level security;
+
+create policy "admins read audit logs"
+on public.audit_logs
+for select
+using (public.is_admin());
+
+-- SECURITY FIX: Allow staff to INSERT audit log entries
+-- Without this, all logAdminAction() calls from the frontend silently fail
+create policy "staff insert audit logs"
+on public.audit_logs
+for insert
+with check (public.is_staff());
+
+-- Team Size Validation Trigger
+create or replace function public.validate_team_size()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  allowed_size integer;
+  actual_size integer;
+begin
+  select max_team_size into allowed_size from public.events where id = new.event_id;
+  
+  -- Calculate size (1 for solo + members array length)
+  actual_size := 1 + jsonb_array_length(new.team_members);
+  
+  if actual_size > allowed_size then
+    raise exception 'Team size (%) exceeds maximum allowed (%) for this event', actual_size, allowed_size;
+  end if;
+  
+  return new;
+end;
+$$;
+
+drop trigger if exists registrations_validate_team_size on public.registrations;
+create trigger registrations_validate_team_size
+before insert or update of team_members on public.registrations
+for each row execute procedure public.validate_team_size();
+
+-- Audit Logging Trigger Function
+create or replace function public.log_registration_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- Only log if sensitive fields changed
+  if (old.payment_status is distinct from new.payment_status) or
+     (old.qualification_stage is distinct from new.qualification_stage) or
+     (old.upload_enabled is distinct from new.upload_enabled) or
+     (old.review_status is distinct from new.review_status) then
+    
+    insert into public.audit_logs (action, table_name, record_id, actor_id, old_data, new_data)
+    values (
+      'UPDATE',
+      'registrations',
+      new.id,
+      auth.uid(),
+      jsonb_build_object(
+        'payment_status', old.payment_status,
+        'qualification_stage', old.qualification_stage,
+        'upload_enabled', old.upload_enabled,
+        'review_status', old.review_status
+      ),
+      jsonb_build_object(
+        'payment_status', new.payment_status,
+        'qualification_stage', new.qualification_stage,
+        'upload_enabled', new.upload_enabled,
+        'review_status', new.review_status
+      )
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists registrations_audit_log on public.registrations;
+create trigger registrations_audit_log
+after update on public.registrations
+for each row execute procedure public.log_registration_change();
+
+-- Blocked Domains table (Admins only)
+create table if not exists public.blocked_domains (
+  id uuid primary key default gen_random_uuid(),
+  domain text not null unique,
+  reason text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.blocked_domains enable row level security;
+
+create policy "admins manage blocked domains"
+on public.blocked_domains
+for all
+using (public.is_admin());
+
+create policy "public read blocked domains"
+on public.blocked_domains
+for select
+using (true);
+
+-- Restore Storage Policies
 drop policy if exists "users read own payment screenshots" on storage.objects;
 create policy "users read own payment screenshots"
 on storage.objects
@@ -594,18 +817,4 @@ to authenticated
 with check (
   bucket_id = 'payments'
   and split_part(name, '_', 1) = auth.uid()::text
-);
-
-drop policy if exists "admin manage assets buckets" on storage.objects;
-create policy "admin manage assets buckets"
-on storage.objects
-for all
-to authenticated
-using (
-  bucket_id in ('assets', 'hero', 'faculty', 'committee')
-  and public.current_role() = 'admin'
-)
-with check (
-  bucket_id in ('assets', 'hero', 'faculty', 'committee')
-  and public.current_role() = 'admin'
 );

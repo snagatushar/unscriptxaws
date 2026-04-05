@@ -106,7 +106,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      // Detect password recovery flow and redirect to reset page
+      if (event === 'PASSWORD_RECOVERY') {
+        window.location.hash = '#/reset-password';
+        return;
+      }
+
       setIsLoading(true);
       window.setTimeout(() => {
         void applySession(newSession);

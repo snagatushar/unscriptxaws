@@ -7,6 +7,15 @@ export default function Contact() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const name = (form.elements.namedItem('name') as HTMLInputElement)?.value;
+    const email = (form.elements.namedItem('email') as HTMLInputElement)?.value;
+    const message = (form.elements.namedItem('message') as HTMLTextAreaElement)?.value;
+
+    // Open the user's email client with the message pre-filled
+    const subject = encodeURIComponent(`UNSCRIPTX Contact: Message from ${name}`);
+    const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`);
+    window.open(`mailto:hello@UNSCRIPTXfest.com?subject=${subject}&body=${body}`, '_self');
     setSubmitted(true);
   };
 
@@ -56,8 +65,8 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="text-xl font-display font-bold uppercase tracking-widest mb-2">Call Us</h4>
-                  <p className="text-white/60">+91 98765 43210</p>
-                  <p className="text-white/60">+91 12345 67890</p>
+                  <p className="text-white/60">+91 9999999999</p>
+                  <p className="text-white/60">+91 8660911643</p>
                 </div>
               </div>
 
@@ -67,15 +76,15 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="text-xl font-display font-bold uppercase tracking-widest mb-2">Visit Us</h4>
-                  <p className="text-white/60">College of Arts & Science,</p>
-                  <p className="text-white/60">University Road, City - 123456</p>
+                  <p className="text-white/60">IFIM SCHOOL OF TECHNOLOGY</p>
+                  <p className="text-white/60">Electronic City Phase 1, Bangalore, Karnataka - 560100</p>
                 </div>
               </div>
             </div>
 
             <div className="glass p-10 rounded-[3rem] bg-fest-purple/5 border-fest-purple/20">
               <h4 className="text-fest-purple font-display font-bold uppercase tracking-widest mb-4">Office Hours</h4>
-              <p className="text-white/60">Monday - Friday: 9:00 AM - 6:00 PM</p>
+              <p className="text-white/60">Monday - Friday: 10:00 AM - 5:00 PM</p>
               <p className="text-white/60">Saturday: 10:00 AM - 2:00 PM</p>
             </div>
           </motion.div>

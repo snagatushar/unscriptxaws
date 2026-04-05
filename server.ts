@@ -1,18 +1,23 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
-import uploadHandler from './api/upload';
 
 async function startServer() {
   const app = express();
-  app.use(cors());
-  app.use(express.json());
 
-  // Serve API endpoints
-  app.post('/api/upload', (req, res) => {
-    // uploadHandler is renamed from drive-upload
-    uploadHandler(req, res);
-  });
+  // SECURITY FIX: Restrict CORS to known origins only
+  app.use(cors({
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://unscriptx.vercel.app',
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
+
+  app.use(express.json({ limit: '1mb' }));
 
   // Create Vite server in middleware mode
   const vite = await createViteServer({

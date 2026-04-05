@@ -31,17 +31,12 @@ export default function AdminLogin() {
         .eq('id', authData.user.id)
         .maybeSingle();
 
-      // Fallback lookup by email in case the profile row was recreated with a matching email
-      if ((!profile || profileError) && authData.user.email) {
-        const fallback = await supabase
-          .from('users')
-          .select('id, email, role')
-          .ilike('email', authData.user.email)
-          .maybeSingle();
-
-        profile = fallback.data;
-        profileError = fallback.error;
+      // SECURITY: Strict lookup by auth ID only — no fallback
+      if (!profile || profileError) {
+        await supabase.auth.signOut();
+        throw new Error('Admin profile not found. Contact the system administrator.');
       }
+
 
       const adminRoles = ['admin', 'payment_reviewer', 'content_reviewer'];
       if (profileError || !adminRoles.includes(profile?.role)) {

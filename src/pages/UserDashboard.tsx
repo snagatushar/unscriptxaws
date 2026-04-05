@@ -43,8 +43,6 @@ function getQualificationLabel(stage: QualificationStage) {
       return 'Qualified for Round 1';
     case 'round_2_qualified':
       return 'Qualified for Round 2';
-    case 'round_3_qualified':
-      return 'Qualified for Round 3';
     case 'semifinal':
       return 'Qualified for Semifinal';
     case 'final':
@@ -62,8 +60,7 @@ function getNextRound(stage: QualificationStage): { id: QualificationStage; name
   switch (stage) {
     case 'not_started': return { id: 'round_1_qualified', name: 'Round 1' };
     case 'round_1_qualified': return { id: 'round_2_qualified', name: 'Round 2' };
-    case 'round_2_qualified': return { id: 'round_3_qualified', name: 'Round 3' };
-    case 'round_3_qualified': return { id: 'semifinal', name: 'Semifinal' };
+    case 'round_2_qualified': return { id: 'semifinal', name: 'Semifinal' };
     case 'semifinal': return { id: 'final', name: 'Final' };
     default: return null;
   }

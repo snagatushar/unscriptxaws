@@ -13,9 +13,24 @@ const DISPOSABLE_DOMAINS = [
   'tempmail.net', 'temp-mail.io', 'dropmail.me', '10minutemail.net'
 ];
 
-function isDisposableEmail(email: string) {
+async function isBlockedEmail(email: string): Promise<boolean> {
   const domain = email.split('@')[1]?.toLowerCase();
-  return DISPOSABLE_DOMAINS.includes(domain);
+  if (!domain) return true;
+
+  // Fast local check first
+  if (DISPOSABLE_DOMAINS.includes(domain)) return true;
+
+  // Server-side check against blocked_domains table
+  try {
+    const { data } = await supabase
+      .from('blocked_domains')
+      .select('id')
+      .eq('domain', domain)
+      .maybeSingle();
+    return !!data;
+  } catch {
+    return false; // Don't block on network failure
+  }
 }
 
 function getAuthErrorMessage(err: any) {
@@ -73,7 +88,7 @@ export default function Login() {
           throw new Error('Name is required for signup');
         }
         
-        if (isDisposableEmail(email)) {
+        if (await isBlockedEmail(email)) {
           throw new Error('Temporary or disposable emails are not allowed for this fest.');
         }
 
@@ -166,7 +181,21 @@ export default function Login() {
             <div className="text-right">
               <button 
                 type="button" 
-                onClick={() => toast('Forgot password flow coming soon', { icon: '🚧' })}
+                onClick={async () => {
+                  if (!email.trim()) {
+                    toast.error('Enter your email address first, then click Forgot Password.');
+                    return;
+                  }
+                  try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                      redirectTo: window.location.origin + '/#/reset-password',
+                    });
+                    if (error) throw error;
+                    toast.success('Password reset link sent to your email!');
+                  } catch (err: any) {
+                    toast.error(err.message || 'Could not send reset email.');
+                  }
+                }}
                 className="text-xs text-white/40 hover:text-fest-pink transition-colors uppercase tracking-widest font-bold"
               >
                 Forgot Password?

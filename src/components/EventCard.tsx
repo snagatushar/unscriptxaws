@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Trophy, Users } from 'lucide-react';
@@ -9,7 +10,7 @@ interface EventCardProps {
   key?: string | number;
 }
 
-export default function EventCard({ event, index }: EventCardProps) {
+export default memo(function EventCard({ event, index }: EventCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
@@ -20,14 +21,22 @@ export default function EventCard({ event, index }: EventCardProps) {
       className="group relative bg-fest-card rounded-3xl overflow-hidden border border-white/10 hover:border-fest-gold/50 transition-all duration-500 flex flex-col"
     >
       <div className="relative h-64 overflow-hidden shrink-0">
-        <motion.img
-          whileHover={{ scale: 1.1 }}
-          transition={{ duration: 0.6 }}
-          src={event.image_url || 'https://picsum.photos/seed/event/800/600'}
-          alt={event.title}
-          className="w-full h-full object-cover transition-all duration-500"
-          referrerPolicy="no-referrer"
-        />
+        {event.image_url ? (
+          <motion.img
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.6 }}
+            src={event.image_url}
+            alt={event.title}
+            className="w-full h-full object-cover transition-all duration-500"
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-fest-gold/20 via-fest-pink/10 to-fest-purple/20 flex items-center justify-center">
+            <span className="text-2xl font-display font-bold text-white/15 uppercase tracking-widest">{event.category}</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-fest-card via-transparent to-transparent opacity-60" />
         <div className="absolute top-4 right-4 px-3 py-1 bg-fest-gold/90 backdrop-blur-md rounded-full text-[10px] font-bold text-fest-dark uppercase tracking-widest">
           {event.category}
@@ -61,4 +70,4 @@ export default function EventCard({ event, index }: EventCardProps) {
       <div className="absolute -inset-px bg-gradient-to-br from-fest-gold/20 via-transparent to-fest-gold-dark/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none -z-10" />
     </motion.div>
   );
-}
+});

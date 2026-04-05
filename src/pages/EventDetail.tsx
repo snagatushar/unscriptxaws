@@ -108,12 +108,20 @@ export default function EventDetail() {
             className="space-y-6 md:space-y-8"
           >
             <div className="relative aspect-video rounded-2xl md:rounded-[2rem] overflow-hidden border border-white/10 glow-gold">
-              <img
-                src={event.image_url || 'https://picsum.photos/seed/eventdetail/1280/720'}
-                alt={event.title}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
+              {event.image_url ? (
+                <img
+                  src={event.image_url}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-fest-gold/20 via-fest-pink/10 to-fest-purple/20 flex items-center justify-center">
+                  <span className="text-4xl font-display font-bold text-white/20 uppercase tracking-widest">{event.category}</span>
+                </div>
+              )}
               <div className="absolute top-4 left-4 md:top-6 md:left-6 px-3 py-1.5 md:px-4 md:py-2 bg-fest-gold text-fest-dark rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest">
                 {event.category}
               </div>

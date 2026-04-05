@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Menu, X, LogOut, User, LayoutDashboard, ChevronDown } from 'lucide-react';
@@ -12,7 +12,7 @@ const navLinks = [
   { name: 'Contact', path: '/contact' },
 ];
 
-export default function Navbar() {
+const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -58,6 +58,11 @@ export default function Navbar() {
           <img
             src="/logo.png"
             alt="UNSCRIPTX Logo"
+            width="160"
+            height="80"
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
             className="w-40 h-20 object-contain group-hover:scale-105 transition-transform duration-500 filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_8px_rgba(255,215,0,0.2)]"
           />
         </Link>
@@ -249,4 +254,6 @@ export default function Navbar() {
       )}
     </nav>
   );
-}
+};
+
+export default memo(Navbar);

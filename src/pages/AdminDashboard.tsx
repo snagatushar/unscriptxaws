@@ -5,7 +5,7 @@ import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalL
 import toast from 'react-hot-toast';
 import { AppRole, CommitteeMember, DatabaseEvent, GeneralRule, HeroSlide, QualificationStage, SiteContent } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import * as XLSX from 'xlsx';
+import { exportToExcel } from '../lib/excel';
 import { openPaymentScreenshot } from '../lib/storage';
 import { logAdminAction } from '../lib/audit';
 import { 
@@ -78,7 +78,6 @@ const STAGE_ORDER: QualificationStage[] = [
   'not_started',
   'round_1_qualified',
   'round_2_qualified',
-  'round_3_qualified',
   'semifinal',
   'final',
   'winner'
@@ -787,14 +786,13 @@ export default function AdminDashboard() {
     });
   };
 
-  const exportQualifiedToExcel = () => {
+  const exportQualifiedToExcel = async () => {
     if (selectedQualifiedEventRows.length === 0) {
       toast.error('No participants to export.');
       return;
     }
 
     const data = selectedQualifiedEventRows.map(reg => {
-      // Get the latest score
       const sortedSubmissions = [...(reg.submissions || [])].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       const currentSub = sortedSubmissions[0];
       
@@ -811,12 +809,8 @@ export default function AdminDashboard() {
       };
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Qualified Participants');
-    
     const fileName = `UNSCRIPTX_${activeQualifiedStage}_${selectedQualifiedEvent?.title || 'all_events'}.xlsx`.toLowerCase().replace(/\s+/g, '_');
-    XLSX.writeFile(workbook, fileName);
+    await exportToExcel(data, 'Qualified Participants', fileName);
     toast.success('Excel downloaded successfully.');
   };
 
@@ -976,7 +970,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const exportRegistrationsForEvent = (event: DatabaseEvent, eventRows: RegistrationRow[]) => {
+  const exportRegistrationsForEvent = async (event: DatabaseEvent, eventRows: RegistrationRow[]) => {
     if (!event) {
       toast.error('Select an event first.');
       return;
@@ -994,11 +988,8 @@ export default function AdminDashboard() {
       review_status: registration.review_status,
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Registrations');
     const safeName = event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    XLSX.writeFile(workbook, `${safeName}_registrations_export.xlsx`);
+    await exportToExcel(rows, 'Registrations', `${safeName}_registrations_export.xlsx`);
     toast.success('Excel exported.');
   };
 
@@ -1724,7 +1715,6 @@ export default function AdminDashboard() {
                                         {[
                                           { id: 'round_1_qualified', label: '1st Round' },
                                           { id: 'round_2_qualified', label: '2nd Round' },
-                                          { id: 'round_3_qualified', label: '3rd Round' },
                                           { id: 'semifinal', label: 'Semifinal' },
                                           { id: 'final', label: 'Final' },
                                           { id: 'winner', label: 'Winner' },

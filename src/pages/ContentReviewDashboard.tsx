@@ -37,7 +37,6 @@ const STAGE_ORDER: QualificationStage[] = [
   'not_started',
   'round_1_qualified',
   'round_2_qualified',
-  'round_3_qualified',
   'semifinal',
   'final',
   'winner'
@@ -142,7 +141,6 @@ export default function ContentReviewDashboard() {
   const rounds: { id: QualificationStage; name: string }[] = [
     { id: 'round_1_qualified', name: 'Round 1' },
     { id: 'round_2_qualified', name: 'Round 2' },
-    { id: 'round_3_qualified', name: 'Round 3' },
     { id: 'semifinal', name: 'Semifinal' },
     { id: 'final', name: 'Final' },
   ];
@@ -316,8 +314,7 @@ export default function ContentReviewDashboard() {
              reg.submissions.some(s => {
                if (s.round === 'round_1_qualified' && reg.qualification_stage === 'not_started') return true;
                if (s.round === 'round_2_qualified' && reg.qualification_stage === 'round_1_qualified') return true;
-               if (s.round === 'round_3_qualified' && reg.qualification_stage === 'round_2_qualified') return true;
-               if (s.round === 'semifinal' && reg.qualification_stage === 'round_3_qualified') return true;
+               if (s.round === 'semifinal' && reg.qualification_stage === 'round_2_qualified') return true;
                if (s.round === 'final' && reg.qualification_stage === 'semifinal') return true;
                return false;
              });
@@ -342,8 +339,7 @@ export default function ContentReviewDashboard() {
              reg.submissions.some(s => {
                if (s.round === 'round_1_qualified' && reg.qualification_stage === 'not_started') return true;
                if (s.round === 'round_2_qualified' && reg.qualification_stage === 'round_1_qualified') return true;
-               if (s.round === 'round_3_qualified' && reg.qualification_stage === 'round_2_qualified') return true;
-               if (s.round === 'semifinal' && reg.qualification_stage === 'round_3_qualified') return true;
+               if (s.round === 'semifinal' && reg.qualification_stage === 'round_2_qualified') return true;
                if (s.round === 'final' && reg.qualification_stage === 'semifinal') return true;
                return false;
              });

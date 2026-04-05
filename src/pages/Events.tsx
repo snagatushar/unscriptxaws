@@ -12,7 +12,8 @@ export default function Events() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredEvents = events.filter(event => {
-    const matchesCategory = activeCategory === 'All' || event.category === activeCategory;
+    const matchesCategory = activeCategory === 'All' || 
+                           event.category?.toLowerCase() === activeCategory.toLowerCase();
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          event.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
