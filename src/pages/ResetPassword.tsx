@@ -24,6 +24,13 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
+      // First, explicitly check if we have a session
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        throw new Error('Authentication session not found. Please try clicking the link in your email again.');
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 
@@ -33,6 +40,7 @@ export default function ResetPassword() {
       // Redirect to login after 3 seconds
       setTimeout(() => navigate('/login', { replace: true }), 3000);
     } catch (err: any) {
+      console.error('Reset error:', err);
       toast.error(err.message || 'Failed to reset password.');
     } finally {
       setLoading(false);

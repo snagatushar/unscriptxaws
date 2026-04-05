@@ -109,9 +109,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       // Detect password recovery flow and redirect to reset page
       if (event === 'PASSWORD_RECOVERY') {
-        // Now that Supabase has processed the recovery token and established the session,
-        // we can safely move the user to the reset page without losing auth.
-        window.location.hash = '#/reset-password';
+        // Delay hash change slightly to ensure Supabase persists its session first
+        setTimeout(() => {
+          window.location.hash = '#/reset-password';
+        }, 100);
         return;
       }
 
