@@ -6,6 +6,18 @@ import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 
+const DISPOSABLE_DOMAINS = [
+  'temp-mail.org', '10minutemail.com', 'guerrillamail.com', 'mailproweb.com',
+  'sharklasers.com', 'dispostable.com', 'getairmail.com', 'tempmail.com',
+  'maildrop.cc', 'yopmail.com', 'mailinator.com', 'trashmail.com',
+  'tempmail.net', 'temp-mail.io', 'dropmail.me', '10minutemail.net'
+];
+
+function isDisposableEmail(email: string) {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return DISPOSABLE_DOMAINS.includes(domain);
+}
+
 function getAuthErrorMessage(err: any) {
   const message = err?.message || '';
 
@@ -60,6 +72,11 @@ export default function Login() {
         if (!name.trim()) {
           throw new Error('Name is required for signup');
         }
+        
+        if (isDisposableEmail(email)) {
+          throw new Error('Temporary or disposable emails are not allowed for this fest.');
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -160,28 +177,31 @@ export default function Login() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-5 bg-fest-purple text-white font-black uppercase tracking-[0.3em] text-lg rounded-2xl hover:bg-fest-pink transition-all glow-purple flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.25em] rounded-full hover:bg-fest-cyan hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-2xl relative overflow-hidden group"
           >
-            {loading ? 'PROCESSING...' : (isLogin ? 'LOGIN' : 'SIGN UP')} {!loading && <ArrowRight size={20} />}
+            {loading ? 'PROCESSING...' : (isLogin ? 'LOGIN' : 'SIGNUP')}
+            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+          </button>
+
+          <div className="relative py-4">
+            <div className="absolute inset-0 flex items-center px-2">
+              <div className="w-full border-t border-white/5"></div>
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-black/50 px-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/20 backdrop-blur-sm">OR</span>
+            </div>
+          </div>
+
+          <button 
+            type="button"
+            onClick={() => void handleOAuth('google')}
+            className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold uppercase tracking-widest rounded-full hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-3 group relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-yellow-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Chrome size={20} className="group-hover:rotate-12 transition-transform text-white/60 group-hover:text-white" />
+            <span>Continue with Google</span>
           </button>
         </form>
-
-        <div className="mt-10">
-          <div className="relative flex items-center justify-center mb-8">
-            <div className="absolute w-full h-px bg-white/10" />
-            <span className="relative px-4 bg-[#111] text-[10px] text-white/20 uppercase tracking-widest font-bold z-10">Or continue with</span>
-          </div>
-
-          <div className="flex justify-center">
-            <button 
-              onClick={() => handleOAuth('google')}
-              type="button"
-              className="w-full flex items-center justify-center gap-3 py-4 glass rounded-2xl hover:bg-white/10 transition-all text-sm font-bold uppercase tracking-widest"
-            >
-              <Chrome size={20} className="text-fest-cyan shadow-glow-cyan" /> Continue with Google
-            </button>
-          </div>
-        </div>
 
         <div className="mt-10 text-center relative z-10">
           <p className="text-white/40 text-sm">

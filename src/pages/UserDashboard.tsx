@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Loader2, CheckCircle, Clock, XCircle, Trophy, Link2, Upload, FileVideo2 } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, XCircle, Trophy, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { PaymentStatus, QualificationStage, ReviewStatus, SubmissionStatus } from '../types';
+import { PaymentStatus, QualificationStage, ReviewStatus, SubmissionStatus, Submission } from '../types';
+import VideoUploadModal from '../components/VideoUploadModal';
 
 type UserRegistration = {
   id: string;
@@ -12,8 +13,6 @@ type UserRegistration = {
   payment_status: PaymentStatus;
   upload_enabled: boolean;
   submission_status: SubmissionStatus;
-  drive_view_url: string | null;
-  drive_download_url: string | null;
   review_status: ReviewStatus;
   qualification_stage: QualificationStage;
   qualification_notes: string | null;
@@ -24,6 +23,7 @@ type UserRegistration = {
     title: string;
     category: string;
   };
+  submissions?: Submission[];
 };
 
 function getReviewLabel(status: ReviewStatus) {
@@ -40,29 +40,48 @@ function getReviewLabel(status: ReviewStatus) {
 function getQualificationLabel(stage: QualificationStage) {
   switch (stage) {
     case 'round_1_qualified':
-      return '1st Round Qualified';
+      return 'Qualified for Round 1';
     case 'round_2_qualified':
-      return '2nd Round Qualified';
+      return 'Qualified for Round 2';
+    case 'round_3_qualified':
+      return 'Qualified for Round 3';
     case 'semifinal':
-      return 'Semifinal Qualified';
+      return 'Qualified for Semifinal';
     case 'final':
-      return 'Final Qualified';
+      return 'Qualified for Final';
+    case 'winner':
+      return 'WINNER 🏆';
     case 'eliminated':
       return 'Eliminated';
     default:
-      return 'Awaiting Round Result';
+      return 'Awaiting Selection';
+  }
+}
+
+function getNextRound(stage: QualificationStage): { id: QualificationStage; name: string } | null {
+  switch (stage) {
+    case 'not_started': return { id: 'round_1_qualified', name: 'Round 1' };
+    case 'round_1_qualified': return { id: 'round_2_qualified', name: 'Round 2' };
+    case 'round_2_qualified': return { id: 'round_3_qualified', name: 'Round 3' };
+    case 'round_3_qualified': return { id: 'semifinal', name: 'Semifinal' };
+    case 'semifinal': return { id: 'final', name: 'Final' };
+    default: return null;
   }
 }
 
 export default function UserDashboard() {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [registrations, setRegistrations] = useState<UserRegistration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submittingId, setSubmittingId] = useState<string | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<Record<string, File | null>>({});
+  const [uploadModal, setUploadModal] = useState<{ isOpen: boolean; regId: string; round: QualificationStage; roundName: string; eventTitle: string }>({
+    isOpen: false,
+    regId: '',
+    round: 'not_started',
+    roundName: '',
+    eventTitle: '',
+  });
 
-  useEffect(() => {
-    async function fetchRegistrations() {
+  const fetchRegistrations = async () => {
       if (!user) return;
       try {
         const { data, error } = await supabase
@@ -73,14 +92,13 @@ export default function UserDashboard() {
             payment_status,
             upload_enabled,
             submission_status,
-            drive_view_url,
-            drive_download_url,
             review_status,
             qualification_stage,
             qualification_notes,
             review_notes,
             payment_review_notes,
-            events ( id, title, category )
+            events ( id, title, category ),
+            submissions (*)
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
@@ -96,65 +114,9 @@ export default function UserDashboard() {
       }
     }
 
+  useEffect(() => {
     fetchRegistrations();
   }, [user]);
-
-  const handleFileUpload = async (registrationId: string) => {
-    const file = selectedFiles[registrationId];
-    if (!file) {
-      toast.error('Choose your video file first.');
-      return;
-    }
-
-    if (!session?.access_token) {
-      toast.error('Your login session expired. Please sign in again.');
-      return;
-    }
-
-    setSubmittingId(registrationId);
-    try {
-      const formData = new FormData();
-      formData.append('registrationId', registrationId);
-      formData.append('file', file);
-
-      const response = await fetch('/api/drive-upload', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      });
-
-      const payload = await response.json().catch(() => ({ message: 'Upload failed.' }));
-      if (!response.ok) {
-        throw new Error(payload.message || 'Upload failed.');
-      }
-
-      setRegistrations((current) =>
-        current.map((registration) =>
-          registration.id === registrationId
-            ? {
-                ...registration,
-                drive_view_url: payload.driveViewUrl || registration.drive_view_url,
-                drive_download_url: payload.driveDownloadUrl || registration.drive_download_url,
-                submission_status: 'submitted',
-              }
-            : registration
-        )
-      );
-
-      setSelectedFiles((current) => ({
-        ...current,
-        [registrationId]: null,
-      }));
-
-      toast.success('Video uploaded to Google Drive successfully.');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to upload video.');
-    } finally {
-      setSubmittingId(null);
-    }
-  };
 
   if (loading) {
     return (
@@ -172,7 +134,7 @@ export default function UserDashboard() {
             Registered <span className="text-fest-gold">Events</span>
           </h1>
           <p className="text-white/60 mb-8 md:mb-12 text-sm md:text-lg">
-            Track payment approval, upload access, and round results for each event you registered in.
+            Track payment approval and round results for each event you registered in.
           </p>
         </motion.div>
 
@@ -250,90 +212,67 @@ export default function UserDashboard() {
                   </div>
                 )}
 
-                {registration.payment_status === 'approved' &&
-                registration.upload_enabled &&
-                registration.qualification_stage !== 'eliminated' ? (
-                  <div className="space-y-4 rounded-2xl border border-fest-gold/20 bg-fest-gold/5 p-4">
-                    <div>
-                      <h4 className="font-bold text-fest-gold uppercase tracking-wider text-sm">Upload Video</h4>
-                      <p className="text-[11px] text-white/55 mt-1">
-                        {registration.qualification_stage === 'not_started'
-                          ? 'Payment is approved for this event. Upload your first-round event video here.'
-                          : 'You qualified to the next round. Upload your next-round content for this event here.'}
-                      </p>
-                    </div>
+                {registration.payment_status === 'approved' && (
+                  <div className="space-y-4">
+                    {(() => {
+                      const next = getNextRound(registration.qualification_stage);
+                      const hasSubmittedForNext = registration.submissions?.some(s => s.round === next?.id);
 
-                    <div className="space-y-3">
-                      <label className="block rounded-xl border border-dashed border-fest-gold/30 bg-black/30 px-4 py-4 text-sm text-white/70 cursor-pointer hover:border-fest-gold transition-colors">
-                        <span className="flex items-center gap-2 font-semibold text-fest-gold">
-                          <FileVideo2 size={16} /> Choose video file
-                        </span>
-                        <span className="mt-2 block text-xs text-white/45">
-                          Supported by your browser upload. The file will be sent to the event Google Drive folder.
-                        </span>
-                        <input
-                          type="file"
-                          accept="video/*"
-                          className="hidden"
-                          onChange={(e) =>
-                            setSelectedFiles((current) => ({
-                              ...current,
-                              [registration.id]: e.target.files?.[0] || null,
-                            }))
-                          }
-                        />
-                      </label>
+                      if (next && !hasSubmittedForNext) {
+                        return (
+                          <button
+                            onClick={() => setUploadModal({
+                              isOpen: true,
+                              regId: registration.id,
+                              round: next.id,
+                              roundName: next.name,
+                              eventTitle: registration.events.title
+                            })}
+                            className="w-full py-4 bg-fest-gold text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-2 glow-gold"
+                          >
+                            <Video size={18} /> Upload for {next.name}
+                          </button>
+                        );
+                      }
 
-                      {selectedFiles[registration.id] && (
-                        <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-xs text-white/70">
-                          Selected file: {selectedFiles[registration.id]?.name}
-                        </div>
-                      )}
-                    </div>
+                      if (hasSubmittedForNext) {
+                        return (
+                          <div className="text-center text-[10px] uppercase tracking-widest text-fest-gold/70 p-4 border border-fest-gold/20 rounded-2xl bg-fest-gold/5 flex flex-col gap-1 items-center">
+                            <CheckCircle size={14} /> Submission for {next?.name} Received
+                          </div>
+                        );
+                      }
 
-                    <button
-                      onClick={() => handleFileUpload(registration.id)}
-                      disabled={submittingId === registration.id}
-                      className="w-full py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-                    >
-                      {submittingId === registration.id ? <Loader2 className="animate-spin" size={16} /> : <><Upload size={16} /> Upload Video</>}
-                    </button>
-                  </div>
-                ) : registration.payment_status === 'approved' && registration.qualification_stage === 'eliminated' ? (
-                  <div className="text-center text-[10px] uppercase tracking-widest text-red-300/80 p-4 border border-red-500/20 rounded-2xl bg-red-500/5">
-                    You are eliminated for this event. Upload is locked.
-                  </div>
-                ) : registration.payment_status === 'approved' ? (
-                  <div className="text-center text-[10px] uppercase tracking-widest text-fest-gold/70 p-4 border border-fest-gold/20 rounded-2xl bg-fest-gold/5">
-                    Payment approved. Upload option for this event will appear here once you qualify for the next round.
-                  </div>
-                ) : registration.payment_status === 'rejected' ? (
-                  <div className="text-center text-[10px] uppercase tracking-widest text-red-300/80 p-4 border border-red-500/20 rounded-2xl bg-red-500/5">
-                    Payment rejected. Please contact the team or register again if needed.
-                  </div>
-                ) : (
-                  <div className="text-center text-[10px] uppercase tracking-widest text-white/40 p-4 border border-white/5 rounded-2xl">
-                    Registration submitted. Wait for up to 24 hours for payment approval.
+                      return null;
+                    })()}
                   </div>
                 )}
 
-                {registration.drive_view_url && (
-                  <div className="bg-black/20 rounded-2xl p-4 border border-white/10">
-                    <div className="font-bold text-sm text-fest-gold mb-2">Submitted Link</div>
-                    <a
-                      href={registration.drive_view_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-white/60 hover:text-white underline flex items-center gap-2"
-                    >
-                      <Link2 size={14} /> Open Uploaded Video
-                    </a>
+                {registration.payment_status === 'rejected' && (
+                  <div className="text-center text-[10px] uppercase tracking-widest text-red-300/80 p-4 border border-red-500/20 rounded-2xl bg-red-500/5">
+                    Payment rejected. Please contact the team.
+                  </div>
+                )}
+
+                {registration.payment_status === 'pending' && (
+                  <div className="text-center text-[10px] uppercase tracking-widest text-white/40 p-4 border border-white/5 rounded-2xl">
+                    Registration submitted. Wait for payment verification.
                   </div>
                 )}
               </motion.div>
             ))}
           </div>
         )}
+
+        <VideoUploadModal
+          isOpen={uploadModal.isOpen}
+          onClose={() => setUploadModal(prev => ({ ...prev, isOpen: false }))}
+          registrationId={uploadModal.regId}
+          round={uploadModal.round}
+          roundName={uploadModal.roundName}
+          eventTitle={uploadModal.eventTitle}
+          onSuccess={fetchRegistrations}
+        />
       </div>
     </main>
   );

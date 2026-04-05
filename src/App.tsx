@@ -65,11 +65,11 @@ function AnimatedRoutes() {
           />
           <Route 
             path="/payments" 
-            element={<ProtectedRoute allowedRoles={['admin', 'payment_reviewer']} redirectPath="/admin/login"><PaymentReviewDashboard /></ProtectedRoute>} 
+            element={<ProtectedRoute allowedRoles={['admin', 'payment_reviewer', 'content_reviewer']} redirectPath="/admin/login"><PaymentReviewDashboard /></ProtectedRoute>} 
           />
           <Route 
             path="/content" 
-            element={<ProtectedRoute allowedRoles={['admin', 'content_reviewer']} redirectPath="/admin/login"><ContentReviewDashboard /></ProtectedRoute>} 
+            element={<ProtectedRoute allowedRoles={['admin', 'payment_reviewer', 'content_reviewer']} redirectPath="/admin/login"><ContentReviewDashboard /></ProtectedRoute>} 
           />
         </Routes>
       </motion.div>

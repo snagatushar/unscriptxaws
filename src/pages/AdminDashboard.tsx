@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppRole, CommitteeMember, DatabaseEvent, GeneralRule, HeroSlide, QualificationStage, SiteContent } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { openPaymentScreenshot } from '../lib/storage';
 
-type DashboardTab = 'events' | 'payment_reviews' | 'qualified_rounds' | 'users' | 'assignments' | 'registrations' | 'ui';
+type DashboardTab = 'events' | 'payment_reviews' | 'qualified_rounds' | 'users' | 'judges_access' | 'payment_access' | 'registrations' | 'ui';
 
 type AppUser = {
   id: string;
@@ -23,7 +23,8 @@ type ReviewerAssignment = {
   id: string;
   reviewer_id: string;
   event_id: string;
-  reviewer_user: { full_name: string | null; email: string } | null;
+  role_type: 'judge' | 'payment';
+  reviewer_user: { full_name: string | null; email: string; role: AppRole } | null;
   assigned_event: { title: string; category: string } | null;
 };
 
@@ -45,7 +46,153 @@ type RegistrationRow = {
   qualification_notes: string | null;
   participant_user: { full_name: string | null; email: string } | null;
   event: { title: string; category: string } | null;
+  submissions: {
+    id: string;
+    round: string;
+    video_url: string;
+    video_path: string;
+    created_at: string;
+    notes: string | null;
+    internal_reviews: { score: number; judge_remarks: string }[] | null;
+  }[];
 };
+
+const STAGE_ORDER: QualificationStage[] = [
+  'not_started',
+  'round_1_qualified',
+  'round_2_qualified',
+  'round_3_qualified',
+  'semifinal',
+  'final',
+  'winner'
+];
+
+function isRoundPast(currentStage: QualificationStage, roundToCheck: string): boolean {
+  const currentIndex = STAGE_ORDER.indexOf(currentStage);
+  const checkIndex = STAGE_ORDER.indexOf(roundToCheck as QualificationStage);
+  
+  if (currentIndex === -1 || checkIndex === -1) return false;
+  return currentIndex > checkIndex;
+}
+
+function getBucketName(title: string): string {
+  if (!title) return 'videos';
+  return title
+    .toLowerCase()
+    .replace(/&/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]/g, '')
+    .replace(/-+/g, '-');
+}
+
+function VideoPreview({ submission, eventTitle, onSave, isPast }: { submission: any; eventTitle: string; onSave: (id: string, score: number, remarks: string) => void; isPast?: boolean }) {
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [score, setScore] = useState(0);
+  const [remarks, setRemarks] = useState('');
+
+  // Always sync state with the actual data from props
+  useEffect(() => {
+    async function syncData() {
+      // If props already have results, use them
+      if (submission.internal_reviews && submission.internal_reviews.length > 0) {
+        setScore(submission.internal_reviews[0].score || 0);
+        setRemarks(submission.internal_reviews[0].judge_remarks || '');
+        return;
+      }
+
+      // Fallback: Fetch directly from the table if props are empty
+      const { data, error } = await supabase
+        .from('internal_reviews')
+        .select('score, judge_remarks')
+        .eq('submission_id', submission.id)
+        .maybeSingle();
+
+      if (data && !error) {
+        setScore(data.score || 0);
+        setRemarks(data.judge_remarks || '');
+      }
+    }
+    syncData();
+  }, [submission]);
+
+  useEffect(() => {
+    async function getUrl() {
+      const bucketName = getBucketName(eventTitle);
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .createSignedUrl(submission.video_path, 3600);
+
+      if (error) {
+        console.error('Error creating signed URL:', error);
+        setVideoUrl(null);
+      } else {
+        setVideoUrl(data.signedUrl);
+      }
+      setLoading(false);
+    }
+    getUrl();
+  }, [submission.video_path, eventTitle]);
+
+  if (loading) return (
+    <div className="w-full h-32 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 animate-pulse">
+      <Loader2 className="animate-spin text-white/20" size={16} />
+    </div>
+  );
+
+  if (!videoUrl) return null;
+
+  return (
+    <div className={`space-y-4 p-4 rounded-2xl border transition-all ${isPast ? 'bg-white/2 border-white/5' : 'bg-black/40 border-white/10'}`}>
+      <div className="flex justify-between items-center px-1">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-fest-gold uppercase tracking-widest text-shadow-glow">
+              {submission.round.replace(/_/g, ' ').replace('qualified','')} Entry
+            </span>
+            {isPast && (
+              <span className="text-[8px] px-1.5 py-0.5 bg-white/10 text-white/40 rounded uppercase font-black">History</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            <input
+              type="number"
+              min="0"
+              max="10"
+              value={score}
+              onChange={(e) => setScore(Number(e.target.value))}
+              className="w-12 bg-white/10 border border-white/10 rounded-lg text-fest-gold font-black text-center text-sm py-1 focus:border-fest-gold transition-all"
+            />
+            <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">/ 10 PTS</span>
+          </div>
+        </div>
+        
+        <button
+          onClick={() => onSave(submission.id, score, remarks)}
+          className="p-2 bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark rounded-lg transition-all border border-fest-gold/20"
+          title="Update Points & Remarks"
+        >
+          <Save size={14} />
+        </button>
+      </div>
+
+      <video 
+        src={videoUrl} 
+        controls 
+        className="w-full aspect-video rounded-xl bg-black border border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.5)]" 
+      />
+
+      <div className="rounded-xl px-3 py-2 border bg-black/30 border-white/10">
+        <textarea
+          value={remarks}
+          onChange={(e) => setRemarks(e.target.value)}
+          placeholder="Admin notes / Judge remarks..."
+          className="w-full bg-transparent text-[10px] text-white/60 outline-none resize-none transition-colors italic h-16"
+        />
+      </div>
+    </div>
+  );
+}
 
 const ROLE_OPTIONS: AppRole[] = ['user', 'payment_reviewer', 'content_reviewer', 'admin'];
 
@@ -59,7 +206,6 @@ const emptyEventForm = {
   payment_account_number: '',
   payment_ifsc: '',
   payment_upi_id: '',
-  drive_folder_id: '',
   image_url: '',
   rules: '',
 };
@@ -128,12 +274,46 @@ export default function AdminDashboard() {
       if (activeTab === 'events') {
         const [{ data: eventsData, error: eventsError }, { data: registrationsData, error: registrationsError }] = await Promise.all([
           supabase.from('events').select('*').order('created_at', { ascending: false }),
-          supabase.from('registrations').select('id, event_id'),
+          supabase.from('registrations').select(`
+            id,
+            event_id,
+            participant_name,
+            email,
+            phone,
+            college_name,
+            team_name,
+            payment_status,
+            payment_screenshot_url,
+            payment_review_notes,
+            upload_enabled,
+            submission_status,
+            review_status,
+            qualification_stage,
+            qualification_notes,
+            participant_user:users!registrations_user_id_fkey ( full_name, email ),
+            event:events!registrations_event_id_fkey ( title, category ),
+            submissions (*, internal_reviews(score, judge_remarks))
+          `).order('created_at', { ascending: false }),
         ]);
         if (eventsError) throw eventsError;
         if (registrationsError) throw registrationsError;
-        setEvents(((eventsData || []) as any[]).map((event) => ({ ...event, entry_fee: Number(event.entry_fee || 0) })));
-        setRegistrations((registrationsData as RegistrationRow[]) || []);
+
+        const mappedEvents = ((eventsData || []) as any[]).map((event) => ({
+          ...event,
+          entry_fee: Number(event.entry_fee || 0),
+        }));
+        const mappedRegistrations = (registrationsData as any[]).map(reg => ({
+          ...reg,
+          participant_user: Array.isArray(reg.participant_user) ? reg.participant_user[0] : reg.participant_user,
+          event: Array.isArray(reg.event) ? reg.event[0] : reg.event,
+          submissions: (reg.submissions || []).map((s: any) => ({
+            ...s,
+            internal_reviews: Array.isArray(s.internal_reviews) ? s.internal_reviews : [s.internal_reviews].filter(Boolean)
+          }))
+        })) as unknown as RegistrationRow[];
+
+        setEvents(mappedEvents);
+        setRegistrations(mappedRegistrations);
       }
 
       if (activeTab === 'registrations' || activeTab === 'payment_reviews' || activeTab === 'qualified_rounds') {
@@ -158,7 +338,8 @@ export default function AdminDashboard() {
               qualification_stage,
               qualification_notes,
               participant_user:users!registrations_user_id_fkey ( full_name, email ),
-              event:events!registrations_event_id_fkey ( title, category )
+              event:events!registrations_event_id_fkey ( title, category ),
+              submissions (*, internal_reviews(score, judge_remarks))
             `)
             .order('created_at', { ascending: false }),
         ]);
@@ -170,10 +351,19 @@ export default function AdminDashboard() {
           ...event,
           entry_fee: Number(event.entry_fee || 0),
         }));
-        const mappedRegistrations = (registrationsData as unknown as RegistrationRow[]) || [];
+        const mappedRegistrations = (registrationsData as any[]).map(reg => ({
+          ...reg,
+          participant_user: Array.isArray(reg.participant_user) ? reg.participant_user[0] : reg.participant_user,
+          event: Array.isArray(reg.event) ? reg.event[0] : reg.event,
+          submissions: (reg.submissions || []).map((s: any) => ({
+            ...s,
+            internal_reviews: Array.isArray(s.internal_reviews) ? s.internal_reviews : [s.internal_reviews].filter(Boolean)
+          }))
+        })) as unknown as RegistrationRow[];
 
         setEvents(mappedEvents);
         setRegistrations(mappedRegistrations);
+
         setPaymentNotes(
           mappedRegistrations.reduce((acc, registration) => {
             acc[registration.id] = registration.payment_review_notes || '';
@@ -203,14 +393,15 @@ export default function AdminDashboard() {
         setUsers((data as AppUser[]) || []);
       }
 
-      if (activeTab === 'assignments') {
+      if (activeTab === 'judges_access' || activeTab === 'payment_access') {
         const { data, error } = await supabase
           .from('reviewer_event_assignments')
           .select(`
             id,
             reviewer_id,
             event_id,
-            reviewer_user:users!reviewer_event_assignments_reviewer_id_fkey ( full_name, email ),
+            role_type,
+            reviewer_user:users!reviewer_event_assignments_reviewer_id_fkey ( full_name, email, role ),
             assigned_event:events!reviewer_event_assignments_event_id_fkey ( title, category )
           `)
           .order('created_at', { ascending: false });
@@ -220,7 +411,7 @@ export default function AdminDashboard() {
         const { data: eventData } = await supabase.from('events').select('*').order('title');
         if (eventData) setEvents(((eventData || []) as any[]).map((event) => ({ ...event, entry_fee: Number(event.entry_fee || 0) })));
 
-        const { data: userData } = await supabase.from('users').select('*').eq('role', 'content_reviewer').order('full_name');
+        const { data: userData } = await supabase.from('users').select('*').in('role', ['content_reviewer', 'payment_reviewer', 'admin']).order('full_name');
         if (userData) setUsers(userData as AppUser[]);
       }
 
@@ -352,7 +543,6 @@ export default function AdminDashboard() {
       payment_account_number: event.payment_account_number || '',
       payment_ifsc: event.payment_ifsc || '',
       payment_upi_id: event.payment_upi_id || '',
-      drive_folder_id: event.drive_folder_id || '',
       image_url: event.image_url || '',
       rules: (event.rules || []).join('\n'),
     });
@@ -520,6 +710,39 @@ export default function AdminDashboard() {
     });
   };
 
+  const exportQualifiedToExcel = () => {
+    if (selectedQualifiedEventRows.length === 0) {
+      toast.error('No participants to export.');
+      return;
+    }
+
+    const data = selectedQualifiedEventRows.map(reg => {
+      // Get the latest score
+      const sortedSubmissions = [...(reg.submissions || [])].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const currentSub = sortedSubmissions[0];
+      
+      return {
+        'Participant Name': reg.participant_name || reg.participant_user?.full_name || 'N/A',
+        'College': reg.college_name || 'N/A',
+        'Email': reg.email || reg.participant_user?.email || 'N/A',
+        'Phone': reg.phone || 'N/A',
+        'Event': reg.event?.title || 'N/A',
+        'Current Stage': reg.qualification_stage.replace(/_/g, ' ').toUpperCase(),
+        'Latest Score': currentSub?.internal_reviews?.[0]?.score || 0,
+        'Judge Remarks': currentSub?.internal_reviews?.[0]?.judge_remarks || 'No notes',
+        'Submission Date': currentSub ? new Date(currentSub.created_at).toLocaleString() : 'No submission'
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Qualified Participants');
+    
+    const fileName = `unscripted_${activeQualifiedStage}_${selectedQualifiedEvent?.title || 'all_events'}.xlsx`.toLowerCase().replace(/\s+/g, '_');
+    XLSX.writeFile(workbook, fileName);
+    toast.success('Excel downloaded successfully.');
+  };
+
   const handleEventCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
@@ -578,17 +801,21 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleAssignmentCreate = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleAssignmentCreate = async (e: React.FormEvent, roleType: 'judge' | 'payment') => {
+    e.preventDefault();
     if (!reviewerId || !assignmentEventId) {
       toast.error('Select both reviewer and event.');
       return;
     }
 
     try {
-      const { error } = await supabase.from('reviewer_event_assignments').insert({ reviewer_id: reviewerId, event_id: assignmentEventId });
+      const { error } = await supabase.from('reviewer_event_assignments').insert({ 
+        reviewer_id: reviewerId, 
+        event_id: assignmentEventId,
+        role_type: roleType
+      });
       if (error) throw error;
-      toast.success('Reviewer assigned to event.');
+      toast.success(`${roleType === 'judge' ? 'Judge' : 'Payment staff'} assigned to event.`);
       setReviewerId('');
       setAssignmentEventId('');
       await fetchData();
@@ -682,6 +909,7 @@ export default function AdminDashboard() {
     }
   };
 
+
   const handleQualificationStage = async (registration: RegistrationRow, stage: QualificationStage) => {
     setActionLoadingId(registration.id);
     try {
@@ -696,6 +924,7 @@ export default function AdminDashboard() {
           upload_enabled: shouldKeepUploadOpen,
           upload_enabled_by: shouldKeepUploadOpen ? user?.id || null : null,
           upload_enabled_at: shouldKeepUploadOpen ? new Date().toISOString() : null,
+          submission_status: shouldKeepUploadOpen ? 'ready' : 'locked',
         })
         .eq('id', registration.id);
 
@@ -730,14 +959,21 @@ export default function AdminDashboard() {
                 </h4>
                 <p className="text-xs text-white/40 mt-1">{registration.email || registration.participant_user?.email}</p>
               </div>
-              <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                registration.payment_status === 'approved'
-                  ? 'bg-green-500/10 text-green-400'
-                  : registration.payment_status === 'rejected'
-                    ? 'bg-red-500/10 text-red-400'
-                    : 'bg-fest-gold/10 text-fest-gold'
-              }`}>
-                {registration.payment_status}
+              <div className="flex flex-col items-end gap-2">
+                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                  registration.payment_status === 'approved'
+                    ? 'bg-green-500/10 text-green-400'
+                    : registration.payment_status === 'rejected'
+                      ? 'bg-red-500/10 text-red-400'
+                      : 'bg-fest-gold/10 text-fest-gold'
+                }`}>
+                  {registration.payment_status}
+                </div>
+                {registration.submissions && registration.submissions.length > 0 && (
+                  <div className="px-2 py-0.5 bg-fest-gold/20 border border-fest-gold/30 rounded text-[9px] font-black text-fest-gold uppercase tracking-tighter">
+                    LATEST: {registration.submissions.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].internal_reviews?.[0]?.score || 0} / 10
+                  </div>
+                )}
               </div>
             </div>
 
@@ -822,11 +1058,12 @@ export default function AdminDashboard() {
         <div className="flex gap-4 border-b border-white/10 mb-8 pb-4 overflow-x-auto whitespace-nowrap">
           {[
             { id: 'events', label: 'Events', icon: CalendarDays },
-            { id: 'payment_reviews', label: 'Payment Reviews', icon: ShieldCheck },
+            { id: 'payment_reviews', label: 'Payment Reviews', icon: DollarSign },
             { id: 'qualified_rounds', label: 'Qualified', icon: CheckCircle2 },
             { id: 'ui', label: 'UI', icon: SlidersHorizontal },
             { id: 'users', label: 'Users', icon: Users },
-            { id: 'assignments', label: 'Reviewer Access', icon: ShieldCheck },
+            { id: 'judges_access', label: 'Judges Access', icon: ShieldCheck },
+            { id: 'payment_access', label: 'Payment Access', icon: DollarSign },
             { id: 'registrations', label: 'All Registrations', icon: CheckSquare },
           ].map((tab) => (
             <button
@@ -909,7 +1146,6 @@ export default function AdminDashboard() {
                   <input placeholder="IFSC" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.payment_ifsc} onChange={(e) => setNewEvent({ ...newEvent, payment_ifsc: e.target.value })} />
                 </div>
                 <input placeholder="UPI ID" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.payment_upi_id} onChange={(e) => setNewEvent({ ...newEvent, payment_upi_id: e.target.value })} />
-                <input placeholder="Google Drive Folder ID" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.drive_folder_id} onChange={(e) => setNewEvent({ ...newEvent, drive_folder_id: e.target.value })} />
                 <textarea placeholder="Rules, one per line" className="w-full h-28 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none" value={newEvent.rules} onChange={(e) => setNewEvent({ ...newEvent, rules: e.target.value })} />
                 <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
                   {editingEventId ? 'Update Event' : 'Create Event'}
@@ -1224,15 +1460,24 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                     </div>
-                    <div className="relative w-full md:w-80">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={16} />
-                      <input
-                        type="text"
-                        value={qualificationSearch}
-                        onChange={(e) => setQualificationSearch(e.target.value)}
-                        placeholder="Search participants"
-                        className="w-full rounded-2xl bg-white/5 border border-white/10 pl-11 pr-4 py-3 text-sm outline-none focus:border-fest-gold"
-                      />
+                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                      <div className="relative w-full sm:w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={16} />
+                        <input
+                          type="text"
+                          value={qualificationSearch}
+                          onChange={(e) => setQualificationSearch(e.target.value)}
+                          placeholder="Search participants"
+                          className="w-full rounded-2xl bg-white/5 border border-white/10 pl-11 pr-4 py-3 text-sm outline-none focus:border-fest-gold"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={exportQualifiedToExcel}
+                        className="w-full sm:w-auto px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all shadow-lg glow-gold shadow-fest-gold/20"
+                      >
+                        <Download size={16} /> Export Round Excel
+                      </button>
                     </div>
                   </header>
 
@@ -1276,8 +1521,15 @@ export default function AdminDashboard() {
                                 <h4 className="text-lg font-bold">{participantName}</h4>
                                 <p className="text-xs text-white/40 mt-1">{registration.email || registration.participant_user?.email}</p>
                               </div>
-                              <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white/75">
-                                {registration.qualification_stage.replaceAll('_', ' ')}
+                              <div className="flex flex-col items-end gap-2">
+                                <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white/75">
+                                  {registration.qualification_stage.replaceAll('_', ' ')}
+                                </div>
+                                {registration.submissions && registration.submissions.length > 0 && (
+                                  <div className="px-2 py-0.5 bg-fest-gold/20 border border-fest-gold/30 rounded text-[9px] font-black text-fest-gold uppercase tracking-tighter">
+                                    SCORE: {registration.submissions.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].internal_reviews?.[0]?.score || 0} / 10
+                                  </div>
+                                )}
                               </div>
                             </div>
 
@@ -1290,7 +1542,86 @@ export default function AdminDashboard() {
                                 <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Team</div>
                                 <div className="font-semibold">{registration.team_name || 'Solo'}</div>
                               </div>
+                              <div className="rounded-2xl bg-white/5 p-4">
+                                <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Status</div>
+                                <div className="font-semibold uppercase text-[10px] tracking-widest text-fest-gold">
+                                  {registration.qualification_stage.replace(/_/g, ' ')}
+                                </div>
+                              </div>
                             </div>
+
+                            {registration.submissions && registration.submissions.length > 0 && (() => {
+                              const sortedSubmissions = [...registration.submissions].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                              const currentSubmission = sortedSubmissions[0];
+                              const previousSubmissions = sortedSubmissions.slice(1);
+
+                              return (
+                                <div className="space-y-4 border-t border-white/5 pt-4">
+                                  {/* PRIMARY FOCUS: CURRENT ROUND */}
+                                  <div className="space-y-2">
+                                     <div className="flex items-center justify-between">
+                                       <div className="text-[10px] uppercase tracking-widest text-fest-gold font-black">Current Active Entry</div>
+                                       <div className="text-[10px] text-white/30 font-mono italic">
+                                          {new Date(currentSubmission.created_at).toLocaleDateString()}
+                                       </div>
+                                     </div>
+                                     <VideoPreview 
+                                        submission={currentSubmission} 
+                                        eventTitle={registration.event?.title || ''} 
+                                        isPast={false}
+                                        onSave={(id, score, remarks) => {
+                                          void supabase
+                                            .from('internal_reviews')
+                                            .upsert({
+                                              submission_id: id,
+                                              score: score,
+                                              judge_remarks: remarks,
+                                              updated_at: new Date().toISOString()
+                                            }, { onConflict: 'submission_id' })
+                                            .then(({ error }) => {
+                                              if (error) toast.error('Save failed');
+                                              else toast.success('Points saved');
+                                            });
+                                        }}
+                                      />
+                                  </div>
+
+                                  {/* OPTIONAL: PREVIOUS SUBMISSIONS */}
+                                  {previousSubmissions.length > 0 && (
+                                    <details className="group mt-4">
+                                      <summary className="flex items-center gap-2 cursor-pointer text-[10px] uppercase tracking-widest text-white/40 font-bold hover:text-white transition-colors py-2 bg-white/5 px-3 rounded-lg border border-white/5 select-none list-none">
+                                        <ChevronRight size={12} className="group-open:rotate-90 transition-transform" />
+                                        View Submission History ({previousSubmissions.length})
+                                      </summary>
+                                      <div className="grid grid-cols-1 gap-6 mt-4 pt-4 border-t border-white/5 animate-in fade-in slide-in-from-top-2">
+                                        {previousSubmissions.map(s => (
+                                          <VideoPreview 
+                                            key={s.id} 
+                                            submission={s} 
+                                            eventTitle={registration.event?.title || ''} 
+                                            isPast={true}
+                                            onSave={(id, score, remarks) => {
+                                              void supabase
+                                                .from('internal_reviews')
+                                                .upsert({
+                                                  submission_id: id,
+                                                  score: score,
+                                                  judge_remarks: remarks,
+                                                  updated_at: new Date().toISOString()
+                                                }, { onConflict: 'submission_id' })
+                                                .then(({ error }) => {
+                                                  if (error) toast.error('Save failed');
+                                                  else toast.success('History points updated');
+                                                });
+                                            }}
+                                          />
+                                        ))}
+                                      </div>
+                                    </details>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                             <textarea
                               value={qualificationNotes[registration.id] || ''}
@@ -1303,10 +1634,22 @@ export default function AdminDashboard() {
                               {[
                                 { id: 'round_1_qualified', label: '1st Round' },
                                 { id: 'round_2_qualified', label: '2nd Round' },
+                                { id: 'round_3_qualified', label: '3rd Round' },
                                 { id: 'semifinal', label: 'Semifinal' },
                                 { id: 'final', label: 'Final' },
+                                { id: 'winner', label: 'Winner' },
                                 { id: 'eliminated', label: 'Eliminate' },
-                              ].map((stage) => (
+                              ]
+                              .filter((stage) => {
+                                // Always show Eliminate
+                                if (stage.id === 'eliminated') return true;
+                                
+                                // Only show stages that are AHEAD of current stage
+                                const currentIndex = STAGE_ORDER.indexOf(registration.qualification_stage);
+                                const stageIndex = STAGE_ORDER.indexOf(stage.id as QualificationStage);
+                                return stageIndex > currentIndex;
+                              })
+                              .map((stage) => (
                                 <button
                                   key={stage.id}
                                   type="button"
@@ -1738,50 +2081,188 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
-          ) : activeTab === 'assignments' ? (
-            <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-8">
-              <form onSubmit={handleAssignmentCreate} className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-6">
-                <div className="text-fest-gold font-bold uppercase tracking-widest text-sm">Assign Reviewer To Event</div>
-                <select value={reviewerId} onChange={(e) => setReviewerId(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold">
-                  <option value="">Select reviewer</option>
-                  {users.map((entry) => (
-                    <option key={entry.id} value={entry.id}>{entry.full_name || entry.email}</option>
-                  ))}
-                </select>
-                <select value={assignmentEventId} onChange={(e) => setAssignmentEventId(e.target.value)} className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold">
-                  <option value="">Select event</option>
-                  {events.map((event) => (
-                    <option key={event.id} value={event.id}>{event.title}</option>
-                  ))}
-                </select>
-                <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
-                  Save Assignment
-                </button>
-              </form>
+          ) : activeTab === 'judges_access' ? (
+            <div className="space-y-6">
+              <div className="max-w-3xl">
+                <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter text-fest-gold flex items-center gap-3">
+                  <ShieldCheck size={28} /> Video Judge Assignments
+                </h3>
+                <p className="text-white/50 text-sm mt-2">
+                  Assign <strong>Content Reviewers</strong> to specific events. They will only be able to judge and score submissions for the events they are linked to here.
+                </p>
+              </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-white/10 text-white/40 uppercase tracking-widest text-xs">
-                      <th className="pb-4 font-bold">Reviewer</th>
-                      <th className="pb-4 font-bold">Event</th>
-                      <th className="pb-4 font-bold">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {assignments.map((assignment) => (
-                      <tr key={assignment.id} className="border-b border-white/5">
-                        <td className="py-4 font-bold">{assignment.reviewer_user?.full_name || assignment.reviewer_user?.email}</td>
-                        <td className="py-4 text-white/60 text-sm">{assignment.assigned_event?.title}</td>
-                        <td className="py-4">
-                          <button onClick={() => void handleDeleteAssignment(assignment.id)} className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 text-xs font-bold uppercase tracking-widest hover:bg-red-500/20">
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 xl:grid-cols-[0.8fr_1.2fr] gap-8">
+                <form onSubmit={(e) => handleAssignmentCreate(e, 'judge')} className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-6 h-fit">
+                  <div className="text-[10px] text-white/40 uppercase tracking-[0.25em] font-bold mb-2">New Judge Assignment</div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/40 uppercase px-1">Select Judge</label>
+                    <select 
+                      value={reviewerId} 
+                      onChange={(e) => setReviewerId(e.target.value)} 
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-gold text-white appearance-none cursor-pointer"
+                    >
+                      <option value="" className="bg-fest-dark text-white">Choose a judge...</option>
+                      {users.filter(u => u.role !== 'user').map((entry) => (
+                        <option key={entry.id} value={entry.id} className="bg-fest-dark text-white">
+                          {entry.full_name || entry.email} ({entry.role.replace('_', ' ')})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/40 uppercase px-1">Select Event</label>
+                    <select 
+                      value={assignmentEventId} 
+                      onChange={(e) => setAssignmentEventId(e.target.value)} 
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-gold text-white appearance-none cursor-pointer"
+                    >
+                      <option value="" className="bg-fest-dark text-white">Choose an event...</option>
+                      {events.map((event) => (
+                        <option key={event.id} value={event.id} className="bg-fest-dark text-white">
+                          {event.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold mt-4">
+                    Link Judge to Event
+                  </button>
+                </form>
+
+                <div className="rounded-3xl border border-white/10 bg-black/40 overflow-hidden">
+                  <div className="p-6 border-b border-white/10 bg-white/5">
+                    <div className="text-xs font-bold uppercase tracking-widest">Active Judge Links</div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/10 text-[10px] text-white/30 uppercase tracking-widest">
+                          <th className="px-6 py-4 font-bold">Judge Name</th>
+                          <th className="px-6 py-4 font-bold">Assigned Event</th>
+                          <th className="px-6 py-4 font-bold text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {assignments.filter(a => a.role_type === 'judge').map((assignment) => (
+                          <tr key={assignment.id} className="border-b border-white/5 group hover:bg-white/[0.02] transition-colors">
+                            <td className="px-6 py-5 font-bold text-sm">
+                              {assignment.reviewer_user?.full_name || assignment.reviewer_user?.email}
+                            </td>
+                            <td className="px-6 py-5">
+                              <span className="px-2 py-1 bg-fest-gold/10 border border-fest-gold/20 rounded text-[10px] font-bold text-fest-gold uppercase">
+                                {assignment.assigned_event?.title}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                              <button 
+                                onClick={() => void handleDeleteAssignment(assignment.id)} 
+                                className="px-3 py-2 rounded-lg bg-red-500/10 text-red-400 group-hover:bg-red-500 group-hover:text-white transition-all text-[10px] font-black uppercase"
+                              >
+                                Revoke Access
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'payment_access' ? (
+            <div className="space-y-6">
+              <div className="max-w-3xl">
+                <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter text-fest-gold flex items-center gap-3">
+                  <DollarSign size={28} /> Payment Access Control
+                </h3>
+                <p className="text-white/50 text-sm mt-2">
+                  Assign <strong>Payment Staff</strong> to specific events. These staff members will only be allowed to review payment screenshots and approve/decline registrations for linked events.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-[0.8fr_1.2fr] gap-8">
+                <form onSubmit={(e) => handleAssignmentCreate(e, 'payment')} className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-6 h-fit">
+                  <div className="text-[10px] text-white/40 uppercase tracking-[0.25em] font-bold mb-2">New Payment Link</div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/40 uppercase px-1">Select Staff Member</label>
+                    <select 
+                      value={reviewerId} 
+                      onChange={(e) => setReviewerId(e.target.value)} 
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-gold text-white appearance-none cursor-pointer"
+                    >
+                      <option value="" className="bg-fest-dark text-white">Choose staff...</option>
+                      {users.filter(u => u.role !== 'user').map((entry) => (
+                        <option key={entry.id} value={entry.id} className="bg-fest-dark text-white">
+                          {entry.full_name || entry.email} ({entry.role.replace('_', ' ')})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/40 uppercase px-1">Select Event</label>
+                    <select 
+                      value={assignmentEventId} 
+                      onChange={(e) => setAssignmentEventId(e.target.value)} 
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-gold text-white appearance-none cursor-pointer"
+                    >
+                      <option value="" className="bg-fest-dark text-white">Choose an event...</option>
+                      {events.map((event) => (
+                        <option key={event.id} value={event.id} className="bg-fest-dark text-white">
+                          {event.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold mt-4">
+                    Link Staff to Payments
+                  </button>
+                </form>
+
+                <div className="rounded-3xl border border-white/10 bg-black/40 overflow-hidden">
+                  <div className="p-6 border-b border-white/10 bg-white/5">
+                    <div className="text-xs font-bold uppercase tracking-widest">Active Payment Links</div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/10 text-[10px] text-white/30 uppercase tracking-widest">
+                          <th className="px-6 py-4 font-bold">Staff Name</th>
+                          <th className="px-6 py-4 font-bold">Assigned Event</th>
+                          <th className="px-6 py-4 font-bold text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {assignments.filter(a => a.role_type === 'payment').map((assignment) => (
+                          <tr key={assignment.id} className="border-b border-white/5 group hover:bg-white/[0.02] transition-colors">
+                            <td className="px-6 py-5 font-bold text-sm">
+                              {assignment.reviewer_user?.full_name || assignment.reviewer_user?.email}
+                            </td>
+                            <td className="px-6 py-5">
+                              <span className="px-2 py-1 bg-fest-gold/10 border border-fest-gold/20 rounded text-[10px] font-bold text-fest-gold uppercase">
+                                {assignment.assigned_event?.title}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                              <button 
+                                onClick={() => void handleDeleteAssignment(assignment.id)} 
+                                className="px-3 py-2 rounded-lg bg-red-500/10 text-red-400 group-hover:bg-red-500 group-hover:text-white transition-all text-[10px] font-black uppercase"
+                              >
+                                Revoke Access
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

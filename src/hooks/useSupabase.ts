@@ -31,8 +31,6 @@ export function useEvents() {
             payment_account_number: row.payment_account_number,
             payment_ifsc: row.payment_ifsc,
             payment_upi_id: row.payment_upi_id,
-            drive_folder_id: row.drive_folder_id,
-            drive_embed_hint: row.drive_embed_hint,
             is_active: row.is_active,
             participants_count: participantsCount,
           };

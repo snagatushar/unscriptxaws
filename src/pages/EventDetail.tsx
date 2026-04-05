@@ -49,8 +49,6 @@ export default function EventDetail() {
           payment_account_number: data.payment_account_number,
           payment_ifsc: data.payment_ifsc,
           payment_upi_id: data.payment_upi_id,
-          drive_folder_id: data.drive_folder_id,
-          drive_embed_hint: data.drive_embed_hint,
           is_active: data.is_active,
           participants_count: participantsCount,
         });

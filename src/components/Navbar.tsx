@@ -30,26 +30,6 @@ export default function Navbar() {
     setIsProfileOpen(false);
   }, [location.pathname]);
 
-  const getDashboardLink = () => {
-    if (!profile) return '/dashboard';
-    switch (profile.role) {
-      case 'admin': return '/admin';
-      case 'payment_reviewer': return '/payments';
-      case 'content_reviewer': return '/content';
-      default: return '/dashboard';
-    }
-  };
-
-  const getDashboardLabel = () => {
-    if (!profile) return 'Dashboard';
-    switch (profile.role) {
-      case 'admin': return 'System Admin';
-      case 'payment_reviewer': return 'Payments';
-      case 'content_reviewer': return 'Reviewer';
-      default: return 'Dashboard';
-    }
-  };
-
   const showRegisteredEventsShortcut = !!profile && profile.role === 'user';
 
   const isAdminArea =
@@ -125,12 +105,32 @@ export default function Navbar() {
                       </Link>
                     )}
                     {showDashboardShortcut && (
-                      <Link
-                        to={getDashboardLink()}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 text-white/80 text-sm font-medium transition-colors"
-                      >
-                        <LayoutDashboard size={16} /> {getDashboardLabel()}
-                      </Link>
+                      <div className="space-y-1">
+                        {profile?.role === 'admin' && (
+                          <Link
+                            to="/admin"
+                            className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 text-white/80 text-sm font-medium transition-colors"
+                          >
+                            <LayoutDashboard size={16} /> System Admin
+                          </Link>
+                        )}
+                        {(profile?.role === 'admin' || profile?.role === 'content_reviewer' || profile?.role === 'payment_reviewer') && (
+                          <>
+                            <Link
+                              to="/content"
+                              className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 text-white/80 text-sm font-medium transition-colors"
+                            >
+                              <LayoutDashboard size={16} /> Judging Dashboard
+                            </Link>
+                            <Link
+                              to="/payments"
+                              className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 text-white/80 text-sm font-medium transition-colors"
+                            >
+                              <LayoutDashboard size={16} /> Payment Review
+                            </Link>
+                          </>
+                        )}
+                      </div>
                     )}
                     <button
                       onClick={async () => {
@@ -195,13 +195,35 @@ export default function Navbar() {
                 </Link>
               )}
               {showDashboardShortcut && (
-                <Link
-                  to={getDashboardLink()}
-                  onClick={() => setIsOpen(false)}
-                  className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
-                >
-                  <User size={18} /> {getDashboardLabel()}
-                </Link>
+                <div className="space-y-2">
+                  {profile?.role === 'admin' && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setIsOpen(false)}
+                      className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                    >
+                      <LayoutDashboard size={18} /> System Admin
+                    </Link>
+                  )}
+                  {(profile?.role === 'admin' || profile?.role === 'content_reviewer' || profile?.role === 'payment_reviewer') && (
+                    <>
+                      <Link
+                        to="/content"
+                        onClick={() => setIsOpen(false)}
+                        className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                      >
+                        <User size={18} /> Judging Dashboard
+                      </Link>
+                      <Link
+                        to="/payments"
+                        onClick={() => setIsOpen(false)}
+                        className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                      >
+                        <LayoutDashboard size={18} /> Payment Review
+                      </Link>
+                    </>
+                  )}
+                </div>
               )}
               <button
                 onClick={() => { signOut(); setIsOpen(false); }}

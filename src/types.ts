@@ -6,9 +6,24 @@ export type QualificationStage =
   | 'not_started'
   | 'round_1_qualified'
   | 'round_2_qualified'
+  | 'round_3_qualified'
   | 'semifinal'
   | 'final'
+  | 'winner'
   | 'eliminated';
+
+export interface Submission {
+  id: string;
+  registration_id: string;
+  round: QualificationStage;
+  video_url: string;
+  video_path: string;
+  notes?: string;
+  admin_notes?: string;
+  score?: number;
+  status: SubmissionStatus;
+  created_at: string;
+}
 
 export interface DatabaseEvent {
   id: string;
@@ -24,8 +39,6 @@ export interface DatabaseEvent {
   payment_account_number?: string | null;
   payment_ifsc?: string | null;
   payment_upi_id?: string | null;
-  drive_folder_id?: string | null;
-  drive_embed_hint?: string | null;
   is_active?: boolean;
   participants_count?: number;
 }
