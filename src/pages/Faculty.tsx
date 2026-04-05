@@ -22,7 +22,7 @@ export default function Faculty() {
             transition={{ delay: 0.1 }}
             className="text-white/50 text-lg max-w-2xl mx-auto"
           >
-            The visionaries behind UNSCRIPTED 2026, guiding us to create an unforgettable experience.
+            The visionaries behind UNSCRIPTX 2026, guiding us to create an unforgettable experience.
           </motion.p>
         </header>
 
@@ -45,7 +45,7 @@ export default function Faculty() {
                   <img
                     src={member.image_url || 'https://picsum.photos/seed/faculty/600/800'}
                     alt={member.name}
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                    className="w-full h-full object-cover transition-all duration-700"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-fest-dark via-transparent to-transparent opacity-80" />

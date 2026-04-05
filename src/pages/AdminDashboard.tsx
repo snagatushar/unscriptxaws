@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -264,6 +264,7 @@ export default function AdminDashboard() {
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([]);
   const [paymentNotes, setPaymentNotes] = useState<Record<string, string>>({});
   const [qualificationNotes, setQualificationNotes] = useState<Record<string, string>>({});
+  const [expandedQualifiedRows, setExpandedQualifiedRows] = useState<Record<string, boolean>>({});
 
   const [newEvent, setNewEvent] = useState(emptyEventForm);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -814,7 +815,7 @@ export default function AdminDashboard() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Qualified Participants');
     
-    const fileName = `unscripted_${activeQualifiedStage}_${selectedQualifiedEvent?.title || 'all_events'}.xlsx`.toLowerCase().replace(/\s+/g, '_');
+    const fileName = `UNSCRIPTX_${activeQualifiedStage}_${selectedQualifiedEvent?.title || 'all_events'}.xlsx`.toLowerCase().replace(/\s+/g, '_');
     XLSX.writeFile(workbook, fileName);
     toast.success('Excel downloaded successfully.');
   };
@@ -1629,160 +1630,220 @@ export default function AdminDashboard() {
                       No participants found in this stage.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="space-y-4">
                       {selectedQualifiedEventRows.map((registration) => {
                         const participantName = registration.participant_name || registration.participant_user?.full_name || registration.participant_user?.email || 'Participant';
+                        const isExpanded = !!expandedQualifiedRows[registration.id];
+                        const submissions = registration.submissions || [];
+                        const latestSubmission = [...submissions].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+                        const lastScore = latestSubmission?.internal_reviews?.[0]?.score || 0;
+
                         return (
-                          <div key={registration.id} className="rounded-3xl border border-white/10 bg-black/20 p-6 space-y-5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <h4 className="text-lg font-bold">{participantName}</h4>
-                                <p className="text-xs text-white/40 mt-1">{registration.email || registration.participant_user?.email}</p>
-                              </div>
-                              <div className="flex flex-col items-end gap-2">
-                                <div className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white/10 text-white/75">
-                                  {registration.qualification_stage.replaceAll('_', ' ')}
+                          <div key={registration.id} className="rounded-3xl border border-white/5 bg-white/[0.03] overflow-hidden transition-all hover:bg-white/[0.04]">
+                            {/* COLLAPSIBLE HEADER */}
+                            <button
+                              type="button"
+                              onClick={() => setExpandedQualifiedRows(prev => ({ ...prev, [registration.id]: !prev[registration.id] }))}
+                              className="w-full text-left px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4 select-none"
+                            >
+                              <div className="flex items-center gap-5">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${isExpanded ? 'bg-fest-gold text-fest-dark' : 'bg-white/5 text-fest-gold'}`}>
+                                  <Users size={22} />
                                 </div>
-                                {registration.submissions && registration.submissions.length > 0 && (
-                                  <div className="px-2 py-0.5 bg-fest-gold/20 border border-fest-gold/30 rounded text-[9px] font-black text-fest-gold uppercase tracking-tighter">
-                                    SCORE: {registration.submissions.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].internal_reviews?.[0]?.score || 0} / 10
+                                <div>
+                                  <h4 className={`text-xl font-bold tracking-tight transition-colors ${isExpanded ? 'text-fest-gold' : 'text-white'}`}>
+                                    {participantName}
+                                  </h4>
+                                  <div className="flex items-center gap-3 mt-1.5">
+                                    <div className="flex items-center gap-1.5 text-xs text-white/40 font-medium">
+                                      <Mail size={12} className="text-fest-gold/40" /> {registration.email || registration.participant_user?.email}
+                                    </div>
+                                    <span className="w-1 h-1 bg-white/10 rounded-full" />
+                                    <div className="px-3 py-0.5 rounded-full bg-white/5 border border-white/5 text-[9px] font-black uppercase tracking-widest text-white/30">
+                                       ID: {registration.id.slice(0, 8)}
+                                    </div>
                                   </div>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div className="rounded-2xl bg-white/5 p-4">
-                                <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Phone</div>
-                                <div className="font-semibold">{registration.phone}</div>
-                              </div>
-                              <div className="rounded-2xl bg-white/5 p-4">
-                                <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Team</div>
-                                <div className="font-semibold">{registration.team_name || 'Solo'}</div>
-                              </div>
-                              <div className="rounded-2xl bg-white/5 p-4">
-                                <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Status</div>
-                                <div className="font-semibold uppercase text-[10px] tracking-widest text-fest-gold">
-                                  {registration.qualification_stage.replace(/_/g, ' ')}
                                 </div>
                               </div>
-                            </div>
-
-                            {registration.submissions && registration.submissions.length > 0 && (() => {
-                              const sortedSubmissions = [...registration.submissions].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                              const currentSubmission = sortedSubmissions[0];
-                              const previousSubmissions = sortedSubmissions.slice(1);
-
-                              return (
-                                <div className="space-y-4 border-t border-white/5 pt-4">
-                                  {/* PRIMARY FOCUS: CURRENT ROUND */}
-                                  <div className="space-y-2">
-                                     <div className="flex items-center justify-between">
-                                       <div className="text-[10px] uppercase tracking-widest text-fest-gold font-black">Current Active Entry</div>
-                                       <div className="text-[10px] text-white/30 font-mono italic">
-                                          {new Date(currentSubmission.created_at).toLocaleDateString()}
-                                       </div>
-                                     </div>
-                                     <VideoPreview 
-                                        submission={currentSubmission} 
-                                        eventTitle={registration.event?.title || ''} 
-                                        isPast={false}
-                                        onSave={(id, score, remarks) => {
-                                          void supabase
-                                            .from('internal_reviews')
-                                            .upsert({
-                                              submission_id: id,
-                                              score: score,
-                                              judge_remarks: remarks,
-                                              updated_at: new Date().toISOString()
-                                            }, { onConflict: 'submission_id' })
-                                            .then(({ error }) => {
-                                              if (error) toast.error('Save failed');
-                                              else toast.success('Points saved');
-                                            });
-                                        }}
-                                      />
+                              
+                              <div className="flex items-center gap-6 self-end md:self-auto">
+                                <div className="text-right flex flex-col items-end gap-1.5">
+                                  <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-colors ${
+                                    registration.qualification_stage === 'eliminated' ? 'border-red-500/20 bg-red-500/10 text-red-400' : 'border-fest-gold/20 bg-fest-gold/10 text-fest-gold'
+                                  }`}>
+                                    {registration.qualification_stage.replaceAll('_', ' ')}
                                   </div>
-
-                                  {/* OPTIONAL: PREVIOUS SUBMISSIONS */}
-                                  {previousSubmissions.length > 0 && (
-                                    <details className="group mt-4">
-                                      <summary className="flex items-center gap-2 cursor-pointer text-[10px] uppercase tracking-widest text-white/40 font-bold hover:text-white transition-colors py-2 bg-white/5 px-3 rounded-lg border border-white/5 select-none list-none">
-                                        <ChevronRight size={12} className="group-open:rotate-90 transition-transform" />
-                                        View Submission History ({previousSubmissions.length})
-                                      </summary>
-                                      <div className="grid grid-cols-1 gap-6 mt-4 pt-4 border-t border-white/5 animate-in fade-in slide-in-from-top-2">
-                                        {previousSubmissions.map(s => (
-                                          <VideoPreview 
-                                            key={s.id} 
-                                            submission={s} 
-                                            eventTitle={registration.event?.title || ''} 
-                                            isPast={true}
-                                            onSave={(id, score, remarks) => {
-                                              void supabase
-                                                .from('internal_reviews')
-                                                .upsert({
-                                                  submission_id: id,
-                                                  score: score,
-                                                  judge_remarks: remarks,
-                                                  updated_at: new Date().toISOString()
-                                                }, { onConflict: 'submission_id' })
-                                                .then(({ error }) => {
-                                                  if (error) toast.error('Save failed');
-                                                  else toast.success('History points updated');
-                                                });
-                                            }}
-                                          />
-                                        ))}
-                                      </div>
-                                    </details>
+                                  {lastScore > 0 && (
+                                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+                                      LAST SCORE: <span className="text-fest-gold">{lastScore}</span> / 10
+                                    </div>
                                   )}
                                 </div>
-                              );
-                            })()}
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center glass transition-all ${isExpanded ? 'rotate-90 bg-fest-gold text-fest-dark border-transparent' : 'text-white/40'}`}>
+                                  <ChevronRight size={20} />
+                                </div>
+                              </div>
+                            </button>
 
-                            <textarea
-                              value={qualificationNotes[registration.id] || ''}
-                              onChange={(e) => setQualificationNotes((current) => ({ ...current, [registration.id]: e.target.value }))}
-                              placeholder="Qualification note"
-                              className="w-full h-24 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none"
-                            />
-
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                              {[
-                                { id: 'round_1_qualified', label: '1st Round' },
-                                { id: 'round_2_qualified', label: '2nd Round' },
-                                { id: 'round_3_qualified', label: '3rd Round' },
-                                { id: 'semifinal', label: 'Semifinal' },
-                                { id: 'final', label: 'Final' },
-                                { id: 'winner', label: 'Winner' },
-                                { id: 'eliminated', label: 'Eliminate' },
-                              ]
-                              .filter((stage) => {
-                                // Always show Eliminate
-                                if (stage.id === 'eliminated') return true;
-                                
-                                // Only show stages that are AHEAD of current stage
-                                const currentIndex = STAGE_ORDER.indexOf(registration.qualification_stage);
-                                const stageIndex = STAGE_ORDER.indexOf(stage.id as QualificationStage);
-                                return stageIndex > currentIndex;
-                              })
-                              .map((stage) => (
-                                <button
-                                  key={stage.id}
-                                  type="button"
-                                  onClick={() => void handleQualificationStage(registration, stage.id as QualificationStage)}
-                                  disabled={actionLoadingId === registration.id}
-                                  className={`py-3 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-colors ${
-                                    stage.id === 'eliminated'
-                                      ? 'bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white'
-                                      : 'bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark'
-                                  } disabled:opacity-60`}
+                            {/* COLLAPSIBLE BODY */}
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.3 }}
                                 >
-                                  {stage.label}
-                                </button>
-                              ))}
-                            </div>
+                                  <div className="px-8 pb-8 pt-2 border-t border-white/5">
+                                    {/* INFO GRID */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-10">
+                                      <div className="rounded-2xl bg-white/5 p-5 border border-white/5">
+                                        <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5 flex items-center gap-2">
+                                          <Phone size={12} /> Contact
+                                        </div>
+                                        <div className="font-bold tracking-tight text-white/90">{registration.phone}</div>
+                                      </div>
+                                      <div className="rounded-2xl bg-white/5 p-5 border border-white/5">
+                                        <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5">College</div>
+                                        <div className="font-bold tracking-tight text-white/90 truncate">{registration.college_name || 'Not specified'}</div>
+                                      </div>
+                                      <div className="rounded-2xl bg-white/5 p-5 border border-white/5">
+                                        <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5">Team Name</div>
+                                        <div className="font-bold tracking-tight text-white/90">{registration.team_name || 'Solo Participant'}</div>
+                                      </div>
+                                      <div className="rounded-2xl bg-white/5 p-5 border border-white/5 group">
+                                        <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5 text-fest-gold">Current Status</div>
+                                        <div className="font-black uppercase text-xs tracking-widest text-white/80">{registration.qualification_stage.replace(/_/g, ' ')}</div>
+                                      </div>
+                                    </div>
+
+                                    {/* DECISION ACTION BUTTONS */}
+                                    <div className="mb-10">
+                                      <div className="text-[10px] uppercase tracking-widest text-white/30 font-black mb-4 px-2">Decision Dashboard</div>
+                                      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+                                        {[
+                                          { id: 'round_1_qualified', label: '1st Round' },
+                                          { id: 'round_2_qualified', label: '2nd Round' },
+                                          { id: 'round_3_qualified', label: '3rd Round' },
+                                          { id: 'semifinal', label: 'Semifinal' },
+                                          { id: 'final', label: 'Final' },
+                                          { id: 'winner', label: 'Winner' },
+                                          { id: 'eliminated', label: 'Eliminate' },
+                                        ]
+                                        .filter(stage => {
+                                          if (stage.id === 'eliminated') return true;
+                                          const currentIndex = STAGE_ORDER.indexOf(registration.qualification_stage);
+                                          const stageIndex = STAGE_ORDER.indexOf(stage.id as QualificationStage);
+                                          return stageIndex > currentIndex;
+                                        })
+                                        .map((stage) => (
+                                          <button
+                                            key={stage.id}
+                                            type="button"
+                                            onClick={() => void handleQualificationStage(registration, stage.id as QualificationStage)}
+                                            disabled={actionLoadingId === registration.id}
+                                            className={`py-3.5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${
+                                              stage.id === 'eliminated'
+                                                ? 'bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white'
+                                                : 'bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark'
+                                            } disabled:opacity-50`}
+                                          >
+                                            {stage.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    {/* SUBMISSIONS */}
+                                    {submissions.length > 0 && (() => {
+                                      const sortedSubmissions = [...submissions].sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                                      const currentSub = sortedSubmissions[0];
+                                      const pastSubs = sortedSubmissions.slice(1);
+
+                                      return (
+                                        <div className="space-y-10">
+                                          <div className="space-y-4">
+                                            <div className="flex items-center justify-between px-2">
+                                              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-fest-gold font-black">
+                                                <Activity size={14} /> Active Competition Submission
+                                              </div>
+                                              <div className="text-[10px] text-white/20 font-bold uppercase tracking-widest">
+                                                {new Date(currentSub.created_at).toLocaleDateString()}
+                                              </div>
+                                            </div>
+                                            <VideoPreview 
+                                              submission={currentSub} 
+                                              eventTitle={registration.event?.title || ''} 
+                                              isPast={false}
+                                              onSave={(id, score, remarks) => {
+                                                void supabase.from('internal_reviews').upsert({
+                                                  submission_id: id,
+                                                  score,
+                                                  judge_remarks: remarks,
+                                                  updated_at: new Date().toISOString()
+                                                }, { onConflict: 'submission_id' }).then(({ error }) => {
+                                                  if (error) toast.error('Save failed');
+                                                  else {
+                                                    toast.success('Internal review saved');
+                                                    fetchData();
+                                                  }
+                                                });
+                                              }}
+                                            />
+                                          </div>
+
+                                          {pastSubs.length > 0 && (
+                                            <details className="group">
+                                              <summary className="flex items-center gap-2 cursor-pointer text-[10px] uppercase tracking-widest text-white/20 font-black hover:text-white transition-colors py-4 bg-white/5 border border-white/5 rounded-3xl px-8 select-none list-none">
+                                                <ChevronRight size={14} className="group-open:rotate-90 transition-transform text-fest-gold" />
+                                                View Previous Round Archive ({pastSubs.length})
+                                              </summary>
+                                              <div className="grid grid-cols-1 gap-12 mt-8 pt-8 border-t border-white/5">
+                                                {pastSubs.map(s => (
+                                                  <VideoPreview 
+                                                    key={s.id} 
+                                                    submission={s} 
+                                                    eventTitle={registration.event?.title || ''} 
+                                                    isPast={true}
+                                                    onSave={(id, score, remarks) => {
+                                                      void supabase.from('internal_reviews').upsert({
+                                                        submission_id: id,
+                                                        score,
+                                                        judge_remarks: remarks,
+                                                        updated_at: new Date().toISOString()
+                                                      }, { onConflict: 'submission_id' }).then(({ error }) => {
+                                                        if (error) toast.error('Archive update failed');
+                                                        else {
+                                                          toast.success('Archive record updated');
+                                                          fetchData();
+                                                        }
+                                                      });
+                                                    }}
+                                                  />
+                                                ))}
+                                              </div>
+                                            </details>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
+
+                                    {/* NOTES */}
+                                    <div className="mt-12 space-y-4">
+                                      <div className="text-[10px] uppercase tracking-widest text-white/20 font-black px-2 flex items-center gap-2">
+                                        <Layout size={14} /> Master Qualification Notes
+                                      </div>
+                                      <textarea
+                                        value={qualificationNotes[registration.id] || ''}
+                                        onChange={(e) => setQualificationNotes(cur => ({ ...cur, [registration.id]: e.target.value }))}
+                                        placeholder="Record internal staff notes for this candidate's journey..."
+                                        className="w-full h-36 rounded-[2rem] border border-white/10 bg-black/40 px-8 py-6 text-sm outline-none focus:border-fest-gold resize-none transition-all"
+                                      />
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
                           </div>
                         );
                       })}

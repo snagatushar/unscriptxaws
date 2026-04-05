@@ -86,7 +86,7 @@ export default function Login() {
         });
         if (error) throw error;
 
-        toast.success('Signup successful! Welcome to UNSCRIPTED.');
+        toast.success('Signup successful! Welcome to UNSCRIPTX.');
         setIsLogin(true);
       }
     } catch (err: any) {

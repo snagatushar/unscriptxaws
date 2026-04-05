@@ -54,8 +54,12 @@ export default function Navbar() {
       scrolled ? "glass py-3" : "bg-transparent"
     )}>
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link to="/" className="text-2xl font-display font-bold tracking-tighter text-white">
-          UN<span className="text-fest-gold">SCRIPTED</span>
+        <Link to="/" className="group flex items-center justify-center">
+          <img
+            src="/logo.png"
+            alt="UNSCRIPTX Logo"
+            className="w-40 h-20 object-contain group-hover:scale-105 transition-transform duration-500 filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_8px_rgba(255,215,0,0.2)]"
+          />
         </Link>
 
         {/* Desktop Links */}
@@ -74,7 +78,7 @@ export default function Navbar() {
               />
             </Link>
           ))}
-          
+
           {hideAuthActionsOnPage ? null : showUserActions ? (
             <div className="relative">
               <button
@@ -178,7 +182,7 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
-          
+
           {hideAuthActionsOnPage ? null : showUserActions ? (
             <div className="flex flex-col gap-4">
               <div className="glass rounded-2xl p-4 text-center">

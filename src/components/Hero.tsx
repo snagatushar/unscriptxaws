@@ -92,7 +92,7 @@ export default function Hero() {
             The Online Edition 2026
           </h2>
           <h1 className="text-5xl sm:text-6xl md:text-9xl font-display font-extrabold tracking-tighter mb-6 leading-none">
-            UN<span className="text-fest-gold text-glow-gold">SCRIPTED</span>
+            UN<span className="text-fest-gold text-glow-gold">SCRIPTX</span>
           </h1>
           <p className="text-sm sm:text-base md:text-2xl text-white/70 max-w-2xl mx-auto mb-10 font-light italic px-4">
             "Break the script, own your moment"

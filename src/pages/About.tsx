@@ -11,7 +11,7 @@ export default function About() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-8xl font-display font-extrabold tracking-tighter mb-6"
           >
-            ABOUT <span className="text-fest-pink">UNSCRIPTED</span>
+            ABOUT <span className="text-fest-pink">UNSCRIPTX</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -52,7 +52,7 @@ export default function About() {
             <div>
               <h2 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter mb-8">The Story Behind The <span className="text-fest-cyan italic">Script</span></h2>
               <p className="text-white/60 text-lg mb-6 leading-relaxed">
-                Founded in 2018, UNSCRIPTED began as a small gathering of passionate students who wanted something different. They wanted a space where the unexpected was celebrated and where every voice could be heard.
+                Founded in 2018, UNSCRIPTX began as a small gathering of passionate students who wanted something different. They wanted a space where the unexpected was celebrated and where every voice could be heard.
               </p>
               <p className="text-white/60 text-lg leading-relaxed">
                 Today, it has grown into one of the most anticipated events in the academic calendar, attracting thousands of participants from across the region.

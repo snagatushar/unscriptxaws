@@ -50,10 +50,10 @@ export default function Home() {
           >
             <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">About The Event</h2>
             <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-8">
-              {aboutEvent?.title || 'UNSCRIPTED 2026:'} <br /> <span className="text-white/80">{aboutEvent?.subtitle || 'Where Talent Meets Opportunity'}</span>
+              {aboutEvent?.title || 'UNSCRIPTX 2026:'} <br /> <span className="text-white/80">{aboutEvent?.subtitle || 'Where Talent Meets Opportunity'}</span>
             </h3>
             <p className="text-white/60 text-lg leading-relaxed">
-              {aboutEvent?.body || "UNSCRIPTED is the premier annual cultural festival uniting creatives, technologists, and innovators globally. It's a three-day celebration blending technology, art, dance, and music into a single spectacular dimension. Prepare to break the norms, go unscripted, and witness history in the making."}
+              {aboutEvent?.body || "UNSCRIPTX is the premier annual cultural festival uniting creatives, technologists, and innovators globally. It's a three-day celebration blending technology, art, dance, and music into a single spectacular dimension. Prepare to break the norms, go UNSCRIPTX, and witness history in the making."}
             </p>
           </motion.div>
         </div>
@@ -240,7 +240,7 @@ export default function Home() {
                 Why wait for the <span className="text-fest-gold">future</span> when you can create it?
               </h2>
               <p className="text-white/60 text-lg mb-12 leading-relaxed">
-                UNSCRIPTED is more than just a fest. It's a platform where creativity meets competition, and passion meets performance. Join thousands of students in the biggest celebration of talent.
+                UNSCRIPTX is more than just a fest. It's a platform where creativity meets competition, and passion meets performance. Join thousands of students in the biggest celebration of talent.
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

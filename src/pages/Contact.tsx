@@ -27,7 +27,7 @@ export default function Contact() {
             transition={{ delay: 0.1 }}
             className="text-white/50 text-lg max-w-2xl mx-auto"
           >
-            Have questions? We'd love to hear from you. Reach out to the UNSCRIPTED team.
+            Have questions? We'd love to hear from you. Reach out to the UNSCRIPTX team.
           </motion.p>
         </header>
 
@@ -45,8 +45,8 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="text-xl font-display font-bold uppercase tracking-widest mb-2">Email Us</h4>
-                  <p className="text-white/60">hello@unscriptedfest.com</p>
-                  <p className="text-white/60">support@unscriptedfest.com</p>
+                  <p className="text-white/60">hello@UNSCRIPTXfest.com</p>
+                  <p className="text-white/60">support@UNSCRIPTXfest.com</p>
                 </div>
               </div>
 

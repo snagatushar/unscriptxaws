@@ -25,7 +25,7 @@ export default function EventCard({ event, index }: EventCardProps) {
           transition={{ duration: 0.6 }}
           src={event.image_url || 'https://picsum.photos/seed/event/800/600'}
           alt={event.title}
-          className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+          className="w-full h-full object-cover transition-all duration-500"
           referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-fest-card via-transparent to-transparent opacity-60" />
