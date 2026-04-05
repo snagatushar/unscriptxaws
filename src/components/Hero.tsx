@@ -65,15 +65,15 @@ const Hero = () => {
     <section className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-fest-dark">
       {/* Background Slideshow */}
       <div className="absolute inset-0 z-0">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {slides.length > 0 ? (
             <motion.img
               key={currentSlide}
               src={slides[currentSlide]?.image_url}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 0.7, scale: 1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.7 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1.5, ease: "easeInOut" }}
+              transition={{ duration: 2, ease: "easeInOut" }}
               className="absolute inset-0 w-full h-full object-cover"
               referrerPolicy="no-referrer"
               loading="eager"

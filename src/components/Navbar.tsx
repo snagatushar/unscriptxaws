@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, LogOut, User, LayoutDashboard, ChevronDown } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,7 +31,6 @@ const Navbar = () => {
   }, [location.pathname]);
 
   const showRegisteredEventsShortcut = !!profile && profile.role === 'user';
-
   const isAdminArea =
     location.pathname === '/admin/login' ||
     location.pathname.startsWith('/admin') ||
@@ -171,87 +170,90 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu */}
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-full left-0 right-0 glass border-t-0 p-6 flex flex-col gap-6 md:hidden"
-        >
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              onClick={() => setIsOpen(false)}
-              className="text-lg font-display font-medium text-white/90"
-            >
-              {link.name}
-            </Link>
-          ))}
-
-          {hideAuthActionsOnPage ? null : showUserActions ? (
-            <div className="flex flex-col gap-4">
-              <div className="glass rounded-2xl p-4 text-center">
-                <div className="text-sm font-bold text-white">{displayName}</div>
-                <div className="text-xs text-white/40 mt-1">{user?.email}</div>
-              </div>
-              {showRegisteredEventsShortcut && (
-                <Link
-                  to="/dashboard"
-                  onClick={() => setIsOpen(false)}
-                  className="w-full py-3 flex justify-center items-center gap-2 bg-white/10 text-center text-white font-bold uppercase tracking-widest rounded-xl text-sm"
-                >
-                  <LayoutDashboard size={18} /> Registered Events
-                </Link>
-              )}
-              {showDashboardShortcut && (
-                <div className="space-y-2">
-                  {profile?.role === 'admin' && (
-                    <Link
-                      to="/admin"
-                      onClick={() => setIsOpen(false)}
-                      className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
-                    >
-                      <LayoutDashboard size={18} /> System Admin
-                    </Link>
-                  )}
-                  {(profile?.role === 'admin' || profile?.role === 'content_reviewer' || profile?.role === 'payment_reviewer') && (
-                    <>
-                      <Link
-                        to="/content"
-                        onClick={() => setIsOpen(false)}
-                        className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
-                      >
-                        <User size={18} /> Judging Dashboard
-                      </Link>
-                      <Link
-                        to="/payments"
-                        onClick={() => setIsOpen(false)}
-                        className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
-                      >
-                        <LayoutDashboard size={18} /> Payment Review
-                      </Link>
-                    </>
-                  )}
-                </div>
-              )}
-              <button
-                onClick={() => { signOut(); setIsOpen(false); }}
-                className="w-full py-3 flex justify-center items-center gap-2 glass text-white font-bold uppercase tracking-widest rounded-xl text-sm"
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-full left-0 right-0 glass border-t-0 p-6 flex flex-col gap-6 md:hidden"
+          >
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                onClick={() => setIsOpen(false)}
+                className="text-lg font-display font-medium text-white/90"
               >
-                <LogOut size={16} /> Logout
-              </button>
-            </div>
-          ) : (
-            <Link
-              to="/login"
-              onClick={() => setIsOpen(false)}
-              className="w-full py-3 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
-            >
-              Login/Signup
-            </Link>
-          )}
-        </motion.div>
-      )}
+                {link.name}
+              </Link>
+            ))}
+
+            {hideAuthActionsOnPage ? null : showUserActions ? (
+              <div className="flex flex-col gap-4">
+                <div className="glass rounded-2xl p-4 text-center">
+                  <div className="text-sm font-bold text-white">{displayName}</div>
+                  <div className="text-xs text-white/40 mt-1">{user?.email}</div>
+                </div>
+                {showRegisteredEventsShortcut && (
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full py-3 flex justify-center items-center gap-2 bg-white/10 text-center text-white font-bold uppercase tracking-widest rounded-xl text-sm"
+                  >
+                    <LayoutDashboard size={18} /> Registered Events
+                  </Link>
+                )}
+                {showDashboardShortcut && (
+                  <div className="space-y-2">
+                    {profile?.role === 'admin' && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                      >
+                        <LayoutDashboard size={18} /> System Admin
+                      </Link>
+                    )}
+                    {(profile?.role === 'admin' || profile?.role === 'content_reviewer' || profile?.role === 'payment_reviewer') && (
+                      <>
+                        <Link
+                          to="/content"
+                          onClick={() => setIsOpen(false)}
+                          className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                        >
+                          <User size={18} /> Judging Dashboard
+                        </Link>
+                        <Link
+                          to="/payments"
+                          onClick={() => setIsOpen(false)}
+                          className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                        >
+                          <LayoutDashboard size={18} /> Payment Review
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => { signOut(); setIsOpen(false); }}
+                  className="w-full py-3 flex justify-center items-center gap-2 glass text-white font-bold uppercase tracking-widest rounded-xl text-sm"
+                >
+                  <LogOut size={16} /> Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setIsOpen(false)}
+                className="w-full py-3 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+              >
+                Login/Signup
+              </Link>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };
