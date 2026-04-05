@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 
 import { QualificationStage, Submission } from '../types';
+import { logAdminAction } from '../lib/audit';
 
 type ContentReview = {
   id: string;
@@ -224,6 +225,20 @@ export default function ContentReviewDashboard() {
         }, { onConflict: 'submission_id' });
 
       if (error) throw error;
+      
+      // Log the judge action
+      if (user) {
+        const reg = submissions.find(r => r.submissions.some(s => s.id === submissionId));
+        if (reg) {
+          await logAdminAction(user.id, 'SITE_CONTENT_UPDATE', submissionId, {
+            student: reg.participant_name || reg.participant_user?.full_name || 'Anonymous',
+            event: reg.events.title,
+            score: scores[submissionId] || 0,
+            notes: 'Saved internal score/remarks'
+          });
+        }
+      }
+
       toast.success('Internal review saved.');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save review.');
@@ -254,6 +269,24 @@ export default function ContentReviewDashboard() {
         .eq('id', registrationId);
 
       if (error) throw error;
+
+      // Log the judge decision
+      if (user) {
+        const reg = submissions.find(r => r.id === registrationId);
+        if (reg) {
+          await logAdminAction(
+            user.id, 
+            decision === 'selected' ? 'JUDGE_PROMOTE' : 'JUDGE_ELIMINATE', 
+            registrationId, 
+            {
+              student: reg.participant_name || reg.participant_user?.full_name || 'Anonymous',
+              event: reg.events.title,
+              round: currentRoundId,
+              decision: decision
+            }
+          );
+        }
+      }
 
       toast.success(`Participant ${decision === 'selected' ? 'promoted' : 'eliminated'}.`);
       fetchSubmissions();

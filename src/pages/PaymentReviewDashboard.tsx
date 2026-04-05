@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { Loader2, CheckCircle2, XCircle, Search, ExternalLink, Unlock, ArrowLeft, Calendar, User, DollarSign } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Search, ExternalLink, Unlock, ArrowLeft, Calendar, User, DollarSign, ChevronDown, Phone, Camera, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { openPaymentScreenshot } from '../lib/storage';
+import { logAdminAction } from '../lib/audit';
 
 type RegistrationReview = {
   id: string;
@@ -50,6 +51,7 @@ export default function PaymentReviewDashboard() {
   const [search, setSearch] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchData();
@@ -148,6 +150,21 @@ export default function PaymentReviewDashboard() {
         .eq('id', registrationId);
 
       if (error) throw error;
+
+      // Log the admin action
+      const regObj = registrations.find(r => r.id === registrationId);
+      if (user && regObj) {
+        await logAdminAction(
+          user.id,
+          approve ? 'PAYMENT_APPROVE' : 'PAYMENT_REJECT',
+          registrationId,
+          {
+            student: regObj.participant_name || regObj.participant_user?.full_name || 'Anonymous',
+            event: regObj.events.title,
+            notes: notes[registrationId] || 'No notes provided'
+          }
+        );
+      }
 
       toast.success(approve ? 'Payment approved.' : 'Payment rejected.');
       
@@ -358,88 +375,141 @@ export default function PaymentReviewDashboard() {
                   <div className="text-sm font-bold uppercase tracking-[0.3em]">No participants in this queue</div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                  {filteredRegistrations.map((reg) => (
-                    <motion.div
-                      key={reg.id}
-                      layout
-                      className="glass rounded-[2.5rem] p-8 border border-white/10 flex flex-col gap-6 relative"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <h4 className="text-2xl font-bold font-display tracking-tight">{reg.participant_name || reg.participant_user?.full_name || 'Anonymous'}</h4>
-                          <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1 text-xs text-white/40 font-medium">
-                              <User size={12} /> {reg.college_name || 'No College'}
-                            </span>
-                            <span className="w-1 h-1 bg-white/10 rounded-full" />
-                            <span className="text-xs text-fest-gold/60 font-bold uppercase tracking-widest">
-                              {reg.phone}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="bg-black/40 px-5 py-3 rounded-2xl border border-white/5 text-right">
-                          <div className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-1">Fee Amount</div>
-                          <div className="text-xl font-display font-black text-fest-gold">₹{reg.events.entry_fee}</div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-6">
+                  {filteredRegistrations.map((reg) => {
+                    const isExpanded = expandedRows[reg.id];
+                    return (
+                      <motion.div
+                        key={reg.id}
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`glass rounded-[2rem] border overflow-hidden transition-all duration-300 ${isExpanded ? 'border-fest-gold/30 bg-white/[0.08] ring-1 ring-fest-gold/10' : 'border-white/10 hover:border-white/20'}`}
+                      >
+                        {/* Header: Clickable Toggle */}
                         <button
-                          type="button"
-                          onClick={() => void handleViewScreenshot(reg.payment_screenshot_url)}
-                          className="flex items-center justify-between p-5 bg-white/5 border border-white/10 rounded-[1.5rem] hover:bg-white/[0.08] transition-all group"
+                          onClick={() => setExpandedRows(prev => ({ ...prev, [reg.id]: !prev[reg.id] }))}
+                          className="w-full text-left p-6 md:p-8 flex items-center justify-between group"
                         >
-                          <div className="text-left">
-                            <div className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-1">Transaction</div>
-                            <div className="text-xs font-black text-fest-gold group-hover:underline">VIEW SCREENSHOT</div>
+                          <div className="flex items-center gap-6">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isExpanded ? 'bg-fest-gold text-fest-dark rotate-180' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                              <ChevronDown size={24} />
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="text-xl md:text-2xl font-bold font-display tracking-tight group-hover:text-fest-gold transition-colors">
+                                {reg.participant_name || reg.participant_user?.full_name || 'Anonymous User'}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span className="flex items-center gap-1.5 text-xs text-white/40 font-medium">
+                                  <User size={12} className="opacity-50" /> {reg.college_name || 'Individual Participant'}
+                                </span>
+                                <span className="hidden md:block w-1 h-1 bg-white/10 rounded-full" />
+                                <span className="text-xs text-fest-gold/50 font-black uppercase tracking-widest flex items-center gap-2">
+                                  <Phone size={12} className="opacity-50" /> {reg.phone}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <ExternalLink size={20} className="text-white/20 group-hover:text-fest-gold transition-colors" />
+
+                          <div className="hidden sm:block bg-black/40 px-6 py-3 rounded-2xl border border-white/5 text-right min-w-32">
+                            <div className="text-[10px] uppercase tracking-widest text-white/30 font-black mb-0.5">Fee Amount</div>
+                            <div className="text-xl font-display font-black text-fest-gold">₹{reg.events.entry_fee}</div>
+                          </div>
                         </button>
-                        
-                        <div className="p-5 bg-white/5 border border-white/10 rounded-[1.5rem]">
-                          <div className="text-[10px] uppercase tracking-widest text-white/30 font-bold mb-1">Submission Time</div>
-                          <div className="text-xs font-bold text-white/60">
-                            {new Date(reg.created_at).toLocaleDateString()} @ {new Date(reg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </div>
-                      </div>
 
-                      <div className="space-y-3">
-                        <label className="text-[10px] uppercase tracking-widest text-white/30 font-black px-2">Decision Notes</label>
-                        <textarea
-                          value={notes[reg.id] || ''}
-                          onChange={(e) => setNotes((current) => ({ ...current, [reg.id]: e.target.value }))}
-                          placeholder="Internal note for approval/rejection reasons..."
-                          className="w-full h-24 rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-sm outline-none focus:border-fest-gold/50 resize-none transition-colors"
-                        />
-                      </div>
+                        {/* Expandable Body */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3, ease: 'easeInOut' }}
+                              className="overflow-hidden"
+                            >
+                              <div className="p-6 md:p-8 pt-0 border-t border-white/5 mt-2 space-y-8">
+                                {/* Grid of detail cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void handleViewScreenshot(reg.payment_screenshot_url);
+                                    }}
+                                    className="flex items-center justify-between p-6 bg-white/5 border border-white/10 rounded-[1.5rem] hover:bg-white/[0.08] transition-all group/screenshot"
+                                  >
+                                    <div className="text-left">
+                                      <div className="text-[10px] uppercase tracking-widest text-white/30 font-black mb-1.5">Transaction</div>
+                                      <div className="text-xs font-black text-fest-gold flex items-center gap-2 group-hover/screenshot:gap-3 transition-all">
+                                        VIEW SCREENSHOT <ExternalLink size={14} />
+                                      </div>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-white/40 group-hover/screenshot:text-fest-gold transition-colors">
+                                      <Camera size={24} />
+                                    </div>
+                                  </button>
+                                  
+                                  <div className="flex items-center justify-between p-6 bg-white/5 border border-white/10 rounded-[1.5rem]">
+                                    <div className="text-left">
+                                      <div className="text-[10px] uppercase tracking-widest text-white/30 font-black mb-1.5">Submission Time</div>
+                                      <div className="text-sm font-bold text-white/60">
+                                        {new Date(reg.created_at).toLocaleDateString()} @ {new Date(reg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </div>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-white/40">
+                                      <Clock size={24} />
+                                    </div>
+                                  </div>
+                                </div>
 
-                      {activeTab === 'pending' ? (
-                        <div className="grid grid-cols-2 gap-4 mt-2">
-                          <button
-                            onClick={() => handleDecision(reg.id, 'rejected')}
-                            disabled={actionLoading === reg.id}
-                            className="py-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-[1.25rem] font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 border border-red-500/20"
-                          >
-                            {actionLoading === reg.id ? <Loader2 className="animate-spin" size={16} /> : <><XCircle size={16} /> Reject Payment</>}
-                          </button>
-                          <button
-                            onClick={() => handleDecision(reg.id, 'approved')}
-                            disabled={actionLoading === reg.id}
-                            className="py-4 bg-fest-gold text-fest-dark rounded-[1.25rem] font-black uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-2 shadow-lg shadow-fest-gold/20"
-                          >
-                            {actionLoading === reg.id ? <Loader2 className="animate-spin" size={16} /> : <><Unlock size={16} /> Approve & Unlock</>}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className={`mt-2 py-4 rounded-[1.25rem] border text-center text-xs font-black uppercase tracking-[0.2em] ${reg.payment_status === 'approved' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
-                           Final Decision: {reg.payment_status}
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
+                                {/* Notes Area */}
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between px-2">
+                                     <label className="text-[10px] uppercase tracking-widest text-white/30 font-black">Decision Notes</label>
+                                     <span className="text-[10px] text-white/10 font-bold uppercase tracking-widest italic">Internal Review Team Only</span>
+                                  </div>
+                                  <textarea
+                                    value={notes[reg.id] || ''}
+                                    onChange={(e) => setNotes((current) => ({ ...current, [reg.id]: e.target.value }))}
+                                    placeholder="Internal note for approval/rejection reasons..."
+                                    className="w-full h-32 rounded-3xl border border-white/10 bg-black/40 px-6 py-5 text-sm outline-none focus:border-fest-gold/40 focus:ring-1 focus:ring-fest-gold/20 resize-none transition-all placeholder:text-white/10"
+                                  />
+                                </div>
+
+                                {/* Decision Row */}
+                                {activeTab === 'pending' ? (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <button
+                                      onClick={() => handleDecision(reg.id, 'rejected')}
+                                      disabled={actionLoading === reg.id}
+                                      className="py-5 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-3 border border-red-500/20 shadow-lg shadow-red-500/0 hover:shadow-red-500/10"
+                                    >
+                                      {actionLoading === reg.id ? <Loader2 className="animate-spin" size={18} /> : <><XCircle size={18} /> Reject Payment</>}
+                                    </button>
+                                    <button
+                                      onClick={() => handleDecision(reg.id, 'approved')}
+                                      disabled={actionLoading === reg.id}
+                                      className="py-5 bg-fest-gold text-fest-dark rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-3 shadow-xl shadow-fest-gold/10 hover:shadow-fest-gold/20 active:scale-[0.98]"
+                                    >
+                                      {actionLoading === reg.id ? <Loader2 className="animate-spin text-fest-dark" size={18} /> : <><Unlock size={18} /> Approve & Unlock</>}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className={`py-6 rounded-[1.5rem] border text-center relative overflow-hidden group/decision ${reg.payment_status === 'approved' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                                     <div className="absolute inset-0 bg-white/0 group-hover/decision:bg-white/[0.02] transition-colors" />
+                                     <div className="text-[10px] uppercase tracking-[0.4em] font-black opacity-40 mb-1">Final Decision Recorded</div>
+                                     <div className="text-sm font-black uppercase tracking-[0.1em]">{reg.payment_status}</div>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
+                    );
+                  })}
                 </div>
+
               )}
             </motion.div>
           )}

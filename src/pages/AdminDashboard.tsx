@@ -7,8 +7,25 @@ import { AppRole, CommitteeMember, DatabaseEvent, GeneralRule, HeroSlide, Qualif
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { openPaymentScreenshot } from '../lib/storage';
+import { logAdminAction } from '../lib/audit';
+import { 
+  Activity,
+  History,
+  Clock,
+  Layout
+} from 'lucide-react';
 
-type DashboardTab = 'events' | 'payment_reviews' | 'qualified_rounds' | 'users' | 'judges_access' | 'payment_access' | 'registrations' | 'ui';
+type DashboardTab = 'events' | 'payment_reviews' | 'qualified_rounds' | 'users' | 'judges_access' | 'payment_access' | 'registrations' | 'ui' | 'system_logs';
+
+type AuditLogRow = {
+  id: string;
+  actor_id: string;
+  action_type: string;
+  target_id: string;
+  details: any;
+  created_at: string;
+  actor_user: { full_name: string | null; email: string; role: string } | null;
+};
 
 type AppUser = {
   id: string;
@@ -244,6 +261,7 @@ export default function AdminDashboard() {
   const [paymentSearch, setPaymentSearch] = useState('');
   const [qualificationSearch, setQualificationSearch] = useState('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([]);
   const [paymentNotes, setPaymentNotes] = useState<Record<string, string>>({});
   const [qualificationNotes, setQualificationNotes] = useState<Record<string, string>>({});
 
@@ -267,6 +285,25 @@ export default function AdminDashboard() {
     setActivePaymentSection('pending');
     setPaymentSearch('');
   }, [selectedPaymentEventId]);
+
+  const fetchAuditLogs = async () => {
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select(`
+        *,
+        actor_user:users!audit_logs_actor_id_fkey (
+          full_name,
+          email,
+          role
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (!error && data) {
+      setAuditLogs(data as any);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -453,6 +490,10 @@ export default function AdminDashboard() {
         setSiteContent(contentMap);
       }
 
+      if (activeTab === 'system_logs') {
+        await fetchAuditLogs();
+      }
+
     } catch (err: any) {
       toast.error(err.message || 'Failed to load admin data.');
     } finally {
@@ -594,6 +635,11 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('site_content').upsert(payload, { onConflict: 'content_key' });
       if (error) throw error;
       toast.success('Content updated.');
+      
+      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', contentKey, {
+        section: contentKey,
+        title: payload.title
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not save content.');
@@ -614,6 +660,11 @@ export default function AdminDashboard() {
       if (error) throw error;
       toast.success('Slide added.');
       setNewSlideDuration(2);
+
+      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', 'hero_slideshow', {
+        action: 'ADD_SLIDE',
+        image: imageUrl
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not add slide.');
@@ -627,6 +678,11 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('hero_slideshow').delete().eq('id', id);
       if (error) throw error;
       toast.success('Slide removed.');
+      
+      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', 'hero_slideshow', {
+        action: 'DELETE_SLIDE',
+        slide_id: id
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not delete slide.');
@@ -648,6 +704,12 @@ export default function AdminDashboard() {
       });
       if (error) throw error;
       toast.success('Committee member added.');
+      
+      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', 'committee', {
+        action: 'ADD_MEMBER',
+        name: committeeForm.name,
+        role: committeeForm.role
+      });
       setCommitteeForm({ name: '', role: '', image_url: '', display_order: 0 });
       await fetchData();
     } catch (err: any) {
@@ -660,6 +722,11 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('committee').delete().eq('id', id);
       if (error) throw error;
       toast.success('Committee member removed.');
+      
+      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', 'committee', {
+        action: 'DELETE_MEMBER',
+        member_id: id
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not remove committee member.');
@@ -683,6 +750,11 @@ export default function AdminDashboard() {
         : await supabase.from('general_rules').insert(payload);
       if (error) throw error;
       toast.success(editingGuidelineId ? 'Guideline updated.' : 'Guideline added.');
+      
+      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', editingGuidelineId || 'general_rules', {
+        action: editingGuidelineId ? 'UPDATE_GUIDELINE' : 'ADD_GUIDELINE',
+        text: payload.rule_text
+      });
       setEditingGuidelineId(null);
       setRuleForm({ rule_text: '', display_order: 0 });
       await fetchData();
@@ -696,6 +768,10 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('general_rules').delete().eq('id', id);
       if (error) throw error;
       toast.success('Guideline removed.');
+      
+      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', id, {
+        action: 'DELETE_GUIDELINE'
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not remove guideline.');
@@ -760,6 +836,11 @@ export default function AdminDashboard() {
       if (error) throw error;
 
       toast.success(editingEventId ? 'Event updated.' : 'Event created.');
+      
+      await logAdminAction(user?.id || '', editingEventId ? 'EVENT_UPDATE' : 'EVENT_CREATE', editingEventId || payload.slug, {
+        title: payload.title,
+        category: payload.category
+      });
       resetEventForm();
       await fetchData();
     } catch (err: any) {
@@ -777,6 +858,10 @@ export default function AdminDashboard() {
       if (error) throw error;
 
       toast.success('Event deleted.');
+      
+      await logAdminAction(user?.id || '', 'EVENT_DELETE', eventId, {
+        title: eventTitle
+      });
 
       if (selectedRegistrationEventId === eventId) setSelectedRegistrationEventId('');
       if (selectedPaymentEventId === eventId) setSelectedPaymentEventId('');
@@ -795,6 +880,13 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('users').update({ role }).eq('id', userId);
       if (error) throw error;
       toast.success('Role updated.');
+      
+      const targetUser = users.find(u => u.id === userId);
+      await logAdminAction(user?.id || '', 'ROLE_UPDATE', userId, {
+        new_role: role,
+        email: targetUser?.email,
+        name: targetUser?.full_name
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Role update failed.');
@@ -816,6 +908,14 @@ export default function AdminDashboard() {
       });
       if (error) throw error;
       toast.success(`${roleType === 'judge' ? 'Judge' : 'Payment staff'} assigned to event.`);
+      
+      const reviewer = users.find(u => u.id === reviewerId);
+      const event = events.find(e => e.id === assignmentEventId);
+      await logAdminAction(user?.id || '', 'ASSIGNMENT_CREATE', reviewerId, {
+        role_type: roleType,
+        event: event?.title,
+        staff_name: reviewer?.full_name || reviewer?.email
+      });
       setReviewerId('');
       setAssignmentEventId('');
       await fetchData();
@@ -829,6 +929,12 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('reviewer_event_assignments').delete().eq('id', assignmentId);
       if (error) throw error;
       toast.success('Assignment removed.');
+      
+      const assignment = assignments.find(a => a.id === assignmentId);
+      await logAdminAction(user?.id || '', 'ASSIGNMENT_DELETE', assignment?.reviewer_id || '', {
+        staff_name: assignment?.reviewer_user?.full_name || assignment?.reviewer_user?.email,
+        event: assignment?.assigned_event?.title
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Delete failed.');
@@ -854,6 +960,13 @@ export default function AdminDashboard() {
         .eq('id', registrationId);
       if (error) throw error;
       toast.success(approve ? 'Payment approved and upload opened.' : 'Payment rejected.');
+      
+      const reg = registrations.find(r => r.id === registrationId);
+      await logAdminAction(user?.id || '', approve ? 'PAYMENT_APPROVE' : 'PAYMENT_REJECT', registrationId, {
+        student: reg?.participant_name || reg?.participant_user?.full_name || reg?.email,
+        event: reg?.event?.title,
+        notes: paymentNotes[registrationId] || 'No notes provided'
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Action failed.');
@@ -895,6 +1008,10 @@ export default function AdminDashboard() {
       const { error } = await supabase.from('registrations').delete().eq('id', id);
       if (error) throw error;
       toast.success('Registration deleted.');
+      
+      await logAdminAction(user?.id || '', 'REGISTRATION_DELETE', id, {
+        student: name
+      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not delete registration.');
@@ -1065,6 +1182,7 @@ export default function AdminDashboard() {
             { id: 'judges_access', label: 'Judges Access', icon: ShieldCheck },
             { id: 'payment_access', label: 'Payment Access', icon: DollarSign },
             { id: 'registrations', label: 'All Registrations', icon: CheckSquare },
+            { id: 'system_logs', label: 'System Logs', icon: History },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -2265,7 +2383,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'registrations' ? (
             <div className="space-y-8">
               {!selectedEventId ? (
                 // --- EVENT LIST VIEW ---
@@ -2414,7 +2532,82 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-          )}
+          ) : activeTab === 'system_logs' ? (
+            <div className="space-y-8">
+              <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <h3 className="text-3xl md:text-4xl font-display font-extrabold uppercase tracking-tighter">
+                    Audit <span className="text-fest-gold">Logs</span>
+                  </h3>
+                  <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2">
+                    {auditLogs.length} recent administrative actions tracked
+                  </p>
+                </div>
+                <button
+                  onClick={fetchAuditLogs}
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                >
+                  <Clock size={16} className="text-fest-gold" /> Refresh Feed
+                </button>
+              </header>
+
+              <div className="space-y-4">
+                {auditLogs.length === 0 ? (
+                  <div className="glass rounded-[3rem] py-24 text-center border-white/5">
+                     <Activity className="mx-auto mb-4 text-white/10" size={48} />
+                     <div className="text-xs font-bold uppercase tracking-[0.3em] text-white/20">No system activity logged yet</div>
+                  </div>
+                ) : (
+                  auditLogs.map((log) => (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      key={log.id}
+                      className="glass rounded-3xl border border-white/5 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-white/10 hover:bg-white/[0.04] transition-all group"
+                    >
+                      <div className="flex items-start gap-6">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${
+                          log.action_type.includes('APPROVE') || log.action_type.includes('PROMOTE') || log.action_type.includes('CREATE')
+                            ? 'bg-green-500/10 text-green-400 group-hover:bg-green-500 group-hover:text-white transition-all'
+                            : 'bg-red-500/10 text-red-400 group-hover:bg-red-500 group-hover:text-white transition-all'
+                        }`}>
+                          <Activity size={24} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3">
+                             <span className="text-xs font-black uppercase tracking-[0.2em] text-fest-gold">
+                               {log.action_type.replace(/_/g, ' ')}
+                             </span>
+                             <span className="w-1 H-1 bg-white/10 rounded-full" />
+                             <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                               {new Date(log.created_at).toLocaleString()}
+                             </span>
+                          </div>
+                          <div className="mt-2 text-lg font-bold tracking-tight">
+                             {log.actor_user?.full_name || 'System Admin'} 
+                             <span className="text-white/40 font-normal ml-2">
+                               {log.action_type.includes('PAYMENT') ? 'processed payment for' : 
+                                log.action_type.includes('JUDGE') ? 'evaluated' : 
+                                log.action_type.includes('ASSIGN') ? 'modified access for' : 'updated'}
+                             </span>
+                             {' '}<span className="text-white/80">{log.details?.student || log.details?.event || log.target_id}</span>
+                          </div>
+                          {log.details?.notes && log.details.notes !== 'No notes provided' && (
+                            <div className="mt-3 text-sm text-white/30 italic font-medium px-4 py-3 bg-black/20 rounded-xl border border-white/5">
+                              "{log.details.notes}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/20 group-hover:text-fest-gold transition-colors">
+                        ACTOR ID: {log.actor_id.slice(0, 8)}...
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </main>
