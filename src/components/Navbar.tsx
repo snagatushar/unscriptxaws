@@ -83,6 +83,21 @@ const Navbar = () => {
             </Link>
           ))}
 
+          {showRegisteredEventsShortcut && (
+            <Link
+              to="/dashboard"
+              className="relative group text-sm font-medium uppercase tracking-widest text-white/80 hover:text-white transition-colors"
+            >
+              Registered Events
+              <motion.span
+                className="absolute -bottom-1 left-0 w-0 h-0.5 bg-fest-gold transition-all group-hover:w-full"
+                initial={false}
+                animate={{ width: location.pathname === '/dashboard' ? '100%' : '0%' }}
+              />
+            </Link>
+          )}
+
+
           {hideAuthActionsOnPage ? null : showUserActions ? (
             <div className="relative">
               <button
@@ -104,15 +119,8 @@ const Navbar = () => {
                   </div>
 
                   <div className="pt-3 space-y-2">
-                    {showRegisteredEventsShortcut && (
-                      <Link
-                        to="/dashboard"
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 text-white/80 text-sm font-medium transition-colors"
-                      >
-                        <LayoutDashboard size={16} /> Registered Events
-                      </Link>
-                    )}
                     {showDashboardShortcut && (
+
                       <div className="space-y-1">
                         {profile?.role === 'admin' && (
                           <Link
@@ -189,21 +197,23 @@ const Navbar = () => {
               </Link>
             ))}
 
+            {showRegisteredEventsShortcut && (
+              <Link
+                to="/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="text-lg font-display font-medium text-white/90"
+              >
+                Registered Events
+              </Link>
+            )}
+
+
             {hideAuthActionsOnPage ? null : showUserActions ? (
               <div className="flex flex-col gap-4">
                 <div className="glass rounded-2xl p-4 text-center">
                   <div className="text-sm font-bold text-white">{displayName}</div>
                   <div className="text-xs text-white/40 mt-1">{user?.email}</div>
                 </div>
-                {showRegisteredEventsShortcut && (
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setIsOpen(false)}
-                    className="w-full py-3 flex justify-center items-center gap-2 bg-white/10 text-center text-white font-bold uppercase tracking-widest rounded-xl text-sm"
-                  >
-                    <LayoutDashboard size={18} /> Registered Events
-                  </Link>
-                )}
                 {showDashboardShortcut && (
                   <div className="space-y-2">
                     {profile?.role === 'admin' && (
