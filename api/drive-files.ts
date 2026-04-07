@@ -1,5 +1,5 @@
 import { getDriveClientWithOAuth } from './_lib/google-oauth';
-import { getSupabaseAdmin } from './_lib/supabase-admin';
+import { getSupabaseAdmin, verifyUserToken } from './_lib/supabase-admin';
 
 function setCors(res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,8 +13,8 @@ export default async function handler(req: any, res: any) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const userId = String(req.query.userId || '');
-    if (!userId) return res.status(400).json({ error: 'userId is required' });
+    const user = await verifyUserToken(req);
+    const userId = user.id;
 
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
