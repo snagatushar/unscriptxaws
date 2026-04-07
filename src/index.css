@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.cdnfonts.com/css/blowbrush');
 @import "tailwindcss";
 
 @theme {
@@ -30,5 +31,9 @@
 
 .text-glow-gold {
   text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.font-blowbrush {
+  font-family: 'BlowBrush', sans-serif !important;
 }
 
