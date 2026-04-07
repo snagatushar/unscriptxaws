@@ -118,11 +118,11 @@ export default function ContentReviewDashboard() {
   const [savingScoreId, setSavingScoreId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSubmissions();
+    void fetchSubmissions(true);
   }, [activeTab]);
 
-  const fetchSubmissions = async () => {
-    setLoading(true);
+  const fetchSubmissions = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       let assignedEventIds: string[] = [];
       if (user?.role !== 'admin') {

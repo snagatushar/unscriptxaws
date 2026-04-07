@@ -269,7 +269,7 @@ export default function AdminDashboard() {
   const [activeQualifiedStage, setActiveQualifiedStage] = useState<'all' | QualificationStage>('all');
 
   useEffect(() => {
-    void fetchData();
+    void fetchData(true);
   }, [activeTab]);
 
   useEffect(() => {
@@ -296,8 +296,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       if (activeTab === 'events') {
         const [{ data: eventsData, error: eventsError }, { data: registrationsData, error: registrationsError }] = await Promise.all([
@@ -312,6 +312,7 @@ export default function AdminDashboard() {
             team_name,
             payment_status,
             payment_screenshot_url,
+            id_card_url,
             payment_review_notes,
             upload_enabled,
             submission_status,
@@ -359,6 +360,7 @@ export default function AdminDashboard() {
               team_name,
               payment_status,
               payment_screenshot_url,
+              id_card_url,
               payment_review_notes,
               upload_enabled,
               submission_status,
