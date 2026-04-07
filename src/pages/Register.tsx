@@ -19,9 +19,11 @@ export default function Register() {
   const [yearOfStudy, setYearOfStudy] = useState('');
   const [teamName, setTeamName] = useState('');
   const [teamSize, setTeamSize] = useState(1);
-  const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [paymentFile, setPaymentFile] = useState<File | null>(null);
+  const [idCardFile, setIdCardFile] = useState<File | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -51,16 +53,25 @@ export default function Register() {
     e.preventDefault();
     if (!user) return toast.error('You must be logged in to register');
     if (!event) return toast.error('Event not found');
-    if (!file) return toast.error('Please upload your payment screenshot');
-
-    // BUG-06 FIX: Payment screenshot must be under 100KB
-    const MAX_PAYMENT_SIZE = 100 * 1024; // 100KB
-    if (file.size > MAX_PAYMENT_SIZE) {
-      return toast.error('Payment screenshot must be under 100KB. Please compress the image.');
-    }
+    if (!paymentFile) return toast.error('Please upload your payment screenshot');
+    if (!idCardFile) return toast.error('Please upload your Student ID Card');
+    
+    // Size limit: 50KB
+    const MAX_FILE_SIZE = 50 * 1024;
     const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedImageTypes.includes(file.type)) {
+
+    if (paymentFile.size > MAX_FILE_SIZE) {
+      return toast.error('Payment screenshot must be under 50KB. Please compress the image.');
+    }
+    if (!allowedImageTypes.includes(paymentFile.type)) {
       return toast.error('Only JPG, PNG, or WebP images are allowed for payment proof.');
+    }
+
+    if (idCardFile.size > MAX_FILE_SIZE) {
+      return toast.error('ID Card must be under 50KB. Please compress the image.');
+    }
+    if (!allowedImageTypes.includes(idCardFile.type)) {
+      return toast.error('Only JPG, PNG, or WebP images are allowed for ID Card.');
     }
 
     // BUG-05 FIX: Phone number validation
@@ -71,16 +82,22 @@ export default function Register() {
 
     setSubmitting(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}_${event.id}_${Date.now()}.${fileExt}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage.from('payments').upload(fileName, file);
+      // 1. Upload Payment Screenshot
+      const payExt = paymentFile.name.split('.').pop();
+      const payFileName = `pay_${user.id}_${event.id}_${Date.now()}.${payExt}`;
+      const { data: payData, error: payError } = await supabase.storage.from('payments').upload(payFileName, paymentFile);
+      if (payError) throw payError;
 
-      if (uploadError) throw uploadError;
+      // 2. Upload ID Card
+      const idExt = idCardFile.name.split('.').pop();
+      const idFileName = `id_${user.id}_${event.id}_${Date.now()}.${idExt}`;
+      const { data: idData, error: idError } = await supabase.storage.from('payments').upload(idFileName, idCardFile);
+      if (idError) throw idError;
 
       const payload = {
         user_id: user.id,
         event_id: event.id,
-        participant_name: profile?.full_name || user.user_metadata?.full_name || user.email,
+        participant_name: fullName,
         email: user.email,
         phone: phoneDigits,
         college_name: collegeName || null,
@@ -88,7 +105,8 @@ export default function Register() {
         year_of_study: yearOfStudy || null,
         team_name: teamName || null,
         team_size: teamSize,
-        payment_screenshot_url: uploadData.path,
+        payment_screenshot_url: payData.path,
+        id_card_url: idData.path,
       };
 
       const { error: insertError } = await supabase.from('registrations').insert(payload);
@@ -99,8 +117,12 @@ export default function Register() {
         throw new Error('Registration failed. Please try again or contact support.');
       }
 
-      if (profile && (phone !== profile.phone || collegeName !== profile.college_name)) {
-        await supabase.from('users').update({ phone: phoneDigits, college_name: collegeName || null }).eq('id', user.id);
+      if (profile && (phone !== profile.phone || collegeName !== profile.college_name || fullName !== profile.full_name)) {
+        await supabase.from('users').update({ 
+          phone: phoneDigits, 
+          college_name: collegeName || null,
+          full_name: fullName || profile.full_name
+        }).eq('id', user.id);
       }
 
       toast.success('Registration successful. Wait up to 24 hours for payment approval.');
@@ -152,8 +174,8 @@ export default function Register() {
 
   return (
     <main className="pt-32 pb-24 px-6 min-h-screen">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-        <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }}>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
+        <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} className="sticky top-32">
           <h1 className="text-5xl md:text-8xl font-display font-extrabold tracking-tighter mb-8 leading-none">
             SECURE YOUR <span className="text-fest-gold">SPOT</span>
           </h1>
@@ -171,6 +193,8 @@ export default function Register() {
               {event?.payment_upi_id && <li>UPI ID: <strong className="text-fest-gold">{event.payment_upi_id}</strong></li>}
               <li>Exact Amount: <strong className="text-xl text-fest-gold">₹{event?.entry_fee}</strong></li>
               <li>Upload a clear screenshot of the successful payment.</li>
+              <li>Upload a clear photo/scan of your <strong>Student ID Card</strong>.</li>
+              <li>Maximum file size for each: <strong className="text-fest-gold">50KB</strong>.</li>
             </ul>
           </div>
         </motion.div>
@@ -178,7 +202,7 @@ export default function Register() {
         <motion.div
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
-          className="glass p-8 md:p-12 rounded-[3rem] relative overflow-hidden"
+          className="glass p-8 md:p-12 rounded-[3rem] relative"
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-fest-gold/10 blur-[80px] -z-10" />
 
@@ -186,11 +210,18 @@ export default function Register() {
             <div className="relative group">
               <input
                 type="text"
-                disabled
-                value={profile?.full_name || user?.user_metadata?.full_name || user?.email || 'Logged In User'}
-                className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none transition-colors opacity-50 cursor-not-allowed"
+                required
+                autoComplete="off"
+                name="user_custom_participant_name_random"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors peer placeholder-transparent"
+                placeholder="Participant Full Name"
+                id="participant-full-name-v6"
               />
-              <label className="absolute left-0 -top-4 text-fest-gold text-xs">Participant Name</label>
+              <label htmlFor="participant-full-name-v6" className="absolute left-0 top-3 text-white/30 text-sm transition-all pointer-events-none peer-focus:-top-4 peer-focus:text-fest-gold peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
+                Participant Full Name
+              </label>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -294,20 +325,48 @@ export default function Register() {
               <label className="absolute left-0 -top-4 text-fest-gold text-xs">Selected Event</label>
             </div>
 
-            <div
-              className="relative rounded-2xl border-2 border-dashed border-white/20 p-6 flex flex-col items-center justify-center hover:bg-white/5 hover:border-fest-gold/50 transition-colors cursor-pointer"
-              onClick={() => document.getElementById('payment-upload')?.click()}
-            >
-              <input
-                type="file"
-                id="payment-upload"
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-              <UploadCloud className="text-fest-gold mb-3" size={32} />
-              <p className="font-bold mb-1">Upload Payment Screenshot</p>
-              <p className="text-xs text-white/50">{file ? file.name : 'PNG or JPG up to 5MB'}</p>
+            <div className="space-y-5 mt-4">
+              <div
+                className="relative rounded-3xl border-2 border-dashed border-fest-pink/40 bg-fest-pink/5 p-6 flex flex-col md:flex-row items-center md:items-start gap-4 hover:bg-fest-pink/10 hover:border-fest-pink transition-all cursor-pointer group"
+                onClick={() => document.getElementById('payment-upload')?.click()}
+              >
+                <input
+                  type="file"
+                  id="payment-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => setPaymentFile(e.target.files?.[0] || null)}
+                />
+                <div className={`p-4 rounded-full flex-shrink-0 transition-transform group-hover:scale-110 ${paymentFile ? 'bg-green-500/20 text-green-500' : 'bg-fest-pink/20 text-fest-pink'}`}>
+                  <UploadCloud size={28} />
+                </div>
+                <div className="text-center md:text-left flex-1">
+                  <h4 className="text-sm font-bold uppercase tracking-widest text-white mb-1">1. Payment Proof</h4>
+                  <p className="text-xs text-white/50">{paymentFile ? paymentFile.name : 'Upload Screenshot / Max 50KB (.jpg, .png)'}</p>
+                </div>
+                {paymentFile && <CheckCircle2 className="text-green-500 hidden md:block" size={24} />}
+              </div>
+
+              <div
+                className="relative rounded-3xl border-2 border-dashed border-fest-gold/40 bg-fest-gold/5 p-6 flex flex-col md:flex-row items-center md:items-start gap-4 hover:bg-fest-gold/10 hover:border-fest-gold transition-all cursor-pointer group"
+                onClick={() => document.getElementById('id-upload')?.click()}
+              >
+                <input
+                  type="file"
+                  id="id-upload"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => setIdCardFile(e.target.files?.[0] || null)}
+                />
+                <div className={`p-4 rounded-full flex-shrink-0 transition-transform group-hover:scale-110 ${idCardFile ? 'bg-green-500/20 text-green-500' : 'bg-fest-gold/20 text-fest-gold'}`}>
+                  <UploadCloud size={28} />
+                </div>
+                <div className="text-center md:text-left flex-1">
+                  <h4 className="text-sm font-bold uppercase tracking-widest text-white mb-1">2. Student ID Card</h4>
+                  <p className="text-xs text-white/50">{idCardFile ? idCardFile.name : 'Upload ID Photo / Max 50KB (.jpg, .png)'}</p>
+                </div>
+                {idCardFile && <CheckCircle2 className="text-green-500 hidden md:block" size={24} />}
+              </div>
             </div>
 
             <button

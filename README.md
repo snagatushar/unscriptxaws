@@ -24,7 +24,7 @@
 
 ### 📁 Advanced Event Workflows
 - **Dynamic Registrations**: Support for external links (Google Forms) or internal native forms.
-- **Video Submission System**: Seamless 500MB+ video uploads directly to Supabase storage with validation.
+- **Video Submission System**: Seamless 800MB video uploads via Google Drive with validation.
 - **Excel Export**: Generate on-demand participant reports with `exceljs`.
 
 ---
@@ -61,6 +61,12 @@ Create a `.env` file in the root directory:
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:3000/api/auth/google/callback
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+GDRIVE_EVENT_FOLDER_MAP_JSON={"Event 1":"folderId1"}
+GDRIVE_ROOT_FOLDER_ID=your_events_root_folder_id
 ```
 
 ### 5. Start the development server
@@ -90,3 +96,79 @@ The site will be available at `http://localhost:5173`.
 ---
 
 Made with ❤️ by S.Naga Tushar for **UNSCRIPTX 2026**.
+
+---
+
+## Google Drive Storage Setup
+
+Video submissions are stored in Google Drive via backend API routes:
+
+- `GET /api/auth/google` (connect your Google account via OAuth)
+- `GET /api/auth/google/callback` (OAuth callback)
+- `POST /api/drive-upload` (upload to event folder; auto-creates event folder under root if missing)
+- `GET /api/drive-view?fileId=...` (private proxy stream)
+- `GET /api/drive-files?userId=...` (optional metadata list by user)
+
+### 1) Google Cloud
+
+- Enable **Google Drive API**
+- Create **OAuth 2.0 Client ID** credentials
+- Set authorized redirect URI to match `GOOGLE_REDIRECT_URI`
+- Use scope `https://www.googleapis.com/auth/drive.file`
+
+### 2) Create Event Folders Automatically
+
+Use the helper script:
+
+```bash
+npm run drive:setup-folders
+```
+
+Required env vars:
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI`
+- `GOOGLE_REFRESH_TOKEN` (script only)
+- `GDRIVE_EVENTS_PARENT_FOLDER_ID`
+- `DRIVE_EVENT_TITLES_JSON` (JSON array of event titles)
+
+This generates:
+
+- `drive-config/event-folder-map.json`
+
+Then copy that JSON into:
+
+- `GDRIVE_EVENT_FOLDER_MAP_JSON`
+
+### 3) Runtime Env Vars
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_URL`
+- `GDRIVE_ROOT_FOLDER_ID` (recommended)
+- `GDRIVE_EVENT_FOLDER_MAP_JSON` (optional override map)
+
+### 4) Connect Drive Owner Account
+
+Open this once after deploy/local backend start:
+
+- `/api/auth/google`
+
+After consent, tokens are stored in Supabase table `google_oauth_tokens`.
+
+Create the table (once):
+
+```sql
+create table if not exists google_oauth_tokens (
+  id text primary key,
+  access_token text,
+  refresh_token text,
+  scope text,
+  token_type text,
+  expiry_date bigint,
+  updated_at timestamptz default now()
+);
+```

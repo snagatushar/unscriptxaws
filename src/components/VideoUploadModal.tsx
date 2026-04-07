@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { QualificationStage } from '../types';
 import toast from 'react-hot-toast';
+import { uploadVideoToDrive } from '../lib/drive';
 
 interface VideoUploadModalProps {
   isOpen: boolean;
@@ -16,56 +17,54 @@ interface VideoUploadModalProps {
   onSuccess: () => void;
 }
 
-function getBucketName(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/&/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]/g, '')
-    .replace(/-+/g, '-');
-}
-
 export default function VideoUploadModal({ isOpen, onClose, registrationId, round, roundName, eventTitle, onSuccess }: VideoUploadModalProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleUpload = async () => {
     if (!file || !user) return;
 
     // BUG-03 FIX: Validate file type and size before upload
-    const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // 500MB
+    const MAX_VIDEO_SIZE = 800 * 1024 * 1024; // 800MB
     const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
     if (!allowedTypes.includes(file.type)) {
       toast.error('Invalid file type. Only MP4, WebM, and MOV are allowed.');
       return;
     }
     if (file.size > MAX_VIDEO_SIZE) {
-      toast.error('File too large. Maximum video size is 500MB.');
+      toast.error('File too large. Maximum video size is 800MB.');
       return;
     }
 
     setUploading(true);
-    const bucketName = getBucketName(eventTitle);
-
+    setUploadProgress(0);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${registrationId}_${round}_${Date.now()}.${fileExt}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(bucketName)
-        .upload(fileName, file);
+      const { data: regData } = await supabase
+        .from('registrations')
+        .select('participant_name')
+        .eq('id', registrationId)
+        .single();
 
-      if (uploadError) throw uploadError;
+      const finalUserName = regData?.participant_name || profile?.full_name || user.email || 'Student';
 
-      // BUG-01 FIX: Use the correct dynamic bucket, not hardcoded 'videos'
-      const { data: { publicUrl } } = supabase.storage.from(bucketName).getPublicUrl(uploadData.path);
+      const driveUpload = await uploadVideoToDrive({
+        file,
+        eventTitle,
+        userId: user.id,
+        registrationId,
+        round,
+        userName: finalUserName,
+        onProgress: setUploadProgress,
+      });
 
       const { error: dbError } = await supabase.from('submissions').insert({
         registration_id: registrationId,
         round: round,
-        video_url: publicUrl,
-        video_path: uploadData.path,
+        video_url: driveUpload.fileId,
+        video_path: driveUpload.fileId,
         notes: notes || null,
         status: 'submitted'
       });
@@ -79,6 +78,7 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
       toast.error('Upload failed: ' + err.message);
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -119,7 +119,7 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
                   <UploadCloud className="text-fest-gold mb-4 group-hover:scale-110 transition-transform" size={48} />
                 )}
                 <p className="font-bold text-xl mb-1">{file ? 'File Selected' : 'Choose Video File'}</p>
-                <p className="text-sm text-white/40">{file ? file.name : 'MP4, MOV or WebM up to 100MB'}</p>
+                <p className="text-sm text-white/40">{file ? file.name : 'MP4, MOV or WebM up to 800MB'}</p>
               </div>
 
               <div className="relative">
@@ -142,6 +142,20 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
                   <>SUBMIT VIDEO ENTRY</>
                 )}
               </button>
+
+              {uploading && (
+                <div className="space-y-2">
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-fest-gold transition-all duration-200"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-white/60 text-center uppercase tracking-widest">
+                    Uploading... {uploadProgress}%
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

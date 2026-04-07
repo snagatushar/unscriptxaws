@@ -6,8 +6,9 @@ import toast from 'react-hot-toast';
 import { AppRole, CommitteeMember, DatabaseEvent, GeneralRule, HeroSlide, QualificationStage, SiteContent } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { exportToExcel } from '../lib/excel';
-import { openPaymentScreenshot } from '../lib/storage';
+import { openPaymentScreenshot, openIdCard } from '../lib/storage';
 import { logAdminAction } from '../lib/audit';
+import { getDriveStreamUrl } from '../lib/drive';
 import { 
   Activity,
   History,
@@ -56,6 +57,7 @@ type RegistrationRow = {
   team_name: string | null;
   payment_status: 'pending' | 'approved' | 'rejected';
   payment_screenshot_url: string;
+  id_card_url?: string | null;
   payment_review_notes: string | null;
   upload_enabled: boolean;
   submission_status: string;
@@ -92,16 +94,6 @@ function isRoundPast(currentStage: QualificationStage, roundToCheck: string): bo
   return currentIndex > checkIndex;
 }
 
-function getBucketName(title: string): string {
-  if (!title) return 'videos';
-  return title
-    .toLowerCase()
-    .replace(/&/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]/g, '')
-    .replace(/-+/g, '-');
-}
-
 function VideoPreview({ submission, eventTitle, onSave, isPast }: { submission: any; eventTitle: string; onSave: (id: string, score: number, remarks: string) => void; isPast?: boolean }) {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,16 +127,12 @@ function VideoPreview({ submission, eventTitle, onSave, isPast }: { submission: 
 
   useEffect(() => {
     async function getUrl() {
-      const bucketName = getBucketName(eventTitle);
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .createSignedUrl(submission.video_path, 3600);
-
-      if (error) {
+      try {
+        const url = await getDriveStreamUrl(submission.video_path);
+        setVideoUrl(url);
+      } catch (error) {
         console.error('Error creating signed URL:', error);
         setVideoUrl(null);
-      } else {
-        setVideoUrl(data.signedUrl);
       }
       setLoading(false);
     }
@@ -986,6 +974,7 @@ export default function AdminDashboard() {
       college_name: registration.college_name || '',
       team_name: registration.team_name || '',
       payment_status: registration.payment_status,
+      id_card_url: registration.id_card_url || '',
       upload_enabled: registration.upload_enabled ? 'Yes' : 'No',
       submission_status: registration.submission_status,
       review_status: registration.review_status,
@@ -1018,6 +1007,15 @@ export default function AdminDashboard() {
       await openPaymentScreenshot(pathOrUrl);
     } catch (err: any) {
       toast.error(err.message || 'Could not open payment screenshot.');
+    }
+  };
+
+  const handleViewIdCard = async (pathOrUrl: string) => {
+    if (!pathOrUrl) return toast.error('No ID Card available for this registration.');
+    try {
+      await openIdCard(pathOrUrl);
+    } catch (err: any) {
+      toast.error(err.message || 'Could not open ID Card.');
     }
   };
 
@@ -1108,13 +1106,22 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => void handleViewScreenshot(registration.payment_screenshot_url)}
-              className="flex justify-center items-center gap-2 w-full py-3 border border-white/10 border-dashed rounded-xl hover:bg-white/5 hover:border-white/30 transition-all text-xs font-bold uppercase tracking-widest text-fest-gold-light"
-            >
-              View Payment Screenshot <ExternalLink size={14} />
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => void handleViewScreenshot(registration.payment_screenshot_url)}
+                className="flex justify-center items-center gap-2 py-3 border border-white/10 border-dashed rounded-xl hover:bg-white/5 hover:border-white/30 transition-all text-[10px] font-bold uppercase tracking-widest text-fest-gold-light"
+              >
+                Payment <ExternalLink size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleViewIdCard(registration.id_card_url || '')}
+                className="flex justify-center items-center gap-2 py-3 border border-white/10 border-dashed rounded-xl hover:bg-white/5 hover:border-white/30 transition-all text-[10px] font-bold uppercase tracking-widest text-fest-gold-light"
+              >
+                ID Card <ExternalLink size={12} />
+              </button>
+            </div>
 
             <textarea
               value={paymentNotes[registration.id] || ''}

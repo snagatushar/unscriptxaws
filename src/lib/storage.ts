@@ -40,3 +40,15 @@ export async function openPaymentScreenshot(value: string) {
 
   window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
 }
+
+export async function openIdCard(value: string) {
+  const path = extractPaymentsPath(value); // Reuses same extraction logic as they share bucket
+  if (!path) {
+    throw new Error('ID card path is missing.');
+  }
+
+  const { data, error } = await supabase.storage.from('payments').createSignedUrl(path, 60 * 10);
+  if (error) throw error;
+
+  window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+}

@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 import { QualificationStage, Submission } from '../types';
 import { logAdminAction } from '../lib/audit';
+import { getDriveStreamUrl, getEventDriveFiles } from '../lib/drive';
 
 type ContentReview = {
   id: string;
@@ -47,27 +48,7 @@ function isRoundPast(currentStage: QualificationStage, roundToCheck: string): bo
   const checkIndex = STAGE_ORDER.indexOf(roundToCheck as QualificationStage);
   
   if (currentIndex === -1 || checkIndex === -1) return false;
-  // If the user's current stage index is strictly GREATER than the video's round index,
-  // it means they have been promoted PAST that round.
   return currentIndex > checkIndex;
-}
-
-function isRoundActive(currentStage: QualificationStage, roundToCheck: string): boolean {
-  const currentIndex = STAGE_ORDER.indexOf(currentStage);
-  const checkIndex = STAGE_ORDER.indexOf(roundToCheck as QualificationStage);
-  
-  // A round is active if the current stage is the one IMMEDIATELY PRECEDING the round, 
-  // OR if they are currently AT that stage (for 'reviewed' tab).
-  return currentIndex === checkIndex || currentIndex === checkIndex - 1;
-}
-
-function getBucketName(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/&/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^\w-]/g, '')
-    .replace(/-+/g, '-');
 }
 
 function VideoPreview({ submission, eventTitle }: { submission: Submission; eventTitle: string }) {
@@ -76,16 +57,12 @@ function VideoPreview({ submission, eventTitle }: { submission: Submission; even
 
   useEffect(() => {
     async function getUrl() {
-      const bucketName = getBucketName(eventTitle);
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .createSignedUrl(submission.video_path, 3600); // 1 hour access
-
-      if (error) {
+      try {
+        const url = await getDriveStreamUrl(submission.video_path);
+        setVideoUrl(url);
+      } catch (error) {
         console.error('Error creating signed URL:', error);
         setVideoUrl(null);
-      } else {
-        setVideoUrl(data.signedUrl);
       }
       setLoading(false);
     }
@@ -100,7 +77,7 @@ function VideoPreview({ submission, eventTitle }: { submission: Submission; even
 
   if (!videoUrl) return (
     <div className="w-full aspect-video rounded-xl bg-red-500/5 flex items-center justify-center border border-red-500/10 text-red-400 text-xs text-center p-4">
-      Failed to load video. Check if the bucket '{getBucketName(eventTitle)}' exists.
+      Failed to load video from Google Drive.
     </div>
   );
 
@@ -128,22 +105,17 @@ function VideoPreview({ submission, eventTitle }: { submission: Submission; even
 
 export default function ContentReviewDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'pending' | 'reviewed'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'reviewed' | 'drive'>('pending');
   const [submissions, setSubmissions] = useState<ContentReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [driveFiles, setDriveFiles] = useState<any[]>([]);
+  const [loadingDrive, setLoadingDrive] = useState(false);
   const [search, setSearch] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [scores, setScores] = useState<Record<string, number>>({});
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [savingScoreId, setSavingScoreId] = useState<string | null>(null);
-
-  const rounds: { id: QualificationStage; name: string }[] = [
-    { id: 'round_1_qualified', name: 'Round 1' },
-    { id: 'round_2_qualified', name: 'Round 2' },
-    { id: 'semifinal', name: 'Semifinal' },
-    { id: 'final', name: 'Final' },
-  ];
 
   useEffect(() => {
     fetchSubmissions();
@@ -152,7 +124,6 @@ export default function ContentReviewDashboard() {
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
-      // 1. Get assigned events if not admin
       let assignedEventIds: string[] = [];
       if (user?.role !== 'admin') {
         const { data: assignments } = await supabase
@@ -169,7 +140,6 @@ export default function ContentReviewDashboard() {
         }
       }
 
-      // 2. Fetch relevant registrations
       let query = supabase
         .from('registrations')
         .select(`
@@ -190,7 +160,6 @@ export default function ContentReviewDashboard() {
       const rows = (data as unknown as ContentReview[]) || [];
       setSubmissions(rows);
       
-      // Pre-fill notes and scores from DB
       const existingNotes: Record<string, string> = {};
       const existingScores: Record<string, number> = {};
       rows.forEach((reg: any) => {
@@ -210,6 +179,26 @@ export default function ContentReviewDashboard() {
     }
   };
 
+  const fetchDriveFiles = async (eventTitle: string) => {
+    setLoadingDrive(true);
+    try {
+      const { files } = await getEventDriveFiles(eventTitle);
+      setDriveFiles(files);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to sync with Google Drive.');
+    } finally {
+      setLoadingDrive(false);
+    }
+  };
+
+  const selectedEvent = selectedEventId ? submissions.find(s => s.event_id === selectedEventId)?.events : null;
+
+  useEffect(() => {
+    if (activeTab === 'drive' && selectedEvent) {
+      fetchDriveFiles(selectedEvent.title);
+    }
+  }, [activeTab, selectedEventId]);
+
   const saveReviewData = async (submissionId: string) => {
     setSavingScoreId(submissionId);
     try {
@@ -224,7 +213,6 @@ export default function ContentReviewDashboard() {
 
       if (error) throw error;
       
-      // Log the judge action
       if (user) {
         const reg = submissions.find(r => r.submissions.some(s => s.id === submissionId));
         if (reg) {
@@ -268,7 +256,6 @@ export default function ContentReviewDashboard() {
 
       if (error) throw error;
 
-      // Log the judge decision
       if (user) {
         const reg = submissions.find(r => r.id === registrationId);
         if (reg) {
@@ -295,7 +282,6 @@ export default function ContentReviewDashboard() {
     }
   };
 
-  // Group submissions by event for the "Main Page"
   const eventGroups = submissions.reduce((acc, reg) => {
     const eid = reg.event_id;
     if (!acc[eid]) {
@@ -309,7 +295,6 @@ export default function ContentReviewDashboard() {
     }
     acc[eid].count++;
     
-    // Check if it's pending for currently selected review logic
     const isPending = reg.qualification_stage !== 'eliminated' && reg.qualification_stage !== 'winner' && 
              reg.submissions.some(s => {
                if (s.round === 'round_1_qualified' && reg.qualification_stage === 'not_started') return true;
@@ -321,13 +306,11 @@ export default function ContentReviewDashboard() {
     
     if (isPending) acc[eid].pending++;
     return acc;
-  }, {} as Record<string, { id: string, title: string, category: string, count: number, pending: number }>);
+  }, {} as Record<string, any>);
 
   const eventList = Object.values(eventGroups).filter(e => 
     e.title.toLowerCase().includes(search.toLowerCase())
   );
-
-  const selectedEvent = selectedEventId ? eventGroups[selectedEventId] : null;
 
   const currentEventSubmissions = submissions.filter(s => s.event_id === selectedEventId).filter((reg) => {
     const participant = reg.participant_name || reg.participant_user?.full_name || reg.participant_user?.email || '';
@@ -344,8 +327,7 @@ export default function ContentReviewDashboard() {
                return false;
              });
     } else {
-      return reg.qualification_stage === 'eliminated' || reg.qualification_stage === 'winner' || 
-             (reg.qualification_stage !== 'not_started');
+      return reg.qualification_stage === 'eliminated' || reg.qualification_stage === 'winner' || (reg.qualification_stage !== 'not_started');
     }
   });
 
@@ -385,7 +367,13 @@ export default function ContentReviewDashboard() {
                 onClick={() => setActiveTab('reviewed')}
                 className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'reviewed' ? 'bg-white/20 text-white' : 'text-white/60 hover:text-white'}`}
               >
-                Processed
+                Process
+              </button>
+              <button
+                onClick={() => setActiveTab('drive')}
+                className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'drive' ? 'bg-indigo-500 text-white glow-indigo' : 'text-white/60 hover:text-white'}`}
+              >
+                Direct Drive
               </button>
             </div>
           ) : (
@@ -412,7 +400,6 @@ export default function ContentReviewDashboard() {
             <Loader2 className="animate-spin text-fest-gold" size={48} />
           </div>
         ) : !selectedEventId ? (
-          /* EVENT GRID VIEW */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {eventList.map((evt) => (
               <motion.div
@@ -426,7 +413,6 @@ export default function ContentReviewDashboard() {
                   {evt.category}
                 </span>
                 <h3 className="text-2xl font-bold font-display mb-6 group-hover:text-fest-gold transition-colors">{evt.title}</h3>
-                
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-3xl font-black">{evt.count}</div>
@@ -442,6 +428,61 @@ export default function ContentReviewDashboard() {
               </motion.div>
             ))}
           </div>
+        ) : activeTab === 'drive' ? (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4 px-2">
+              <h4 className="text-indigo-400 font-bold uppercase tracking-[0.2em] text-sm">Drive Folder Contents</h4>
+              <button 
+                onClick={() => selectedEvent && fetchDriveFiles(selectedEvent.title)}
+                disabled={loadingDrive}
+                className="text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-indigo-400 transition-colors disabled:opacity-20"
+              >
+                {loadingDrive ? 'Syncing...' : 'Force Refresh'}
+              </button>
+            </div>
+            {loadingDrive ? (
+              <div className="py-20 flex flex-col items-center gap-4 text-white/20">
+                <Loader2 className="animate-spin" size={32} />
+                <span className="text-[10px] uppercase font-bold tracking-[0.3em]">Talking to Google...</span>
+              </div>
+            ) : driveFiles.length === 0 ? (
+              <div className="glass p-20 text-center rounded-[3rem] border-white/5 opacity-50">
+                No videos found in Drive for this event.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                 {driveFiles.map((file) => {
+                   const isLinked = submissions.some(s => s.submissions.some(sub => sub.video_path === file.id));
+                   return (
+                    <motion.div
+                      key={file.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="glass p-5 rounded-3xl border-white/5 hover:border-indigo-500/30 transition-all flex flex-col gap-4 relative overflow-hidden group"
+                    >
+                      <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                         {isLinked ? <CheckCircle2 className="text-green-500" size={16} /> : <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />}
+                      </div>
+                      <div className="overflow-hidden rounded-xl border border-white/10 bg-black aspect-video flex items-center justify-center">
+                         <video 
+                           src={`/api/drive-view?fileId=${file.id}`} 
+                           controls 
+                           className="w-full h-full object-cover" 
+                         />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest line-clamp-1">{file.name}</div>
+                        <div className="flex justify-between items-center text-[8px] text-white/20 font-black uppercase tracking-widest">
+                           <span>{(Number(file.size) / (1024 * 1024)).toFixed(1)} MB</span>
+                           <span>{new Date(file.createdTime).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                   );
+                 })}
+              </div>
+            )}
+          </div>
         ) : currentEventSubmissions.length === 0 ? (
           <div className="glass text-center py-24 rounded-[3rem] border border-white/5">
             <Video className="mx-auto text-white/10 mb-6" size={64} />
@@ -451,7 +492,6 @@ export default function ContentReviewDashboard() {
             </p>
           </div>
         ) : (
-          /* DRILL DOWN VIEW (PARTICIPANTS) */
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             <AnimatePresence mode="popLayout">
               {currentEventSubmissions.map((submission) => (
@@ -479,7 +519,6 @@ export default function ContentReviewDashboard() {
                     </div>
                     <Video className="text-fest-gold" size={24} />
                   </div>
-
                   <div className="space-y-4">
                     {submission.submissions.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(s => (
                       <div key={s.id} className="glass bg-black/40 p-5 rounded-2xl border border-white/5">
@@ -488,8 +527,6 @@ export default function ContentReviewDashboard() {
                           <span className="text-[10px] text-white/30 font-mono">{new Date(s.created_at).toLocaleDateString()}</span>
                         </div>
                         <VideoPreview submission={s} eventTitle={submission.events.title} />
-                        
-                        {/* ONLY SHOW SCORING AND DECISIONS FOR THE ACTIVE ROUND */}
                         {!isRoundPast(submission.qualification_stage, s.round) && (
                           <>
                             <div className="mt-6 pt-6 border-t border-white/5 space-y-4 bg-white/2 rounded-2xl p-4">
@@ -508,76 +545,61 @@ export default function ContentReviewDashboard() {
                                     <span className="text-white/20 font-display font-medium">/ 10</span>
                                   </div>
                                 </div>
-                                
                                 <button
                                   onClick={() => saveReviewData(s.id)}
                                   disabled={savingScoreId === s.id}
                                   className="px-6 py-3 bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark rounded-xl text-[10px] uppercase font-bold tracking-widest transition-all border border-fest-gold/20 flex items-center gap-2"
                                 >
-                                   {savingScoreId === s.id ? <Loader2 className="animate-spin" size={14} /> : <><Save size={14} /> Save Points</>}
+                                   {savingScoreId === s.id ? <Loader2 className="animate-spin" size={14} /> : <><Save size={14} /> Save</>}
                                 </button>
                               </div>
-                              
                               <textarea
                                 value={notes[s.id] || ''}
                                 onChange={(e) => setNotes((current) => ({ ...current, [s.id]: e.target.value }))}
-                                placeholder="Add private judge notes for this entry..."
+                                placeholder="Add private judge notes..."
                                 className="w-full h-20 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none transition-colors"
                               />
                             </div>
-                            
-                                 {/* DECISION BUTTONS ONLY FOR ACTIVE ROUND */}
-                                 {activeTab === 'pending' && !isRoundPast(submission.qualification_stage, s.round) && (
-                                   <div className="grid grid-cols-2 gap-4 mt-8 pt-2 border-t border-white/5 animate-in fade-in slide-in-from-top-2">
-                                     <div className="col-span-2 text-center text-[10px] uppercase tracking-widest text-white/30 mb-2 font-bold select-none">Action for this round entry</div>
-                                     <button
+                            {activeTab === 'pending' && (
+                              <div className="grid grid-cols-2 gap-4 mt-8 pt-2 border-t border-white/5">
+                                <button
                                   onClick={() => handleDecision(submission.id, s.round, 'selected')}
                                   disabled={actionLoading === submission.id}
-                                  className="py-4 bg-fest-gold text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-2 glow-gold shadow-lg"
+                                  className="py-4 bg-fest-gold text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-2 glow-gold"
                                 >
-                                  {actionLoading === submission.id ? <Loader2 className="animate-spin" size={16} /> : <><CheckCircle2 size={16} /> Promote Candidate</>}
+                                  {actionLoading === submission.id ? <Loader2 className="animate-spin" size={16} /> : <><CheckCircle2 size={16} /> Promote</>}
                                 </button>
                                 <button
                                   onClick={() => handleDecision(submission.id, s.round, 'eliminated')}
                                   disabled={actionLoading === submission.id}
                                   className="py-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 border border-red-500/20"
                                 >
-                                  {actionLoading === submission.id ? <Loader2 className="animate-spin" size={16} /> : <><XCircle size={16} /> Eliminate User</>}
+                                  {actionLoading === submission.id ? <Loader2 className="animate-spin" size={16} /> : <><XCircle size={16} /> Eliminate</>}
                                 </button>
                               </div>
                             )}
                           </>
                         )}
-                        
-                        {/* READ-ONLY SCORE DISPLAY FOR PREVIOUS ROUNDS IN HISTORY */}
                         {isRoundPast(submission.qualification_stage, s.round) && (
                           <div className="mt-4 px-4 py-4 bg-fest-gold/5 border border-fest-gold/10 rounded-2xl flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                               <div className="flex flex-col">
-                                <div className="text-[10px] text-fest-gold uppercase tracking-[0.2em] font-black mb-1">Final Result (History)</div>
-                                <div className="text-[10px] font-bold text-white/60">Stage Successfully Completed</div>
+                                <div className="text-[10px] text-fest-gold uppercase tracking-[0.2em] font-black mb-1">Final Result</div>
+                                <div className="text-[10px] font-bold text-white/60">Stage Successful</div>
                               </div>
                               <div className="flex items-center gap-2 bg-fest-gold/10 px-4 py-2 rounded-xl border border-fest-gold/20">
                                 <span className="text-2xl font-display font-black text-fest-gold">{scores[s.id] || 0}</span>
-                                <span className="text-[10px] text-fest-gold/40 font-bold uppercase tracking-widest pt-1">/ 10 PTS</span>
+                                <span className="text-[10px] text-fest-gold/40 font-bold uppercase tracking-widest pt-1">/ 10</span>
                               </div>
                             </div>
-                            
-                            {notes[s.id] && (
-                              <div className="border-t border-fest-gold/5 pt-3">
-                                <div className="text-[8px] text-white/30 uppercase tracking-widest font-bold mb-1">Judge Remarks</div>
-                                <p className="text-xs text-white/70 italic leading-relaxed">"{notes[s.id]}"</p>
-                              </div>
-                            )}
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
-
                   {activeTab === 'reviewed' && (
                     <div className={`text-center w-full uppercase tracking-widest text-[10px] font-black py-4 rounded-xl ${submission.qualification_stage === 'eliminated' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-fest-gold/20 text-fest-gold border border-fest-gold/20'}`}>
-                      STAGE STATUS: {submission.qualification_stage === 'eliminated' ? 'Eliminated' : 'Promoted'}
+                      STATUS: {submission.qualification_stage === 'eliminated' ? 'Eliminated' : 'Promoted'}
                     </div>
                   )}
                 </motion.div>
