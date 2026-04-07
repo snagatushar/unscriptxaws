@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign } from 'lucide-react';
+import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign, Menu, X, ChevronDown, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppRole, CommitteeMember, DatabaseEvent, GeneralRule, HeroSlide, QualificationStage, SiteContent } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +14,7 @@ import {
   Clock,
   Layout
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 type DashboardTab = 'events' | 'payment_reviews' | 'qualified_rounds' | 'users' | 'judges_access' | 'payment_access' | 'registrations' | 'ui' | 'system_logs';
 
@@ -238,6 +239,8 @@ const defaultSiteContent = (contentKey: string): SiteContent => ({
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<DashboardTab>('events');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [activePaymentSection, setActivePaymentSection] = useState<'pending' | 'approved' | 'rejected'>('pending');
@@ -1152,48 +1155,139 @@ export default function AdminDashboard() {
     );
   };
 
+  const TAB_GROUPS = [
+    {
+      label: 'Core',
+      tabs: [
+        { id: 'events' as DashboardTab, label: 'Events', icon: CalendarDays },
+        { id: 'payment_reviews' as DashboardTab, label: 'Payments', icon: DollarSign },
+        { id: 'qualified_rounds' as DashboardTab, label: 'Qualified', icon: CheckCircle2 },
+        { id: 'registrations' as DashboardTab, label: 'Registrations', icon: CheckSquare },
+      ],
+    },
+    {
+      label: 'Access Control',
+      tabs: [
+        { id: 'users' as DashboardTab, label: 'Users', icon: Users },
+        { id: 'judges_access' as DashboardTab, label: 'Judges', icon: ShieldCheck },
+        { id: 'payment_access' as DashboardTab, label: 'Pay Staff', icon: DollarSign },
+      ],
+    },
+    {
+      label: 'System',
+      tabs: [
+        { id: 'ui' as DashboardTab, label: 'Site Editor', icon: SlidersHorizontal },
+        { id: 'system_logs' as DashboardTab, label: 'Audit Logs', icon: History },
+      ],
+    },
+  ];
+
+  const activeTabMeta = TAB_GROUPS.flatMap(g => g.tabs).find(t => t.id === activeTab);
+
   return (
-    <main className="pt-32 pb-24 px-6 min-h-screen">
-      <div className="max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter">
-              System <span className="text-fest-gold">Admin</span>
-            </motion.h1>
-            <p className="text-white/50 mt-3">Create events, manage roles, assign reviewers, and handle registrations event by event.</p>
-          </div>
-        </header>
+    <main className="pt-20 min-h-screen">
+      {/* MOBILE SIDEBAR OVERLAY */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-        <div className="flex gap-4 border-b border-white/10 mb-8 pb-4 overflow-x-auto whitespace-nowrap">
-          {[
-            { id: 'events', label: 'Events', icon: CalendarDays },
-            { id: 'payment_reviews', label: 'Payment Reviews', icon: DollarSign },
-            { id: 'qualified_rounds', label: 'Qualified', icon: CheckCircle2 },
-            { id: 'ui', label: 'UI', icon: SlidersHorizontal },
-            { id: 'users', label: 'Users', icon: Users },
-            { id: 'judges_access', label: 'Judges Access', icon: ShieldCheck },
-            { id: 'payment_access', label: 'Payment Access', icon: DollarSign },
-            { id: 'registrations', label: 'All Registrations', icon: CheckSquare },
-            { id: 'system_logs', label: 'System Logs', icon: History },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as DashboardTab)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold uppercase tracking-widest text-sm transition-all ${
-                activeTab === tab.id ? 'border-b-2 border-fest-gold text-fest-gold bg-white/5' : 'text-white/50 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <tab.icon size={18} /> {tab.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="glass rounded-3xl p-6 md:p-8">
-          {loading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="animate-spin text-fest-gold" size={48} />
+      <div className="flex min-h-[calc(100vh-5rem)]">
+        {/* SIDEBAR */}
+        <aside className={`fixed lg:sticky top-20 left-0 z-50 lg:z-10 h-[calc(100vh-5rem)] w-72 shrink-0 border-r border-white/[0.06] bg-black/80 lg:bg-black/40 backdrop-blur-xl flex flex-col transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+          {/* Sidebar header */}
+          <div className="px-6 pt-8 pb-6 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-display font-extrabold tracking-tight text-white">Admin</h2>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-fest-gold font-bold mt-1">UNSCRIPTX</p>
+              </div>
+              <button onClick={() => setSidebarOpen(false)} className="lg:hidden w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors">
+                <X size={18} />
+              </button>
             </div>
-          ) : activeTab === 'events' ? (
+          </div>
+
+          {/* Nav groups */}
+          <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+            {TAB_GROUPS.map((group) => (
+              <div key={group.label}>
+                <div className="text-[9px] font-black uppercase tracking-[0.35em] text-white/20 px-3 mb-3">{group.label}</div>
+                <div className="space-y-1">
+                  {group.tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group ${
+                          isActive
+                            ? 'bg-fest-gold/10 text-fest-gold shadow-[inset_3px_0_0_0_#d4af37]'
+                            : 'text-white/45 hover:text-white hover:bg-white/[0.04]'
+                        }`}
+                      >
+                        <tab.icon size={16} className={isActive ? 'text-fest-gold' : 'text-white/25 group-hover:text-white/50'} />
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+
+          {/* Sidebar footer */}
+          <div className="px-4 py-5 border-t border-white/[0.06]">
+            <div className="flex items-center gap-3 px-3">
+              <div className="w-8 h-8 rounded-full bg-fest-gold/20 flex items-center justify-center text-fest-gold text-xs font-black">
+                {(user as any)?.email?.charAt(0).toUpperCase() || 'A'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-white/70 truncate">{(user as any)?.email || 'Admin'}</div>
+                <div className="text-[9px] text-white/25 uppercase tracking-widest font-bold">Administrator</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* MAIN CONTENT */}
+        <div className="flex-1 min-w-0">
+          {/* Top bar */}
+          <div className="sticky top-20 z-20 bg-fest-dark/80 backdrop-blur-xl border-b border-white/[0.06] px-6 lg:px-10 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setSidebarOpen(true)} className="lg:hidden w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-white transition-colors">
+                  <Menu size={20} />
+                </button>
+                <div>
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-white/25 font-bold">
+                    <span>Dashboard</span>
+                    <ChevronRight size={10} />
+                    <span className="text-fest-gold">{activeTabMeta?.label}</span>
+                  </div>
+                  <h1 className="text-xl md:text-2xl font-display font-extrabold tracking-tight mt-0.5">
+                    {activeTabMeta?.label || 'Dashboard'}
+                  </h1>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Content area */}
+          <div className="px-6 lg:px-10 py-8">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-32 gap-4">
+                <Loader2 className="animate-spin text-fest-gold" size={40} />
+                <p className="text-xs uppercase tracking-[0.3em] text-white/20 font-bold">Loading data...</p>
+              </div>
+            ) : activeTab === 'events' ? (
             <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8">
               <form onSubmit={handleEventCreate} className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-6">
                 <div className="flex items-center justify-between gap-4">
@@ -2659,6 +2753,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           ) : null}
+          </div>
         </div>
       </div>
     </main>
