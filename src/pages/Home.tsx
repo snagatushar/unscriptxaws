@@ -16,29 +16,7 @@ export default function Home() {
     <main>
       <Hero />
 
-      {/* Stats Section */}
-      <section className="py-12 md:py-20 px-6 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-          {[
-            { label: 'Events', value: '25+' },
-            { label: 'Colleges', value: '50+' },
-            { label: 'Participants', value: '5000+' },
-            { label: 'Prizes', value: '₹5L+' },
-          ].map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.1 }}
-              viewport={{ once: true }}
-              className="text-center p-6 md:p-8 glass rounded-3xl"
-            >
-              <div className="text-3xl md:text-5xl font-display font-extrabold text-fest-gold mb-2">{stat.value}</div>
-              <div className="text-[10px] uppercase tracking-widest text-white/40">{stat.label}</div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+
 
       {/* About Section */}
       <section className="py-16 md:py-20 px-6">
@@ -69,11 +47,11 @@ export default function Home() {
             className="flex-1"
           >
             <div className="w-full aspect-video rounded-[2rem] overflow-hidden border-4 border-white/10 relative">
-               <div className="absolute inset-0 bg-fest-gold/20 mix-blend-overlay"></div>
-               <img src={aboutCollege?.image_url || 'https://picsum.photos/seed/college/800/400'} alt="College Campus" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-fest-gold/20 mix-blend-overlay"></div>
+              <img src={aboutCollege?.image_url || 'https://picsum.photos/seed/college/800/400'} alt="College Campus" className="w-full h-full object-cover" />
             </div>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -88,9 +66,9 @@ export default function Home() {
               {aboutCollege?.body || 'Founded on the principles of innovation and integrity, our institution has been at the forefront of quality education for decades. We believe in nurturing raw talent and providing a dynamic environment where ideas flourish.'}
             </p>
             <div className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest text-white/50">
-               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_one_value || 'A++')}</span> {String(aboutCollege?.metadata?.highlight_one_label || 'NAAC Grade')}</div>
-               <div className="w-1 h-1 bg-white/20 rounded-full"></div>
-               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_two_value || 'Top 10')}</span> {String(aboutCollege?.metadata?.highlight_two_label || 'State Rank')}</div>
+              <div><span className="text-fest-gold text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_one_value || 'A++')}</span> {String(aboutCollege?.metadata?.highlight_one_label || 'NAAC Grade')}</div>
+              <div className="w-1 h-1 bg-white/20 rounded-full"></div>
+              <div><span className="text-fest-gold text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_two_value || 'Top 10')}</span> {String(aboutCollege?.metadata?.highlight_two_label || 'State Rank')}</div>
             </div>
           </motion.div>
         </div>
@@ -112,7 +90,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {eventsLoading ? (
               <div className="col-span-full flex justify-center py-20">
-                 <Loader2 className="animate-spin text-fest-gold" size={48} />
+                <Loader2 className="animate-spin text-fest-gold" size={48} />
               </div>
             ) : events.length > 0 ? (
               events.slice(0, 3).map((event, i) => (
@@ -132,11 +110,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="glass rounded-[2rem] md:rounded-[3rem] p-8 md:p-20 relative overflow-hidden border border-white/5">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-fest-gold to-transparent opacity-30" />
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
               <div className="lg:col-span-1">
                 <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4 text-xs md:text-sm">The Playbook</h2>
-                <h3 className="text-3xl md:text-5xl font-display font-extrabold tracking-tighter mb-6 uppercase">Universal <br/><span className="text-fest-gold-light text-glow-gold">Guidelines</span></h3>
+                <h3 className="text-3xl md:text-5xl font-display font-extrabold tracking-tighter mb-6 uppercase">Universal <br /><span className="text-fest-gold-light text-glow-gold">Guidelines</span></h3>
                 <p className="text-white/40 leading-relaxed text-sm md:text-lg">
                   To ensure a fair and spectacular experience for everyone, please adhere to these core festival regulations.
                 </p>
@@ -167,7 +145,7 @@ export default function Home() {
                   ))
                 ) : (
                   <div className="p-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                     <p className="text-white/20 uppercase tracking-widest text-xs font-bold">Standard rules pending upload</p>
+                    <p className="text-white/20 uppercase tracking-widest text-xs font-bold">Standard rules pending upload</p>
                   </div>
                 )}
               </div>
@@ -207,9 +185,9 @@ export default function Home() {
                   <div className="relative mb-6 mx-auto w-40 h-40 md:w-56 md:h-56">
                     <div className="absolute inset-0 bg-fest-gold/20 rounded-full blur-2xl group-hover:bg-fest-gold/40 transition-all -z-10" />
                     <div className="w-full h-full rounded-full border-2 border-white/10 p-2 group-hover:border-fest-gold/50 transition-all">
-                      <img 
-                        src={member.image_url} 
-                        alt={member.name} 
+                      <img
+                        src={member.image_url}
+                        alt={member.name}
                         className="w-full h-full object-cover rounded-full transition-all duration-500"
                         referrerPolicy="no-referrer"
                       />
@@ -233,7 +211,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto glass rounded-[3rem] p-12 md:p-24 overflow-hidden relative">
           <div className="absolute top-0 right-0 w-96 h-96 bg-fest-gold/10 blur-[100px] -z-10" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 blur-[100px] -z-10" />
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter mb-8 leading-tight">
@@ -242,7 +220,7 @@ export default function Home() {
               <p className="text-white/60 text-lg mb-12 leading-relaxed">
                 UNSCRIPTX is more than just a fest. It's a platform where creativity meets competition, and passion meets performance. Join thousands of students in the biggest celebration of talent.
               </p>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[
                   { icon: Music, title: 'Musical Nights', color: 'text-fest-gold' },
@@ -259,16 +237,16 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            
+
             <div className="relative">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 className="absolute inset-0 border-2 border-dashed border-white/10 rounded-full"
               />
-              <img 
-                src="https://picsum.photos/seed/crowd/800/800" 
-                alt="Fest Crowd" 
+              <img
+                src="https://picsum.photos/seed/crowd/800/800"
+                alt="Fest Crowd"
                 className="rounded-full w-full aspect-square object-cover border-8 border-white/5"
                 referrerPolicy="no-referrer"
               />

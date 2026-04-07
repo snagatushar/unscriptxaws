@@ -4,6 +4,7 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", sans-serif;
+  --font-blowbrush: "BlowBrush", sans-serif;
   
   --color-fest-gold: #d4af37;
   --color-fest-gold-light: #f9e29c;
