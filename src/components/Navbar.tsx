@@ -62,7 +62,7 @@ const Navbar = () => {
             fetchPriority="high"
             loading="eager"
             decoding="async"
-            className="w-40 h-20 object-contain group-hover:scale-105 transition-transform duration-500 filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_8px_rgba(255,215,0,0.2)]"
+            className="w-40 h-20 object-contain filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_8px_rgba(255,215,0,0.2)]"
           />
         </Link>
 

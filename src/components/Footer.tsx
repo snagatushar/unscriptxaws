@@ -11,9 +11,9 @@ const Footer = () => {
             <img
               src="/logo.png"
               alt="UNSCRIPTX Logo"
-              className="w-48 h-24 object-contain group-hover:rotate-6 transition-transform duration-500 filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_15px_rgba(255,215,0,0.15)]"
+              className="w-48 h-24 object-contain filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_15px_rgba(255,215,0,0.15)]"
             />
-            <span className="text-4xl font-display font-bold tracking-tighter text-white">
+            <span className="text-4xl font-blowbrush tracking-widest text-white mt-2">
               UN<span className="text-fest-gold">SCRIPTX</span> 2026
             </span>
           </Link>
