@@ -1,15 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
 
 @font-face {
   font-family: 'BlowBrush';
-  src: url('https://fonts.cdnfonts.com/s/blowbrush/blowbrush.woff2') format('woff2'),
-       url('https://fonts.cdnfonts.com/s/blowbrush/blowbrush.woff') format('woff');
-  font-weight: 400;
+  src: url('./assets/fonts/blowbrush.woff') format('woff');
+  font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
-
-@import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -40,9 +38,5 @@
 
 .text-glow-gold {
   text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-}
-
-.font-blowbrush {
-  font-family: 'BlowBrush', sans-serif !important;
 }
 

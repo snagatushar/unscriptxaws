@@ -1,0 +1,11 @@
+{
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
+  "tailwindCSS.experimental.classRegex": [
+    ["@theme\\s*{([^}]*)}", "--([a-zA-Z0-9-]+):"]
+  ],
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
+}
