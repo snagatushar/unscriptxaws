@@ -65,6 +65,8 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
   }>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', uploadUrl, true);
+    // Do NOT send cookies/credentials to googleapis.com — avoids extra CORS preflight
+    xhr.withCredentials = false;
     xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
 
     xhr.upload.onprogress = (event) => {
@@ -73,11 +75,16 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
       onProgress(percent);
     };
 
-    xhr.onerror = () => reject(new Error('Network error during Google Drive upload'));
+    xhr.onerror = () => {
+      console.error('XHR onerror — status:', xhr.status, 'readyState:', xhr.readyState);
+      reject(new Error('Network error during Google Drive upload. This may be a CORS issue — check browser console.'));
+    };
+
+    xhr.ontimeout = () => reject(new Error('Upload timed out'));
 
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
-        let errMsg = 'Upload to Google Drive failed.';
+        let errMsg = `Upload to Google Drive failed (HTTP ${xhr.status}).`;
         try {
           const parsed = JSON.parse(xhr.responseText);
           errMsg = parsed?.error?.message || errMsg;

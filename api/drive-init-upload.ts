@@ -87,6 +87,12 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'fileName is required' });
     }
 
+    // Extract the browser origin — Google Drive requires this for CORS on resumable uploads
+    const origin = req.headers?.origin
+      || (req.headers?.referer ? new URL(req.headers.referer).origin : null)
+      || process.env.SITE_ORIGIN
+      || 'https://www.unscriptx.com';
+
     const drive = await getDriveClientWithOAuth();
     const folderId = await getOrCreateEventFolderId(drive, eventTitle);
 
@@ -100,8 +106,11 @@ export default async function handler(req: any, res: any) {
     const accessToken = await getGoogleAccessToken();
 
     // Initiate a resumable upload session directly via the Google Drive REST API
+    // The 'origin' query parameter is CRITICAL — without it Google won't return
+    // CORS headers and the browser will block the upload with a network error.
+    const uploadInitUrl = `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,mimeType,size,createdTime&origin=${encodeURIComponent(origin)}`;
     const initResponse = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,mimeType,size,createdTime',
+      uploadInitUrl,
       {
         method: 'POST',
         headers: {
