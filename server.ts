@@ -27,7 +27,7 @@ async function loadApiRoutes() {
     { path: '/api/drive-files', file: './api/drive-files.ts' },
     { path: '/api/drive-list-event', file: './api/drive-list-event.ts' },
     { path: '/api/drive-view', file: './api/drive-view.ts' },
-    { path: '/api/auth/google', file: './api/auth/google.ts' },
+    { path: '/api/auth/google', file: './api/auth/google/index.ts' },
     { path: '/api/auth/google/callback', file: './api/auth/google/callback.ts' },
   ];
 
