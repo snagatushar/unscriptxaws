@@ -229,7 +229,10 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<DashboardTab>('events');
+  const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
+    const saved = sessionStorage.getItem('admin_active_tab') as DashboardTab | null;
+    return saved || 'events';
+  });
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [activePaymentSection, setActivePaymentSection] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [events, setEvents] = useState<DatabaseEvent[]>([]);
@@ -269,7 +272,8 @@ export default function AdminDashboard() {
   const [activeQualifiedStage, setActiveQualifiedStage] = useState<'all' | QualificationStage>('all');
 
   useEffect(() => {
-    void fetchData(true);
+    sessionStorage.setItem('admin_active_tab', activeTab);
+    void fetchData(false);
   }, [activeTab]);
 
   useEffect(() => {

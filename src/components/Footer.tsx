@@ -44,7 +44,7 @@ const Footer = () => {
           <ul className="flex flex-col gap-4">
             <li className="flex items-center gap-3 text-white/60 text-sm">
               <Mail size={16} className="text-fest-gold" />
-              info@UNSCRIPTX2026.com
+              unscriptx@ifim.edu.in
             </li>
             <li className="flex items-center gap-3 text-white/60 text-sm">
               <Phone size={16} className="text-fest-gold-light" />
