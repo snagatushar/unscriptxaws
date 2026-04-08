@@ -1,5 +1,5 @@
-import { getDriveClientWithOAuth } from './_lib/google-oauth';
-import { getSupabaseAdmin, verifyUserToken } from './_lib/supabase-admin';
+import { getDriveClientWithOAuth } from './_lib/google-oauth.js';
+import { getSupabaseAdmin, verifyUserToken } from './_lib/supabase-admin.js';
 
 function setCors(res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');

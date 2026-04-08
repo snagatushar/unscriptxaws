@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { getSupabaseAdmin } from './supabase-admin';
+import { getSupabaseAdmin } from './supabase-admin.js';
 
 const TOKEN_ROW_ID = 'google_drive_owner';
 const DRIVE_SCOPE = ['https://www.googleapis.com/auth/drive.file'];

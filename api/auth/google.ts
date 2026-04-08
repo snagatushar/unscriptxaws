@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
-import { buildGoogleAuthUrl } from '../_lib/google-oauth';
-import { verifyAdmin } from '../_lib/supabase-admin';
+import { buildGoogleAuthUrl } from '../_lib/google-oauth.js';
+import { verifyAdmin } from '../_lib/supabase-admin.js';
 
 function setCors(res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');

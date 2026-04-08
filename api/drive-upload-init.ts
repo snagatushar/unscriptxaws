@@ -1,5 +1,5 @@
-import { getDriveClientWithOAuth } from './_lib/google-oauth';
-import { verifyUserToken } from './_lib/supabase-admin';
+import { getDriveClientWithOAuth } from './_lib/google-oauth.js';
+import { verifyUserToken } from './_lib/supabase-admin.js';
 
 // Reusing same folder logic
 function getFolderIdFromMap(eventTitle: string) {
