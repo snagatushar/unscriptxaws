@@ -52,10 +52,6 @@ export default memo(function EventCard({ event, index }: EventCardProps) {
             <Trophy size={14} className="text-fest-gold" />
             <span>Entry Fee: <strong className="text-white">₹{event.entry_fee}</strong></span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-white/40">
-            <Users size={14} className="text-fest-cyan" />
-            <span>Participants: <strong className="text-white">{event.participants_count || 0}</strong></span>
-          </div>
         </div>
 
         <Link
