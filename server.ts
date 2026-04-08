@@ -18,14 +18,12 @@ app.use(cors({
 }));
 
 // Vercel handlers usually do their own parsing (e.g. formidable for uploads)
-// So we don't automatically add express.json() if we want to mimic Vercel perfectly,
-// but for most cases it's fine.
-// Some routes in this project use formidable (drive-upload), so we should avoid bodyParser on those.
+app.use(express.json());
 
 // Dynamic route loader for the /api folder
 async function loadApiRoutes() {
   const apiFiles = [
-    { path: '/api/drive-upload', file: './api/drive-upload.ts' },
+    { path: '/api/drive-upload-init', file: './api/drive-upload-init.ts' },
     { path: '/api/drive-files', file: './api/drive-files.ts' },
     { path: '/api/drive-list-event', file: './api/drive-list-event.ts' },
     { path: '/api/drive-view', file: './api/drive-view.ts' },
