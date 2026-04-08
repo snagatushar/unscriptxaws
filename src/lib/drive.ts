@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 type UploadToDriveParams = {
   file: File;
   eventTitle: string;
@@ -7,8 +9,6 @@ type UploadToDriveParams = {
   userName: string;
   onProgress?: (percent: number) => void;
 };
-
-import { supabase } from './supabase';
 
 async function getToken() {
   const { data } = await supabase.auth.getSession();
@@ -34,35 +34,9 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
   }>(async (resolve, reject) => {
     try {
       const token = await getToken();
-      
-      // STEP 1: Ask Vercel backend to get a signed Resumable Upload URL from Google
-      const initRes = await fetch('/api/drive-upload-init', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          eventTitle,
-          userId,
-          registrationId,
-          round,
-          userName,
-          fileName: file.name,
-          mimeType: file.type || 'application/octet-stream',
-          size: file.size
-        })
-      });
-
-      const initData = await initRes.json();
-      if (!initRes.ok) throw new Error(initData.error || 'Failed to initialize upload');
-      if (!initData.uploadUrl) throw new Error('No upload URL received from server');
-
-      // STEP 2: Upload directly from the browser to Google Drive via XMLHttpRequest for Progress
       const xhr = new XMLHttpRequest();
-      xhr.open('PUT', initData.uploadUrl, true);
-      // DO NOT set Authorization header here, Google uses the session UUID in the uploadUrl!
-      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.open('POST', '/api/drive-upload', true);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
       xhr.upload.onprogress = (event) => {
         if (!onProgress || !event.lengthComputable) return;
@@ -79,24 +53,22 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
         } catch {}
 
         if (xhr.status < 200 || xhr.status >= 300) {
-          reject(new Error(parsed?.error?.message || 'Upload to Google Drive failed.'));
+          reject(new Error(parsed?.error || 'Upload to Google Drive failed.'));
           return;
         }
 
         if (onProgress) onProgress(100);
-        
-        // Google Drive returns the uploaded file metadata in the response!
+
         resolve({
-          fileId: parsed.id,
-          fileName: initData.safeFileName || parsed.name,
-          mimeType: file.type || 'application/octet-stream',
-          size: file.size.toString(),
-          createdTime: new Date().toISOString()
+          fileId: parsed.fileId,
+          fileName: parsed.fileName,
+          mimeType: parsed.mimeType || file.type || 'application/octet-stream',
+          size: parsed.size?.toString() || file.size.toString(),
+          createdTime: parsed.createdTime || new Date().toISOString()
         });
       };
 
-      // Send raw file bytes directly to Google!
-      xhr.send(file);
+      xhr.send(formData);
     } catch (err: any) {
       reject(err);
     }
