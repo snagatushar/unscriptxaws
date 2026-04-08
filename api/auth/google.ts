@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes } from 'crypto';
 import { buildGoogleAuthUrl } from '../_lib/google-oauth';
 import { verifyAdmin } from '../_lib/supabase-admin';
 
