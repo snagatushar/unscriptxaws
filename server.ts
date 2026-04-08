@@ -13,10 +13,12 @@ const PORT = process.env.BACKEND_PORT || 3000;
 // Enable CORS for frontend development
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Upload-Url', 'X-Content-Range', 'X-Content-Type']
 }));
 
+// Parse raw binary bodies (for chunk uploads) before JSON
+app.use(express.raw({ type: 'application/octet-stream', limit: '10mb' }));
 // Vercel handlers usually do their own parsing (e.g. formidable for uploads)
 app.use(express.json());
 
@@ -25,6 +27,7 @@ async function loadApiRoutes() {
   const apiFiles = [
     { path: '/api/drive-upload', file: './api/drive-upload.ts' },
     { path: '/api/drive-init-upload', file: './api/drive-init-upload.ts' },
+    { path: '/api/drive-upload-chunk', file: './api/drive-upload-chunk.ts' },
     { path: '/api/drive-files', file: './api/drive-files.ts' },
     { path: '/api/drive-list-event', file: './api/drive-list-event.ts' },
     { path: '/api/drive-view', file: './api/drive-view.ts' },

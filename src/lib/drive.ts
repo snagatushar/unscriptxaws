@@ -16,19 +16,29 @@ async function getToken() {
 }
 
 /**
- * Two-phase upload flow that works around Vercel's 4.5MB serverless payload limit:
+ * 4 MB chunks — must be a multiple of 256 KB (Google Drive requirement).
+ * Stays well under Vercel's 4.5 MB serverless body limit.
+ */
+const CHUNK_SIZE = 4 * 1024 * 1024;
+
+/**
+ * Chunked upload flow that works around BOTH:
+ *   1. Vercel's 4.5 MB serverless payload limit
+ *   2. Google Drive CORS restrictions (browser never talks to googleapis.com)
  *
- * Phase 1 — Call our lightweight `/api/drive-init-upload` endpoint.
- *           This creates a Google Drive resumable upload session and returns the
- *           upload URL. Only a tiny JSON body is sent to Vercel.
+ * Phase 1 — POST /api/drive-init-upload
+ *           Server creates a Google Drive resumable upload session.
+ *           Returns the resumable upload URL (only metadata, ~1 KB).
  *
- * Phase 2 — Upload the file directly from the browser to Google Drive using
- *           the resumable upload URL. No payload passes through Vercel at all.
+ * Phase 2 — For each 4 MB chunk of the file:
+ *           PUT /api/drive-upload-chunk
+ *           Our serverless function proxies the chunk to Google Drive.
+ *           Each request is under Vercel's limit and goes through our domain.
  */
 export async function uploadVideoToDrive(params: UploadToDriveParams) {
   const { file, eventTitle, userId, registrationId, round, userName, onProgress } = params;
 
-  // ── Phase 1: Initiate the resumable upload via our serverless function ──
+  // ── Phase 1: Initiate the resumable upload ──────────────────────────────
   const token = await getToken();
   const initRes = await fetch('/api/drive-init-upload', {
     method: 'POST',
@@ -55,62 +65,59 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
 
   const { uploadUrl, fileName } = await initRes.json();
 
-  // ── Phase 2: Upload the file directly to Google Drive ──
-  return new Promise<{
-    fileId: string;
-    fileName: string;
-    mimeType: string;
-    size: string;
-    createdTime: string;
-  }>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('PUT', uploadUrl, true);
-    // Do NOT send cookies/credentials to googleapis.com — avoids extra CORS preflight
-    xhr.withCredentials = false;
-    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+  // ── Phase 2: Send file in chunks through our proxy ───────────────────────
+  const totalSize = file.size;
+  const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+  let offset = 0;
 
-    xhr.upload.onprogress = (event) => {
-      if (!onProgress || !event.lengthComputable) return;
-      const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
+  for (let i = 0; i < totalChunks; i++) {
+    const start = offset;
+    const end = Math.min(start + CHUNK_SIZE, totalSize) - 1;
+    const chunk = file.slice(start, end + 1);
+    const contentRange = `bytes ${start}-${end}/${totalSize}`;
+
+    const chunkRes = await fetch('/api/drive-upload-chunk', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/octet-stream',
+        'X-Upload-Url': uploadUrl,
+        'X-Content-Range': contentRange,
+        'X-Content-Type': file.type || 'application/octet-stream',
+      },
+      body: chunk,
+    });
+
+    if (!chunkRes.ok) {
+      const err = await chunkRes.json().catch(() => ({}));
+      throw new Error(err?.error || `Chunk ${i + 1}/${totalChunks} failed (HTTP ${chunkRes.status})`);
+    }
+
+    const result = await chunkRes.json();
+    offset = end + 1;
+
+    // Update progress (stepped per chunk)
+    if (onProgress) {
+      const percent = Math.min(100, Math.round(((end + 1) / totalSize) * 100));
       onProgress(percent);
-    };
+    }
 
-    xhr.onerror = () => {
-      console.error('XHR onerror — status:', xhr.status, 'readyState:', xhr.readyState);
-      reject(new Error('Network error during Google Drive upload. This may be a CORS issue — check browser console.'));
-    };
-
-    xhr.ontimeout = () => reject(new Error('Upload timed out'));
-
-    xhr.onload = () => {
-      if (xhr.status < 200 || xhr.status >= 300) {
-        let errMsg = `Upload to Google Drive failed (HTTP ${xhr.status}).`;
-        try {
-          const parsed = JSON.parse(xhr.responseText);
-          errMsg = parsed?.error?.message || errMsg;
-        } catch {}
-        reject(new Error(errMsg));
-        return;
-      }
-
+    // Google returned 200 — upload complete
+    if (result.status === 'complete') {
       if (onProgress) onProgress(100);
+      return {
+        fileId: result.fileId,
+        fileName: result.fileName || fileName,
+        mimeType: result.mimeType || file.type || 'application/octet-stream',
+        size: result.size?.toString() || file.size.toString(),
+        createdTime: result.createdTime || new Date().toISOString(),
+      };
+    }
 
-      try {
-        const metadata = JSON.parse(xhr.responseText);
-        resolve({
-          fileId: metadata.id,
-          fileName: metadata.name || fileName,
-          mimeType: metadata.mimeType || file.type || 'application/octet-stream',
-          size: metadata.size?.toString() || file.size.toString(),
-          createdTime: metadata.createdTime || new Date().toISOString(),
-        });
-      } catch {
-        reject(new Error('Failed to parse Google Drive upload response'));
-      }
-    };
+    // result.status === 'incomplete' → continue to next chunk
+  }
 
-    xhr.send(file);
-  });
+  throw new Error('Upload completed all chunks but did not receive completion response from Google Drive');
 }
 
 export async function getDriveStreamUrl(fileId: string) {
