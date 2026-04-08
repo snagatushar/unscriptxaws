@@ -24,6 +24,7 @@ app.use(express.json());
 async function loadApiRoutes() {
   const apiFiles = [
     { path: '/api/drive-upload', file: './api/drive-upload.ts' },
+    { path: '/api/drive-init-upload', file: './api/drive-init-upload.ts' },
     { path: '/api/drive-files', file: './api/drive-files.ts' },
     { path: '/api/drive-list-event', file: './api/drive-list-event.ts' },
     { path: '/api/drive-view', file: './api/drive-view.ts' },

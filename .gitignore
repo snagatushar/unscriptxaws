@@ -7,3 +7,5 @@ coverage/
 .env*
 !.env.example
 server/.tmp-uploads/
+.vercel
+.env*.local

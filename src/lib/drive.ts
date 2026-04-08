@@ -15,63 +15,94 @@ async function getToken() {
   return data.session?.access_token || '';
 }
 
+/**
+ * Two-phase upload flow that works around Vercel's 4.5MB serverless payload limit:
+ *
+ * Phase 1 — Call our lightweight `/api/drive-init-upload` endpoint.
+ *           This creates a Google Drive resumable upload session and returns the
+ *           upload URL. Only a tiny JSON body is sent to Vercel.
+ *
+ * Phase 2 — Upload the file directly from the browser to Google Drive using
+ *           the resumable upload URL. No payload passes through Vercel at all.
+ */
 export async function uploadVideoToDrive(params: UploadToDriveParams) {
   const { file, eventTitle, userId, registrationId, round, userName, onProgress } = params;
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('eventTitle', eventTitle);
-  formData.append('userId', userId);
-  formData.append('registrationId', registrationId);
-  formData.append('round', round);
-  formData.append('userName', userName);
 
+  // ── Phase 1: Initiate the resumable upload via our serverless function ──
+  const token = await getToken();
+  const initRes = await fetch('/api/drive-init-upload', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      eventTitle,
+      userId,
+      registrationId,
+      round,
+      userName,
+      mimeType: file.type || 'application/octet-stream',
+      fileName: file.name,
+      fileSize: file.size,
+    }),
+  });
+
+  if (!initRes.ok) {
+    const errBody = await initRes.json().catch(() => ({}));
+    throw new Error(errBody?.error || `Failed to initiate upload (${initRes.status})`);
+  }
+
+  const { uploadUrl, fileName } = await initRes.json();
+
+  // ── Phase 2: Upload the file directly to Google Drive ──
   return new Promise<{
     fileId: string;
     fileName: string;
     mimeType: string;
     size: string;
     createdTime: string;
-  }>(async (resolve, reject) => {
-    try {
-      const token = await getToken();
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/drive-upload', true);
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+  }>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', uploadUrl, true);
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
 
-      xhr.upload.onprogress = (event) => {
-        if (!onProgress || !event.lengthComputable) return;
-        const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
-        onProgress(percent);
-      };
+    xhr.upload.onprogress = (event) => {
+      if (!onProgress || !event.lengthComputable) return;
+      const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
+      onProgress(percent);
+    };
 
-      xhr.onerror = () => reject(new Error('Network error during Google Drive upload'));
+    xhr.onerror = () => reject(new Error('Network error during Google Drive upload'));
 
-      xhr.onload = () => {
-        let parsed: any = {};
+    xhr.onload = () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        let errMsg = 'Upload to Google Drive failed.';
         try {
-          parsed = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+          const parsed = JSON.parse(xhr.responseText);
+          errMsg = parsed?.error?.message || errMsg;
         } catch {}
+        reject(new Error(errMsg));
+        return;
+      }
 
-        if (xhr.status < 200 || xhr.status >= 300) {
-          reject(new Error(parsed?.error || 'Upload to Google Drive failed.'));
-          return;
-        }
+      if (onProgress) onProgress(100);
 
-        if (onProgress) onProgress(100);
-
+      try {
+        const metadata = JSON.parse(xhr.responseText);
         resolve({
-          fileId: parsed.fileId,
-          fileName: parsed.fileName,
-          mimeType: parsed.mimeType || file.type || 'application/octet-stream',
-          size: parsed.size?.toString() || file.size.toString(),
-          createdTime: parsed.createdTime || new Date().toISOString()
+          fileId: metadata.id,
+          fileName: metadata.name || fileName,
+          mimeType: metadata.mimeType || file.type || 'application/octet-stream',
+          size: metadata.size?.toString() || file.size.toString(),
+          createdTime: metadata.createdTime || new Date().toISOString(),
         });
-      };
+      } catch {
+        reject(new Error('Failed to parse Google Drive upload response'));
+      }
+    };
 
-      xhr.send(formData);
-    } catch (err: any) {
-      reject(err);
-    }
+    xhr.send(file);
   });
 }
 

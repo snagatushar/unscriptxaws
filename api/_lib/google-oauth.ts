@@ -87,3 +87,32 @@ export async function getDriveClientWithOAuth() {
 
   return google.drive({ version: 'v3', auth: oauth2Client });
 }
+
+/**
+ * Returns a valid Google OAuth2 access token (refreshing if needed).
+ * Useful for direct REST API calls (e.g. initiating a resumable upload).
+ */
+export async function getGoogleAccessToken(): Promise<string> {
+  const oauth2Client = createOAuthClient();
+  const stored = await getStoredGoogleTokens();
+  oauth2Client.setCredentials({
+    access_token: stored.access_token || undefined,
+    refresh_token: stored.refresh_token || undefined,
+    expiry_date: stored.expiry_date || undefined,
+    scope: stored.scope || undefined,
+    token_type: stored.token_type || undefined,
+  });
+
+  const tokenResponse = await oauth2Client.getAccessToken();
+  if (!tokenResponse?.token) {
+    throw new Error('Unable to obtain Google access token.');
+  }
+
+  // Persist any refreshed tokens
+  const fresh = oauth2Client.credentials;
+  if (fresh?.access_token || fresh?.refresh_token) {
+    await saveGoogleTokens(fresh);
+  }
+
+  return tokenResponse.token;
+}
