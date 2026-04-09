@@ -25,7 +25,7 @@ export default async function handler(req: any, res: any) {
     const rootFolderId = process.env.GDRIVE_ROOT_FOLDER_ID;
     if (!rootFolderId) throw new Error('GDRIVE_ROOT_FOLDER_ID not configured');
 
-    const safeTitle = eventTitle.replace(/[^a-zA-Z0-9 ]/g, '_').trim();
+    const safeTitle = (eventTitle || 'Event').replace(/[^a-zA-Z0-9 ]/g, '').trim() || 'Event';
 
     // 1. Find the event folder
     const listResponse = await drive.files.list({

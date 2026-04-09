@@ -82,7 +82,7 @@ async function getOrCreateEventFolderId(drive: any, eventTitle: string) {
   if (mappedFolderId) return mappedFolderId;
 
   const rootFolderId = requiredRootFolderId();
-  const safeTitle = eventTitle.replace(/'/g, "\\'");
+  const safeTitle = sanitize(eventTitle, 'Event');
   const listResponse = await drive.files.list({
     q: `mimeType='application/vnd.google-apps.folder' and '${rootFolderId}' in parents and name='${safeTitle}' and trashed=false`,
     fields: 'files(id,name)',
@@ -94,7 +94,7 @@ async function getOrCreateEventFolderId(drive: any, eventTitle: string) {
 
   const createResponse = await drive.files.create({
     requestBody: {
-      name: eventTitle,
+      name: safeTitle,
       mimeType: 'application/vnd.google-apps.folder',
       parents: [rootFolderId],
     },
