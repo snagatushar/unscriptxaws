@@ -1,10 +1,14 @@
 import { getDriveClientWithOAuth, getGoogleAccessToken } from './_lib/google-oauth.js';
 import { verifyUserToken } from './_lib/supabase-admin.js';
 
+const ALLOWED_ORIGIN = process.env.SITE_ORIGIN || 'https://www.unscriptx.com';
+
 function setCors(res: any) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // HIGH-2: Restrict CORS to production domain only, not wildcard
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Vary', 'Origin');
 }
 
 function requiredRootFolderId() {
@@ -31,7 +35,8 @@ async function getOrCreateEventFolderId(drive: any, eventTitle: string) {
   if (mappedFolderId) return mappedFolderId;
 
   const rootFolderId = requiredRootFolderId();
-  const safeTitle = eventTitle.replace(/'/g, "\\'");
+  // MED-1: Use the sanitize helper to prevent query injection and handle special chars
+  const safeTitle = sanitize(eventTitle, 'Event');
   const listResponse = await drive.files.list({
     q: `mimeType='application/vnd.google-apps.folder' and '${rootFolderId}' in parents and name='${safeTitle}' and trashed=false`,
     fields: 'files(id,name)',
@@ -43,7 +48,7 @@ async function getOrCreateEventFolderId(drive: any, eventTitle: string) {
 
   const createResponse = await drive.files.create({
     requestBody: {
-      name: eventTitle,
+      name: safeTitle, // Use sanitized title here too
       mimeType: 'application/vnd.google-apps.folder',
       parents: [rootFolderId],
     },

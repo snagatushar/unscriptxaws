@@ -39,8 +39,8 @@ export async function verifyAdminOrJudge(req: any) {
   const supabase = getSupabaseAdmin();
   const { data: profile, error } = await supabase.from('users').select('role').eq('id', user.id).single();
   
-  if (error || (profile?.role !== 'admin' && profile?.role !== 'judge')) {
-     throw new Error('Insufficient permissions. Admin or judge role required.');
+  if (error || (profile?.role !== 'admin' && profile?.role !== 'content_reviewer')) {
+     throw new Error('Insufficient permissions. Admin or content reviewer role required.');
   }
   return user;
 }

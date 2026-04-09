@@ -1,10 +1,14 @@
 import { getDriveClientWithOAuth } from './_lib/google-oauth.js';
 import { verifyAdminOrJudge } from './_lib/supabase-admin.js';
 
+const ALLOWED_ORIGIN = process.env.SITE_ORIGIN || 'https://www.unscriptx.com';
+
 function setCors(res: any) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // HIGH-2: Restrict CORS to production domain only, not wildcard
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Vary', 'Origin');
 }
 
 export default async function handler(req: any, res: any) {

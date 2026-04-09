@@ -63,8 +63,10 @@ export default function Login() {
 
   useEffect(() => {
     if (isLoading || !user) return;
-
-    navigate(nextPath || '/', { replace: true });
+    // HIGH-1: Validate redirect path is relative to prevent open redirect attacks
+    // Only allow paths that start with '/' and don't start with '//' (protocol-relative URLs)
+    const isSafeRedirect = nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//');
+    navigate(isSafeRedirect ? nextPath : '/', { replace: true });
   }, [user, isLoading, navigate, nextPath]);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -188,7 +190,11 @@ export default function Login() {
                   }
                   try {
                     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-                      redirectTo: `${window.location.origin}/`,
+                      // LOW-2: Use explicit production origin, not window.location.origin
+                      // window.location.origin could be http:// in dev environments
+                      redirectTo: import.meta.env.VITE_SITE_URL 
+                        ? `${import.meta.env.VITE_SITE_URL}/`
+                        : `${window.location.origin}/`,
                     });
                     if (error) throw error;
                     toast.success('Password reset link sent to your email!');

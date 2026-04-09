@@ -116,10 +116,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      setIsLoading(true);
-      window.setTimeout(() => {
-        void applySession(newSession);
-      }, 0);
+      // TOKEN_REFRESHED fires every time the tab regains focus (Supabase silently
+      // extends the session). The user identity is IDENTICAL — only update the
+      // session token in state. Do NOT call setUser() here: even if the new object
+      // has the same data, it is a different reference, which would trigger every
+      // downstream useEffect([user]) and cause dashboards to re-fetch/re-render.
+      if (event === 'TOKEN_REFRESHED') {
+        console.debug('[Auth] Token refreshed silently — session updated, user reference preserved');
+        setSession(newSession);
+        // ← intentionally NOT calling setUser() to keep the same object reference
+        return;
+      }
+
+      // For genuine auth changes (SIGNED_IN, SIGNED_OUT, USER_UPDATED),
+      // only show the loading state if the user identity actually changed.
+      const currentUserId = newSession?.user?.id ?? null;
+      setUser(prev => {
+        const prevId = prev?.id ?? null;
+        if (prevId === currentUserId) {
+          // Same user — silently update session without a loading flash
+          console.debug('[Auth] Auth event', event, '— same user, silent update');
+          setSession(newSession);
+          return prev;
+        }
+        // Different user (or signed out) — run full applySession with loading
+        console.debug('[Auth] Auth event', event, '— user changed, applying session');
+        setIsLoading(true);
+        window.setTimeout(() => {
+          void applySession(newSession);
+        }, 0);
+        return prev; // applySession will call setUser properly
+      });
     });
 
     return () => {

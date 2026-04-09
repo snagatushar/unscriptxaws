@@ -58,8 +58,16 @@ export default async function handler(req: any, res: any) {
     if (!uploadUrl) {
       return res.status(400).json({ error: 'Missing X-Upload-Url header' });
     }
+    // CRIT-2: Prevent SSRF — only allow Google Drive resumable upload URLs
+    if (!uploadUrl.startsWith('https://www.googleapis.com/upload/drive/')) {
+      return res.status(400).json({ error: 'Invalid upload URL' });
+    }
     if (!contentRange) {
       return res.status(400).json({ error: 'Missing X-Content-Range header' });
+    }
+    // Validate Content-Range format: bytes start-end/total
+    if (!/^bytes \d+-\d+\/\d+$/.test(contentRange)) {
+      return res.status(400).json({ error: 'Invalid Content-Range format' });
     }
 
     // Read the raw binary chunk
@@ -100,11 +108,11 @@ export default async function handler(req: any, res: any) {
     }
 
     // Unexpected error from Google Drive
+    // LOW-3: Log details server-side only — never send raw API responses to client
     const errText = await driveRes.text();
     console.error('Google Drive chunk error:', driveRes.status, errText);
     return res.status(502).json({
-      error: `Google Drive returned HTTP ${driveRes.status}`,
-      details: errText,
+      error: `Upload failed. Please try again.`,
     });
   } catch (error: any) {
     console.error('Chunk upload error:', error);

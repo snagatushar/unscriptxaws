@@ -112,8 +112,11 @@ export default function UserDashboard() {
     }
 
   useEffect(() => {
+    // Use user?.id (stable string) not user (object reference).
+    // Using the full user object would cause re-fetch every time Supabase
+    // fires any auth event that rebuilds the User object, even for the same user.
     fetchRegistrations();
-  }, [user]);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (

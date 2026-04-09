@@ -120,23 +120,37 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
   throw new Error('Upload completed all chunks but did not receive completion response from Google Drive');
 }
 
-export async function getDriveStreamUrl(fileId: string) {
+/**
+ * Returns an authenticated blob URL for streaming a Drive video.
+ * The JWT token is sent as a Bearer header — NOT as a URL query param —
+ * so it never appears in browser history, server logs, or Referer headers.
+ */
+export async function getDriveStreamUrl(fileId: string): Promise<string> {
   if (!fileId) {
     throw new Error('Missing file id');
   }
   const token = await getToken();
-  return `/api/drive-view?fileId=${encodeURIComponent(fileId)}&token=${token}`;
+  // Fetch the video stream through our authenticated proxy
+  const response = await fetch(`/api/drive-view?fileId=${encodeURIComponent(fileId)}`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to load video (HTTP ${response.status})`);
+  }
+  const blob = await response.blob();
+  // Create a temporary object URL — revoked automatically when the component unmounts
+  return URL.createObjectURL(blob);
 }
 
 export async function getEventDriveFiles(eventTitle: string) {
   const token = await getToken();
   const url = `/api/drive-list-event?eventTitle=${encodeURIComponent(eventTitle)}`;
   const response = await fetch(url, {
-    headers: { 'Authorization': `Bearer ${token}` }
+    headers: { 'Authorization': `Bearer ${token}` },
   });
   if (!response.ok) {
-     const err = await response.json().catch(() => ({}));
-     throw new Error(err.error || 'Failed to fetch event files from Drive');
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to fetch event files from Drive');
   }
   return response.json() as Promise<{ files: any[] }>;
 }
