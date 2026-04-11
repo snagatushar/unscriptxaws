@@ -254,6 +254,9 @@ export default function AdminDashboard() {
   const [registrationSearch, setRegistrationSearch] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
   const [qualificationSearch, setQualificationSearch] = useState('');
+  const [createdEventsSearch, setCreatedEventsSearch] = useState('');
+  const [createdEventsCategory, setCreatedEventsCategory] = useState('all');
+  const [isCreatedEventsExpanded, setIsCreatedEventsExpanded] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([]);
   const [paymentNotes, setPaymentNotes] = useState<Record<string, string>>({});
@@ -566,6 +569,20 @@ export default function AdminDashboard() {
   const selectedRegistrationEvent = events.find((event) => event.id === selectedRegistrationEventId) || null;
   const selectedPaymentEvent = events.find((event) => event.id === selectedPaymentEventId) || null;
   const selectedQualifiedEvent = events.find((event) => event.id === selectedQualifiedEventId) || null;
+
+  const uniqueEventCategories = useMemo(() => {
+    return Array.from(new Set(events.map(e => e.category))).filter(Boolean);
+  }, [events]);
+
+  const filteredCreatedEvents = useMemo(() => {
+    return events.filter((event) => {
+      const matchesSearch = 
+        event.title.toLowerCase().includes(createdEventsSearch.toLowerCase()) ||
+        event.category.toLowerCase().includes(createdEventsSearch.toLowerCase());
+      const matchesCategory = createdEventsCategory === 'all' || event.category === createdEventsCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [events, createdEventsSearch, createdEventsCategory]);
 
   const resetEventForm = () => {
     setNewEvent(emptyEventForm);
@@ -1396,59 +1413,106 @@ export default function AdminDashboard() {
                 </button>
               </form>
 
-              <div className="rounded-3xl border border-white/10 bg-black/20 p-6">
-                <div className="flex items-center justify-between gap-4 mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold">Created Events</h3>
-                    <p className="text-white/45 text-sm mt-1">Each event has its own front image. You can edit or delete any event here.</p>
+              <div className="rounded-3xl border border-white/10 bg-black/20 p-6 transition-all duration-300">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                  <div
+                    onClick={() => setIsCreatedEventsExpanded(!isCreatedEventsExpanded)}
+                    className="flex-1 cursor-pointer group"
+                  >
+                    <h3 className="text-xl font-bold transition-colors group-hover:text-fest-gold">Created Events</h3>
+                    <p className="text-white/45 text-sm mt-1">Click the arrow to expand and view, edit, or delete any of the {events.length} events created.</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+                      <input
+                        type="text"
+                        placeholder="Search events by title..."
+                        value={createdEventsSearch}
+                        onChange={(e) => {
+                          setCreatedEventsSearch(e.target.value);
+                          if (e.target.value.trim() !== '') {
+                            setIsCreatedEventsExpanded(true);
+                          }
+                        }}
+                        className="pl-12 pr-4 py-2 bg-black/40 border border-white/10 rounded-xl w-full text-sm focus:border-fest-gold outline-none transition-all"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatedEventsExpanded(!isCreatedEventsExpanded)}
+                      className={`w-10 h-10 shrink-0 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all duration-300 hover:bg-white/10 ${isCreatedEventsExpanded ? 'rotate-180 bg-fest-gold/10 border-fest-gold/30 text-fest-gold' : 'text-white/60'}`}
+                    >
+                      <ChevronDown size={20} />
+                    </button>
                   </div>
                 </div>
 
-                {events.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-white/35">
-                    No events created yet.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {events.map((event) => {
-                      const eventRegistrationCount = registrations.filter((registration) => registration.event_id === event.id).length;
-                      return (
-                        <div key={event.id} className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-                          <div className="flex items-center gap-4 min-w-0">
-                            <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 bg-black/20 shrink-0">
-                              {event.image_url ? (
-                                <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-white/25 text-[10px] uppercase tracking-widest">
-                                  No Image
-                                </div>
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-bold text-lg">{event.title}</div>
-                            <div className="text-sm text-white/55 mt-1">{event.category} • ₹{event.entry_fee}</div>
-                            <div className="text-xs text-white/35 mt-2">{eventRegistrationCount} registrations</div>
-                            </div>
+                <AnimatePresence>
+                  {isCreatedEventsExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-8 mt-6 border-t border-white/10">
+                        {events.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-white/35">
+                            No events created yet.
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => startEditingEvent(event)}
-                            className="px-4 py-3 rounded-2xl bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
-                          >
-                            <Pencil size={16} /> Edit Event
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleDeleteEvent(event.id, event.title)}
-                            className="px-4 py-3 rounded-2xl bg-red-500/10 text-red-300 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
-                          >
-                            <Trash2 size={16} /> Delete Event
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        ) : filteredCreatedEvents.length === 0 ? (
+                          <div className="rounded-2xl border border-dashed border-white/10 py-16 text-center text-white/35">
+                            No events match your search.
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {filteredCreatedEvents.map((event) => {
+                              const eventRegistrationCount = registrations.filter((registration) => registration.event_id === event.id).length;
+                              return (
+                                <div key={event.id} className="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                                  <div className="flex items-center gap-4 min-w-0">
+                                    <div className="w-24 h-24 rounded-2xl overflow-hidden border border-white/10 bg-black/20 shrink-0">
+                                      {event.image_url ? (
+                                        <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-white/25 text-[10px] uppercase tracking-widest">
+                                          No Image
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="font-bold text-lg">{event.title}</div>
+                                      <div className="text-sm text-white/55 mt-1">{event.category} • ₹{event.entry_fee}</div>
+                                      <div className="text-xs text-white/35 mt-2">{eventRegistrationCount} registrations</div>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col sm:flex-row gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => startEditingEvent(event)}
+                                      className="px-4 py-3 rounded-2xl bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                                    >
+                                      <Pencil size={16} /> Edit Event
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteEvent(event.id, event.title)}
+                                      className="px-4 py-3 rounded-2xl bg-red-500/10 text-red-300 hover:bg-red-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                                    >
+                                      <Trash2 size={16} /> Delete Event
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           ) : activeTab === 'payment_reviews' ? (
