@@ -11,6 +11,19 @@ export default function Home() {
   const { rules, loading: rulesLoading } = useGeneralRules();
   const { content: aboutEvent } = useSiteContent('home_about_event');
   const { content: aboutCollege } = useSiteContent('home_about_college');
+  const { content: whyJoin } = useSiteContent('home_why_join');
+
+  const parseTitle = (raw: string | null | undefined) => {
+    if (!raw) return <>Why wait for the <span className="text-fest-gold">future</span> when you can create it?</>;
+    const parts = raw.split(/\[(.*?)\]/g);
+    return (
+      <>
+        {parts.map((part, i) => 
+          i % 2 === 1 ? <span key={i} className="text-fest-gold">{part}</span> : <span key={i}>{part}</span>
+        )}
+      </>
+    );
+  };
 
   return (
     <main>
@@ -215,18 +228,18 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter mb-8 leading-tight">
-                Why wait for the <span className="text-fest-gold">future</span> when you can create it?
+                {parseTitle(whyJoin?.title)}
               </h2>
               <p className="text-white/60 text-lg mb-12 leading-relaxed">
-                UNSCRIPTX is more than just a fest. It's a platform where creativity meets competition, and passion meets performance. Join thousands of students in the biggest celebration of talent.
+                {whyJoin?.body || "UNSCRIPTX is more than just a fest. It's a platform where creativity meets competition, and passion meets performance. Join thousands of students in the biggest celebration of talent."}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[
-                  { icon: Music, title: 'Musical Nights', color: 'text-fest-gold' },
-                  { icon: Zap, title: 'High Energy', color: 'text-fest-gold-light' },
-                  { icon: Sparkles, title: 'Star Guests', color: 'text-fest-gold' },
-                  { icon: Palette, title: 'Artistic Souls', color: 'text-white' },
+                  { icon: Music, title: whyJoin?.metadata?.f1 || 'Musical Nights', color: 'text-fest-gold' },
+                  { icon: Zap, title: whyJoin?.metadata?.f2 || 'High Energy', color: 'text-fest-gold-light' },
+                  { icon: Sparkles, title: whyJoin?.metadata?.f3 || 'Star Guests', color: 'text-fest-gold' },
+                  { icon: Palette, title: whyJoin?.metadata?.f4 || 'Artistic Souls', color: 'text-white' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl glass flex items-center justify-center ${item.color}`}>
