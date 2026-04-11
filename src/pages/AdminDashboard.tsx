@@ -1284,26 +1284,26 @@ export default function AdminDashboard() {
 
           {/* Sidebar footer */}
           <div className="px-4 py-5 border-t border-white/[0.06] space-y-3">
-            <button
-               onClick={async () => {
-                 try {
-                   const { data } = await supabase.auth.getSession();
-                   if (data.session?.access_token) {
-                     window.location.href = `/api/auth/google?token=${data.session.access_token}`;
-                   } else {
-                     toast.error("Not fully authenticated. Please log in again.");
-                   }
-                 } catch (e: any) {
-                   toast.error("Failed. " + e.message);
-                 }
-               }}
-               className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 hover:text-blue-300 border border-blue-500/20 font-bold transition-all"
-             >
-               🔌 Connect Google Drive
-            </button>
-
-            <div className="flex items-center gap-3 px-3 mt-4">
-              <div className="w-8 h-8 rounded-full bg-fest-gold/20 flex items-center justify-center text-fest-gold text-xs font-black">
+            <div 
+              className="flex items-center gap-3 px-3 mt-4 group cursor-default"
+              onDoubleClick={async () => {
+                try {
+                  const { data } = await supabase.auth.getSession();
+                  if (data.session?.access_token) {
+                    toast.loading("Connecting to Google Drive...", { duration: 2000 });
+                    setTimeout(() => {
+                      window.location.href = `/api/auth/google?token=${data.session.access_token}`;
+                    }, 500);
+                  } else {
+                    toast.error("Not fully authenticated. Please log in again.");
+                  }
+                } catch (e: any) {
+                  toast.error("Failed. " + e.message);
+                }
+              }}
+              title="Double click to reconnect Google Drive"
+            >
+              <div className="w-8 h-8 rounded-full bg-fest-gold/20 flex items-center justify-center text-fest-gold text-xs font-black transition-transform group-hover:scale-110">
                 {(user as any)?.email?.charAt(0).toUpperCase() || 'A'}
               </div>
               <div className="flex-1 min-w-0">
