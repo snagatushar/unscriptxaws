@@ -55,6 +55,7 @@ type RegistrationRow = {
   phone: string;
   college_name: string | null;
   team_name: string | null;
+  team_size: number;
   payment_status: 'pending' | 'approved' | 'rejected';
   payment_screenshot_url: string;
   id_card_url?: string | null;
@@ -314,6 +315,7 @@ export default function AdminDashboard() {
             phone,
             college_name,
             team_name,
+            team_size,
             payment_status,
             payment_screenshot_url,
             id_card_url,
@@ -362,6 +364,7 @@ export default function AdminDashboard() {
               phone,
               college_name,
               team_name,
+              team_size,
               payment_status,
               payment_screenshot_url,
               id_card_url,
@@ -1098,9 +1101,15 @@ export default function AdminDashboard() {
                 <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Phone</div>
                 <div className="font-semibold">{registration.phone}</div>
               </div>
-              <div className="rounded-2xl bg-white/5 p-3.5">
-                <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Team</div>
-                <div className="font-semibold">{registration.team_name || 'Solo'}</div>
+              <div className="rounded-2xl bg-fest-gold/5 border border-fest-gold/20 p-3.5 col-span-2 flex justify-between items-center">
+                <div>
+                  <div className="text-fest-gold/80 text-[10px] uppercase tracking-widest mb-1 font-black">Total Participants</div>
+                  <div className="font-black text-fest-gold text-lg">{registration.team_size || 1} {registration.team_size === 1 ? 'Member' : 'Members'}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Team Name</div>
+                  <div className="font-semibold">{registration.team_name || 'Solo'}</div>
+                </div>
               </div>
               <div className="rounded-2xl bg-white/5 p-3.5">
                 <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">College</div>
@@ -1824,7 +1833,10 @@ export default function AdminDashboard() {
                                         <div className="font-bold tracking-tight text-white/90 truncate">{registration.college_name || 'Not specified'}</div>
                                       </div>
                                       <div className="rounded-2xl bg-white/5 p-5 border border-white/5">
-                                        <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5">Team Name</div>
+                                        <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5 flex justify-between">
+                                          <span>Team Name</span>
+                                          <span>Size: {registration.team_size || 1}</span>
+                                        </div>
                                         <div className="font-bold tracking-tight text-white/90">{registration.team_name || 'Solo Participant'}</div>
                                       </div>
                                       <div className="rounded-2xl bg-white/5 p-5 border border-white/5 group">
@@ -2667,7 +2679,7 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="px-10 py-8 text-white/50 text-sm">
                                   <div className="font-medium text-white/70">{reg.college_name}</div>
-                                  <div className="text-xs uppercase tracking-widest mt-1 opacity-40">{reg.team_name || 'Solo'}</div>
+                                  <div className="text-xs uppercase tracking-widest mt-1 opacity-40">{reg.team_name || 'Solo'} • {reg.team_size || 1} Members</div>
                                 </td>
                                 <td className="px-10 py-8">
                                   <div className="flex flex-col gap-2">

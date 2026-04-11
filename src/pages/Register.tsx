@@ -181,7 +181,7 @@ export default function Register() {
           </h1>
           <p className="text-white/60 text-xl mb-12 leading-relaxed max-w-lg">
             Registration for <strong className="text-fest-gold">{event?.title}</strong> is almost complete. Entry fee is
-            {' '}₹{event?.entry_fee}.
+            {' '}₹{event?.entry_fee} per participant. Total Amount: <strong className="text-fest-gold">₹{(event?.entry_fee || 0) * teamSize}</strong>
           </p>
 
           <div className="space-y-6 glass p-8 rounded-3xl border-l-4 border-fest-pink">
@@ -191,7 +191,7 @@ export default function Register() {
               {event?.payment_account_number && <li>Account Number: <strong className="text-fest-gold">{event.payment_account_number}</strong></li>}
               {event?.payment_ifsc && <li>IFSC: <strong className="text-fest-gold">{event.payment_ifsc}</strong></li>}
               {event?.payment_upi_id && <li>UPI ID: <strong className="text-fest-gold">{event.payment_upi_id}</strong></li>}
-              <li>Exact Amount: <strong className="text-xl text-fest-gold">₹{event?.entry_fee}</strong></li>
+              <li>Exact Amount for {teamSize} participants: <strong className="text-xl text-fest-gold">₹{(event?.entry_fee || 0) * teamSize}</strong></li>
               <li>Upload a clear screenshot of the successful payment.</li>
               <li>Upload a clear photo/scan of your <strong>Student ID Card</strong>.</li>
               <li>Maximum file size for each: <strong className="text-fest-gold">70KB</strong>.</li>
