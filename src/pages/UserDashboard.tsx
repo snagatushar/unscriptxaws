@@ -23,6 +23,7 @@ type UserRegistration = {
     title: string;
     category: string;
   };
+  sub_category: string | null;
   submissions?: Submission[];
 };
 
@@ -94,6 +95,7 @@ export default function UserDashboard() {
             qualification_notes,
             review_notes,
             payment_review_notes,
+            sub_category,
             events ( id, title, category ),
             submissions (*)
           `)
@@ -160,7 +162,14 @@ export default function UserDashboard() {
                 </div>
 
                 <div>
-                  <h3 className="text-xl md:text-2xl font-display font-bold mb-2 pr-16 leading-tight">{registration.events.title}</h3>
+                  <h3 className="text-xl md:text-2xl font-display font-bold mb-2 pr-16 leading-tight">
+                    {registration.events.title}
+                    {registration.sub_category && (
+                      <span className="block text-fest-gold text-sm font-bold mt-1 tracking-normal">
+                         {registration.sub_category}
+                      </span>
+                    )}
+                  </h3>
                   <p className="text-xs uppercase tracking-[0.25em] text-white/35">Event Registration</p>
                 </div>
 

@@ -383,6 +383,7 @@ export default function AdminDashboard() {
               review_status,
               qualification_stage,
               qualification_notes,
+              sub_category,
               participant_user:users!registrations_user_id_fkey ( full_name, email ),
               event:events!registrations_event_id_fkey ( title, category ),
               submissions (*, internal_reviews(score, judge_remarks))
@@ -864,6 +865,7 @@ export default function AdminDashboard() {
         'Email': reg.email || reg.participant_user?.email || 'N/A',
         'Phone': reg.phone || 'N/A',
         'Event': reg.event?.title || 'N/A',
+        'Category/Slot': reg.sub_category || 'N/A',
         'Current Stage': reg.qualification_stage.replace(/_/g, ' ').toUpperCase(),
         'Latest Score': currentSub?.internal_reviews?.[0]?.score || 0,
         'Judge Remarks': currentSub?.internal_reviews?.[0]?.judge_remarks || 'No notes',
@@ -1067,6 +1069,7 @@ export default function AdminDashboard() {
       phone: registration.phone,
       college_name: registration.college_name || '',
       team_name: registration.team_name || '',
+      sub_category: registration.sub_category || '',
       payment_status: registration.payment_status,
       id_card_url: registration.id_card_url || '',
       upload_enabled: registration.upload_enabled ? 'Yes' : 'No',

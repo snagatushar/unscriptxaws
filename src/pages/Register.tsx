@@ -164,7 +164,9 @@ export default function Register() {
           </div>
           <h2 className="text-3xl font-display font-bold mb-4">Registration Successful</h2>
           <p className="text-white/50 mb-10">
-            Wait for 24 hours for the payment approval. Once the payment is approved, you will get the option to upload the video for your respective event.
+            You've successfully registered for <strong className="text-white">{event?.title}</strong>
+            {subCategory && <span> in the <strong className="text-fest-gold">{subCategory}</strong> category</span>}.
+            Wait for 24 hours for payment approval.
           </p>
           <Link
             to="/dashboard"
