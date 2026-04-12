@@ -57,6 +57,7 @@ type RegistrationRow = {
   team_name: string | null;
   team_size: number;
   sub_category: string | null;
+  team_members: { name: string; game_id: string }[] | null;
   payment_status: 'pending' | 'approved' | 'rejected';
   payment_screenshot_url: string;
   id_card_url?: string | null;
@@ -226,6 +227,7 @@ const emptyEventForm = {
   image_url: '',
   rules: '',
   sub_categories: [] as string[],
+  requires_team_details: false,
 };
 
 const defaultSiteContent = (contentKey: string): SiteContent => ({
@@ -276,6 +278,7 @@ export default function AdminDashboard() {
   const [paymentNotes, setPaymentNotes] = useState<Record<string, string>>({});
   const [qualificationNotes, setQualificationNotes] = useState<Record<string, string>>({});
   const [expandedQualifiedRows, setExpandedQualifiedRows] = useState<Record<string, boolean>>({});
+  const [expandedRegisterRows, setExpandedRegisterRows] = useState<Record<string, boolean>>({});
 
   const [newEvent, setNewEvent] = useState(emptyEventForm);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -394,8 +397,9 @@ export default function AdminDashboard() {
               qualification_stage,
               qualification_notes,
               sub_category,
+              team_members,
               participant_user:users!registrations_user_id_fkey ( full_name, email ),
-              event:events!registrations_event_id_fkey ( title, category ),
+              event:events!registrations_event_id_fkey ( title, category, requires_team_details ),
               submissions (*, internal_reviews(score, judge_remarks))
             `)
             .order('created_at', { ascending: false }),
@@ -623,6 +627,7 @@ export default function AdminDashboard() {
       image_url: event.image_url || '',
       rules: (event.rules || []).join('\n'),
       sub_categories: event.sub_categories || [],
+      requires_team_details: !!event.requires_team_details,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -879,7 +884,12 @@ export default function AdminDashboard() {
         'Current Stage': reg.qualification_stage.replace(/_/g, ' ').toUpperCase(),
         'Latest Score': currentSub?.internal_reviews?.[0]?.score || 0,
         'Judge Remarks': currentSub?.internal_reviews?.[0]?.judge_remarks || 'No notes',
-        'Submission Date': currentSub ? new Date(currentSub.created_at).toLocaleString() : 'No submission'
+        'Submission Date': currentSub ? new Date(currentSub.created_at).toLocaleString() : 'No submission',
+        ...((reg.team_members || []).reduce((acc, member, idx) => ({
+          ...acc,
+          [`Player ${idx + 1} Name`]: member.name,
+          [`Player ${idx + 1} ID`]: member.game_id,
+        }), {}))
       };
     });
 
@@ -1080,6 +1090,11 @@ export default function AdminDashboard() {
       college_name: registration.college_name || '',
       team_name: registration.team_name || '',
       sub_category: registration.sub_category || '',
+      ...((registration.team_members || []).reduce((acc, member, idx) => ({
+        ...acc,
+        [`player_${idx + 1}_name`]: member.name,
+        [`player_${idx + 1}_id`]: member.game_id,
+      }), {})),
       payment_status: registration.payment_status,
       id_card_url: registration.id_card_url || '',
       upload_enabled: registration.upload_enabled ? 'Yes' : 'No',
@@ -1245,6 +1260,23 @@ export default function AdminDashboard() {
                 ID Card <ExternalLink size={12} />
               </button>
             </div>
+
+            {registration.team_members && registration.team_members.length > 0 && (
+              <div className="rounded-2xl border border-fest-gold/20 bg-fest-gold/5 p-4 overflow-hidden relative">
+                <div className="flex items-center gap-3 text-fest-gold text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+                  <Users size={14} /> 5-Player Gaming Roster
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  {registration.team_members.map((member, idx) => (
+                    <div key={idx} className="rounded-xl bg-black/40 border border-white/5 p-2.5">
+                      <div className="text-[8px] font-black text-white/20 uppercase tracking-widest">P{idx + 1}</div>
+                      <div className="font-bold text-white/90 text-[11px] truncate">{member.name}</div>
+                      <div className="text-[9px] text-fest-gold font-mono opacity-60 truncate">{member.game_id}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <textarea
               value={paymentNotes[registration.id] || ''}
@@ -1509,6 +1541,16 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <input type="number" min={0} placeholder="Entry Fee" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.entry_fee} onChange={(e) => setNewEvent({ ...newEvent, entry_fee: Number(e.target.value) })} />
                   <input type="number" min={1} placeholder="Team Limit" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.max_team_size} onChange={(e) => setNewEvent({ ...newEvent, max_team_size: Number(e.target.value) })} />
+                </div>
+
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-fest-gold/30 transition-all cursor-pointer select-none" onClick={() => setNewEvent({ ...newEvent, requires_team_details: !newEvent.requires_team_details })}>
+                  <div className={`w-10 h-5 rounded-full relative transition-all ${newEvent.requires_team_details ? 'bg-fest-gold' : 'bg-white/10'}`}>
+                    <div className={`absolute top-1 w-3 h-3 rounded-full bg-fest-dark transition-all ${newEvent.requires_team_details ? 'right-1' : 'left-1'}`} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold uppercase tracking-widest text-white/70">Require Player Names & Game IDs</span>
+                    <span className="text-[10px] text-white/30 truncate">Specifically for BGMI, Free Fire, and other roster-based games</span>
+                  </div>
                 </div>
                 
                 {/* Sub-categories List Manager */}
@@ -2082,6 +2124,27 @@ export default function AdminDashboard() {
                                         <div className="font-black uppercase text-xs tracking-widest text-white/80">{registration.qualification_stage.replace(/_/g, ' ')}</div>
                                       </div>
                                     </div>
+
+                                    {/* TEAM ROSTER SECTION */}
+                                    {registration.team_members && registration.team_members.length > 0 && (
+                                      <div className="mb-10 rounded-3xl border border-fest-gold/20 bg-fest-gold/5 p-6 overflow-hidden relative">
+                                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+                                          <Users size={120} />
+                                        </div>
+                                        <div className="flex items-center gap-3 text-fest-gold text-xs font-black uppercase tracking-[0.2em] mb-6">
+                                          <Users size={16} /> 5-Player Gaming Roster
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                          {registration.team_members.map((member, idx) => (
+                                            <div key={idx} className="rounded-2xl bg-black/40 border border-white/5 p-4 transition-all hover:border-fest-gold/30 group">
+                                              <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover:text-fest-gold/40 transition-colors">Player {idx + 1}</div>
+                                              <div className="font-bold text-white/90 text-sm truncate">{member.name}</div>
+                                              <div className="text-[10px] text-fest-gold font-mono mt-1 opacity-60">ID: {member.game_id}</div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
 
                                     {/* DECISION ACTION BUTTONS */}
                                     <div className="mb-10">
@@ -3053,6 +3116,7 @@ export default function AdminDashboard() {
                           <th className="px-10 py-8 font-bold">College / Dept</th>
                           <th className="px-10 py-8 font-bold">Contact Details</th>
                           <th className="px-10 py-8 font-bold">Status</th>
+                          <th className="px-10 py-8 font-bold">Roster</th>
                           <th className="px-10 py-8 font-bold text-right">Action</th>
                         </tr>
                       </thead>
@@ -3067,47 +3131,99 @@ export default function AdminDashboard() {
                           registrations
                             .filter((r) => r.event_id === selectedEventId)
                             .map((reg) => (
-                              <tr key={reg.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
-                                <td className="px-10 py-8">
-                                  <div className="font-bold text-white text-lg tracking-tight">
-                                    {reg.participant_name || reg.participant_user?.full_name || 'N/A'}
-                                  </div>
-                                </td>
-                                <td className="px-10 py-8 text-white/50 text-sm">
-                                  <div className="font-medium text-white/70">{reg.college_name}</div>
-                                  <div className="text-xs uppercase tracking-widest mt-1 opacity-40">{reg.team_name || 'Solo'} • {reg.team_size || 1} Members</div>
-                                </td>
-                                <td className="px-10 py-8">
-                                  <div className="flex flex-col gap-2">
-                                    <div className="flex items-center gap-2 text-white/60 text-xs">
-                                      <Mail size={12} className="text-fest-gold/60" /> {reg.email || reg.participant_user?.email}
+                              <React.Fragment key={reg.id}>
+                                <tr className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                                  <td className="px-10 py-8">
+                                    <div className="font-bold text-white text-lg tracking-tight">
+                                      {reg.participant_name || reg.participant_user?.full_name || 'N/A'}
                                     </div>
-                                    <div className="flex items-center gap-2 text-white/60 text-xs">
-                                      <Phone size={12} className="text-fest-gold/60" /> {reg.phone}
+                                  </td>
+                                  <td className="px-10 py-8 text-white/50 text-sm">
+                                    <div className="font-medium text-white/70">{reg.college_name}</div>
+                                    <div className="text-xs uppercase tracking-widest mt-1 opacity-40">{reg.team_name || 'Solo'} • {reg.team_size || 1} Members</div>
+                                  </td>
+                                  <td className="px-10 py-8">
+                                    <div className="flex flex-col gap-2">
+                                      <div className="flex items-center gap-2 text-white/60 text-xs">
+                                        <Mail size={12} className="text-fest-gold/60" /> {reg.email || reg.participant_user?.email}
+                                      </div>
+                                      <div className="flex items-center gap-2 text-white/60 text-xs">
+                                        <Phone size={12} className="text-fest-gold/60" /> {reg.phone}
+                                      </div>
                                     </div>
-                                  </div>
-                                </td>
-                                <td className="px-10 py-8">
-                                  <div className={`inline-flex px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
-                                    reg.payment_status === 'approved' 
-                                      ? 'border-green-500/20 bg-green-500/10 text-green-400' 
-                                      : 'border-white/10 bg-white/5 text-white/40'
-                                  }`}>
-                                    {reg.payment_status}
-                                  </div>
-                                </td>
-                                <td className="px-10 py-8 text-right">
-                                  <button 
-                                    onClick={() => {
-                                      const name = reg.participant_name || reg.participant_user?.full_name || reg.participant_user?.email || 'N/A';
-                                      void handleDeleteRegistration(reg.id, name);
-                                    }} 
-                                    className="p-3 text-white/20 hover:text-red-500 transition-colors"
-                                  >
-                                    <Trash2 size={20} />
-                                  </button>
-                                </td>
-                              </tr>
+                                  </td>
+                                  <td className="px-10 py-8">
+                                    <div className={`inline-flex px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+                                      reg.payment_status === 'approved' 
+                                        ? 'border-green-500/20 bg-green-500/10 text-green-400' 
+                                        : 'border-white/10 bg-white/5 text-white/40'
+                                    }`}>
+                                      {reg.payment_status}
+                                    </div>
+                                  </td>
+                                  <td className="px-10 py-8">
+                                    {reg.team_members && reg.team_members.length > 0 ? (
+                                      <button
+                                        onClick={() => setExpandedRegisterRows(prev => ({ ...prev, [reg.id]: !prev[reg.id] }))}
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all font-bold text-[10px] uppercase tracking-widest border ${
+                                          expandedRegisterRows[reg.id]
+                                            ? 'bg-fest-gold text-fest-dark border-transparent'
+                                            : 'border-fest-gold/30 text-fest-gold hover:bg-fest-gold/10'
+                                        }`}
+                                      >
+                                        <Users size={12} /> {expandedRegisterRows[reg.id] ? 'Hide' : 'View'}
+                                      </button>
+                                    ) : (
+                                      <span className="text-[10px] text-white/20 uppercase font-bold tracking-widest italic">Solo</span>
+                                    )}
+                                  </td>
+                                  <td className="px-10 py-8 text-right">
+                                    <button 
+                                      onClick={() => {
+                                        const name = reg.participant_name || reg.participant_user?.full_name || reg.participant_user?.email || 'N/A';
+                                        void handleDeleteRegistration(reg.id, name);
+                                      }} 
+                                      className="p-3 text-white/20 hover:text-red-500 transition-colors"
+                                    >
+                                      <Trash2 size={20} />
+                                    </button>
+                                  </td>
+                                </tr>
+
+                                {/* ROSTER COLLAPSIBLE DETAIL */}
+                                <AnimatePresence>
+                                  {expandedRegisterRows[reg.id] && reg.team_members && (
+                                    <tr className="bg-fest-gold/[0.02]">
+                                      <td colSpan={6} className="px-10 pb-10 pt-2">
+                                        <motion.div
+                                          initial={{ opacity: 0, height: 0 }}
+                                          animate={{ opacity: 1, height: 'auto' }}
+                                          exit={{ opacity: 0, height: 0 }}
+                                          className="overflow-hidden"
+                                        >
+                                          <div className="rounded-3xl border border-fest-gold/20 bg-fest-gold/5 p-6 relative">
+                                            <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
+                                              <Users size={80} />
+                                            </div>
+                                            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-fest-gold mb-4 flex items-center gap-2">
+                                              <ShieldCheck size={14} /> Team Participant Roster
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                                              {reg.team_members.map((member, idx) => (
+                                                <div key={idx} className="bg-black/40 border border-white/5 rounded-2xl p-4">
+                                                  <div className="text-[9px] font-black text-white/20 uppercase mb-1">Player {idx + 1}</div>
+                                                  <div className="text-xs font-bold text-white truncate">{member.name}</div>
+                                                  <div className="text-[10px] text-fest-gold/60 font-mono mt-1">ID: {member.game_id}</div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </AnimatePresence>
+                              </React.Fragment>
                             ))
                         )}
                       </tbody>

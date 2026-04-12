@@ -42,6 +42,7 @@ export interface DatabaseEvent {
   is_active?: boolean;
   participants_count?: number;
   sub_categories?: string[] | null;
+  requires_team_details?: boolean;
 }
 
 export interface Faculty {

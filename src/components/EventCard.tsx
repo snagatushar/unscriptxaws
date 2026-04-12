@@ -20,14 +20,14 @@ export default memo(function EventCard({ event, index }: EventCardProps) {
       whileHover={{ y: -10 }}
       className="group relative bg-fest-card rounded-3xl overflow-hidden border border-white/10 hover:border-fest-gold/50 transition-all duration-500 flex flex-col"
     >
-      <div className="relative h-64 overflow-hidden shrink-0">
+      <div className="relative aspect-[4/5] overflow-hidden shrink-0 bg-black/90">
         {event.image_url ? (
           <motion.img
             whileHover={{ scale: 1.1 }}
             transition={{ duration: 0.6 }}
             src={event.image_url}
             alt={event.title}
-            className="w-full h-full object-cover transition-all duration-500"
+            className="w-full h-full object-cover object-center transition-all duration-500"
             referrerPolicy="no-referrer"
             loading="lazy"
             decoding="async"
@@ -37,8 +37,8 @@ export default memo(function EventCard({ event, index }: EventCardProps) {
             <span className="text-2xl font-display font-bold text-white/15 uppercase tracking-widest">{event.category}</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-fest-card via-transparent to-transparent opacity-60" />
-        <div className="absolute top-4 right-4 px-3 py-1 bg-fest-gold/90 backdrop-blur-md rounded-full text-[10px] font-bold text-fest-dark uppercase tracking-widest">
+        <div className="absolute inset-0 bg-gradient-to-t from-fest-card via-transparent to-transparent opacity-60 z-20" />
+        <div className="absolute top-4 right-4 px-3 py-1 bg-fest-gold/90 backdrop-blur-md rounded-full text-[10px] font-bold text-fest-dark uppercase tracking-widest z-30">
           {event.category}
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { useState, FormEvent, useEffect } from 'react';
-import { CheckCircle2, Send, UploadCloud, Loader2 } from 'lucide-react';
+import { CheckCircle2, Send, UploadCloud, Loader2, Users } from 'lucide-react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +25,9 @@ export default function Register() {
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
   const [idCardFile, setIdCardFile] = useState<File | null>(null);
   const [subCategory, setSubCategory] = useState('');
+  const [teamMembers, setTeamMembers] = useState<{ name: string; game_id: string }[]>(
+    Array(5).fill(null).map(() => ({ name: '', game_id: '' }))
+  );
 
   useEffect(() => {
     async function init() {
@@ -84,6 +87,14 @@ export default function Register() {
       return toast.error('Please enter a valid phone number (10-13 digits).');
     }
 
+    // Roster Validation
+    if (event.requires_team_details) {
+      const isComplete = teamMembers.every(m => m.name.trim() !== '' && m.game_id.trim() !== '');
+      if (!isComplete) {
+        return toast.error('Please fill in all 5 Player Names and Game IDs.');
+      }
+    }
+
     setSubmitting(true);
     try {
       // 1. Upload Payment Screenshot
@@ -110,6 +121,7 @@ export default function Register() {
         team_name: teamName || null,
         team_size: teamSize,
         sub_category: subCategory || null,
+        team_members: event.requires_team_details ? teamMembers : [],
         payment_screenshot_url: payData.path,
         id_card_url: idData.path,
       };
@@ -321,6 +333,52 @@ export default function Register() {
                 </label>
               </div>
             </div>
+
+            {/* TEAM ROSTER SECTION */}
+            {event?.requires_team_details && (
+              <div className="space-y-6 mt-10 p-6 rounded-3xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-3 text-fest-gold text-xs font-black uppercase tracking-[0.2em] mb-4">
+                  <Users size={16} /> 5-Player Gaming Roster
+                </div>
+                <div className="grid grid-cols-1 gap-6">
+                  {teamMembers.map((member, idx) => (
+                    <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end pb-6 border-b border-white/5 last:border-0 last:pb-0">
+                      <div className="relative group">
+                         <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">Player {idx + 1} Name</div>
+                         <input
+                           type="text"
+                           required
+                           value={member.name}
+                           onChange={(e) => {
+                             const newMembers = [...teamMembers];
+                             newMembers[idx].name = e.target.value;
+                             setTeamMembers(newMembers);
+                           }}
+                           className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-fest-gold transition-all"
+                           placeholder="Full Name"
+                         />
+                      </div>
+                      <div className="relative group">
+                         <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">Game ID / In-Game Name</div>
+                         <input
+                           type="text"
+                           required
+                           value={member.game_id}
+                           onChange={(e) => {
+                             const newMembers = [...teamMembers];
+                             newMembers[idx].game_id = e.target.value;
+                             setTeamMembers(newMembers);
+                           }}
+                           className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-fest-gold transition-all"
+                           placeholder="ID (e.g. 512344566)"
+                         />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-white/30 italic">Note: All 5 slots are mandatory for BGMI/Free Fire events.</p>
+              </div>
+            )}
 
             {event?.sub_categories && event.sub_categories.length > 0 && (
               <div className="relative group">
