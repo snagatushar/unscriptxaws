@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign, Menu, X, ChevronDown, LogOut } from 'lucide-react';
+import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign, Menu, X, ChevronDown, LogOut, ListFilter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppRole, CommitteeMember, DatabaseEvent, GeneralRule, HeroSlide, QualificationStage, SiteContent } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -56,6 +56,7 @@ type RegistrationRow = {
   college_name: string | null;
   team_name: string | null;
   team_size: number;
+  sub_category: string | null;
   payment_status: 'pending' | 'approved' | 'rejected';
   payment_screenshot_url: string;
   id_card_url?: string | null;
@@ -214,6 +215,7 @@ const emptyEventForm = {
   payment_upi_id: '',
   image_url: '',
   rules: '',
+  sub_categories: [] as string[],
 };
 
 const defaultSiteContent = (contentKey: string): SiteContent => ({
@@ -277,6 +279,7 @@ export default function AdminDashboard() {
   const [reviewerId, setReviewerId] = useState('');
   const [assignmentEventId, setAssignmentEventId] = useState('');
   const [activeQualifiedStage, setActiveQualifiedStage] = useState<'all' | QualificationStage>('all');
+  const [subCategoryInput, setSubCategoryInput] = useState('');
 
   useEffect(() => {
     sessionStorage.setItem('admin_active_tab', activeTab);
@@ -608,6 +611,7 @@ export default function AdminDashboard() {
       payment_upi_id: event.payment_upi_id || '',
       image_url: event.image_url || '',
       rules: (event.rules || []).join('\n'),
+      sub_categories: event.sub_categories || [],
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -901,6 +905,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAddSubCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cat = subCategoryInput.trim();
+    if (!cat) return;
+    if (newEvent.sub_categories.includes(cat)) {
+      toast.error('Category already exists');
+      return;
+    }
+    setNewEvent(curr => ({
+      ...curr,
+      sub_categories: [...curr.sub_categories, cat]
+    }));
+    setSubCategoryInput('');
+  };
+
+  const handleRemoveSubCategory = (catToRemove: string) => {
+    setNewEvent(curr => ({
+      ...curr,
+      sub_categories: curr.sub_categories.filter(c => c !== catToRemove)
+    }));
+  };
+
+
   const handleDeleteEvent = async (eventId: string, eventTitle: string) => {
     if (!window.confirm(`Delete "${eventTitle}"?\n\nThis will also remove registrations and event assignments linked to it.`)) {
       return;
@@ -1165,8 +1192,11 @@ export default function AdminDashboard() {
                   <div className="font-black text-fest-gold text-lg">{registration.team_size || 1} {registration.team_size === 1 ? 'Member' : 'Members'}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Team Name</div>
-                  <div className="font-semibold">{registration.team_name || 'Solo'}</div>
+                  <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Team Name / Category</div>
+                  <div className="font-semibold">
+                    {registration.team_name || 'Solo'} 
+                    {registration.sub_category ? ` • ${registration.sub_category}` : ''}
+                  </div>
                 </div>
               </div>
               <div className="rounded-2xl bg-white/5 p-3.5">
@@ -1460,6 +1490,56 @@ export default function AdminDashboard() {
                   <input type="number" min={0} placeholder="Entry Fee" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.entry_fee} onChange={(e) => setNewEvent({ ...newEvent, entry_fee: Number(e.target.value) })} />
                   <input type="number" min={1} placeholder="Team Limit" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.max_team_size} onChange={(e) => setNewEvent({ ...newEvent, max_team_size: Number(e.target.value) })} />
                 </div>
+                
+                {/* Sub-categories List Manager */}
+                <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <div className="flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-widest mb-2">
+                    <ListFilter size={16} className="text-fest-gold" /> Categories / Slots
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      placeholder="Add Category (e.g. Solo, Duet, Slot 1...)" 
+                      className="flex-1 rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold transition-all" 
+                      value={subCategoryInput} 
+                      onChange={(e) => setSubCategoryInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSubCategory(e as any);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSubCategory}
+                      className="px-6 rounded-xl bg-fest-gold text-fest-dark font-black uppercase text-xs tracking-widest hover:bg-fest-gold-light transition-all"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  
+                  {newEvent.sub_categories.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      {newEvent.sub_categories.map((cat) => (
+                        <div key={cat} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-fest-gold/10 border border-fest-gold/20 text-fest-gold text-xs font-bold">
+                          {cat}
+                          <button 
+                            type="button"
+                            onClick={() => handleRemoveSubCategory(cat)}
+                            className="hover:text-white transition-colors"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-[10px] text-white/20 uppercase tracking-widest text-center py-2 italic font-medium">
+                      No specific categories added yet. If empty, the field won't show in registration.
+                    </div>
+                  )}
+                </div>
+
                 <input placeholder="Payment Account Name" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.payment_account_name} onChange={(e) => setNewEvent({ ...newEvent, payment_account_name: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
                   <input placeholder="Account Number" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.payment_account_number} onChange={(e) => setNewEvent({ ...newEvent, payment_account_number: e.target.value })} />
@@ -1957,10 +2037,13 @@ export default function AdminDashboard() {
                                       </div>
                                       <div className="rounded-2xl bg-white/5 p-5 border border-white/5">
                                         <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5 flex justify-between">
-                                          <span>Team Name</span>
+                                          <span>Team / Category</span>
                                           <span>Size: {registration.team_size || 1}</span>
                                         </div>
-                                        <div className="font-bold tracking-tight text-white/90">{registration.team_name || 'Solo Participant'}</div>
+                                        <div className="font-bold tracking-tight text-white/90">
+                                          {registration.team_name || 'Solo Participant'}
+                                          {registration.sub_category ? ` • ${registration.sub_category}` : ''}
+                                        </div>
                                       </div>
                                       <div className="rounded-2xl bg-white/5 p-5 border border-white/5 group">
                                         <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5 text-fest-gold">Current Status</div>

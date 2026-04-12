@@ -24,6 +24,7 @@ export default function Register() {
   const [fullName, setFullName] = useState('');
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
   const [idCardFile, setIdCardFile] = useState<File | null>(null);
+  const [subCategory, setSubCategory] = useState('');
 
   useEffect(() => {
     async function init() {
@@ -55,6 +56,9 @@ export default function Register() {
     if (!event) return toast.error('Event not found');
     if (!paymentFile) return toast.error('Please upload your payment screenshot');
     if (!idCardFile) return toast.error('Please upload your Student ID Card');
+    if (event.sub_categories && event.sub_categories.length > 0 && !subCategory) {
+      return toast.error('Please select an event category/slot');
+    }
     
     // Size limit: 70KB
     const MAX_FILE_SIZE = 70 * 1024;
@@ -105,6 +109,7 @@ export default function Register() {
         year_of_study: yearOfStudy || null,
         team_name: teamName || null,
         team_size: teamSize,
+        sub_category: subCategory || null,
         payment_screenshot_url: payData.path,
         id_card_url: idData.path,
       };
@@ -314,6 +319,23 @@ export default function Register() {
                 </label>
               </div>
             </div>
+
+            {event?.sub_categories && event.sub_categories.length > 0 && (
+              <div className="relative group">
+                <select
+                  required
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors text-white"
+                >
+                  <option value="" className="bg-fest-dark text-white/50">Select Category / Slot</option>
+                  {event.sub_categories.map((cat, idx) => (
+                    <option key={idx} value={cat} className="bg-fest-dark text-white">{cat}</option>
+                  ))}
+                </select>
+                <label className="absolute left-0 -top-4 text-fest-gold text-xs">Category / Slot Selection (Required)</label>
+              </div>
+            )}
 
             <div className="relative group">
               <input

@@ -41,6 +41,7 @@ export interface DatabaseEvent {
   payment_upi_id?: string | null;
   is_active?: boolean;
   participants_count?: number;
+  sub_categories?: string[] | null;
 }
 
 export interface Faculty {
