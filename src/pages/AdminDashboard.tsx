@@ -267,6 +267,7 @@ export default function AdminDashboard() {
   const [newEvent, setNewEvent] = useState(emptyEventForm);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [eventImageUploading, setEventImageUploading] = useState(false);
+  const [eventImageDeleting, setEventImageDeleting] = useState(false);
   const [uiSaving, setUiSaving] = useState(false);
   const [newSlideDuration, setNewSlideDuration] = useState(2);
   const [committeeForm, setCommitteeForm] = useState({ name: '', role: '', image_url: '', display_order: 0 });
@@ -634,6 +635,42 @@ export default function AdminDashboard() {
       toast.error(err.message || 'Could not upload event image.');
     } finally {
       setEventImageUploading(false);
+    }
+  };
+
+  const extractStoragePath = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      const parts = urlObj.pathname.split('/storage/v1/object/public/assets/');
+      if (parts.length > 1) {
+        return parts[1];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const handleDeleteAsset = async (imageUrl: string) => {
+    if (!imageUrl) return;
+    
+    setEventImageDeleting(true);
+    try {
+      const path = extractStoragePath(imageUrl);
+      if (!path) {
+        setNewEvent((current) => ({ ...current, image_url: '' }));
+        return;
+      }
+
+      const { error } = await supabase.storage.from('assets').remove([path]);
+      if (error) throw error;
+
+      setNewEvent((current) => ({ ...current, image_url: '' }));
+      toast.success('Front image removed from storage.');
+    } catch (err: any) {
+      toast.error(err.message || 'Could not delete asset from storage.');
+    } finally {
+      setEventImageDeleting(false);
     }
   };
 
@@ -1398,10 +1435,19 @@ export default function AdminDashboard() {
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                         <button
                           type="button"
-                          onClick={() => setNewEvent({ ...newEvent, image_url: '' })}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-500/80 hover:bg-red-500 text-white rounded-xl transition-all shadow-lg text-xs font-bold uppercase tracking-widest"
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to permanently delete this image from storage?')) {
+                              void handleDeleteAsset(newEvent.image_url);
+                            }
+                          }}
+                          disabled={eventImageDeleting}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-500/80 hover:bg-red-500 text-white rounded-xl transition-all shadow-lg text-xs font-bold uppercase tracking-widest disabled:opacity-50"
                         >
-                          <Trash2 size={16} /> Remove Image
+                          {eventImageDeleting ? (
+                            <><Loader2 className="animate-spin" size={16} /> Deleting...</>
+                          ) : (
+                            <><Trash2 size={16} /> Remove Image</>
+                          )}
                         </button>
                       </div>
                     </div>
