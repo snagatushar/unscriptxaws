@@ -1393,8 +1393,17 @@ export default function AdminDashboard() {
                     )}
                   </label>
                   {newEvent.image_url ? (
-                    <div className="rounded-2xl overflow-hidden border border-white/10 bg-black/20">
+                    <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/20 group">
                       <img src={newEvent.image_url} alt={newEvent.title || 'Event preview'} className="w-full h-48 object-cover" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                        <button
+                          type="button"
+                          onClick={() => setNewEvent({ ...newEvent, image_url: '' })}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-500/80 hover:bg-red-500 text-white rounded-xl transition-all shadow-lg text-xs font-bold uppercase tracking-widest"
+                        >
+                          <Trash2 size={16} /> Remove Image
+                        </button>
+                      </div>
                     </div>
                   ) : null}
                 </div>
