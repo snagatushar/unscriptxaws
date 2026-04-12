@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
-import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign, Menu, X, ChevronDown, LogOut, ListFilter } from 'lucide-react';
+import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign, Menu, X, ChevronDown, LogOut, ListFilter, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppRole, CommitteeMember, DatabaseEvent, GeneralRule, HeroSlide, QualificationStage, SiteContent } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -94,6 +94,16 @@ function isRoundPast(currentStage: QualificationStage, roundToCheck: string): bo
   
   if (currentIndex === -1 || checkIndex === -1) return false;
   return currentIndex > checkIndex;
+}
+
+function getNextRound(stage: QualificationStage): { id: QualificationStage; name: string } | null {
+  switch (stage) {
+    case 'not_started': return { id: 'round_1_qualified', name: 'Round 1' };
+    case 'round_1_qualified': return { id: 'round_2_qualified', name: 'Round 2' };
+    case 'round_2_qualified': return { id: 'semifinal', name: 'Semifinal' };
+    case 'semifinal': return { id: 'final', name: 'Final' };
+    default: return null;
+  }
 }
 
 function VideoPreview({ submission, eventTitle, onSave, isPast }: { submission: any; eventTitle: string; onSave: (id: string, score: number, remarks: string) => void; isPast?: boolean }) {
@@ -1176,11 +1186,18 @@ export default function AdminDashboard() {
                 }`}>
                   {registration.payment_status}
                 </div>
-                {registration.submissions && registration.submissions.length > 0 && (
-                  <div className="px-2 py-0.5 bg-fest-gold/20 border border-fest-gold/30 rounded text-[9px] font-black text-fest-gold uppercase tracking-tighter">
-                    LATEST: {registration.submissions.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].internal_reviews?.[0]?.score || 0} / 10
-                  </div>
-                )}
+                {(() => {
+                  const next = getNextRound(registration.qualification_stage);
+                  const hasSubmittedForNext = registration.submissions?.some(s => s.round === next?.id);
+                  if (hasSubmittedForNext) {
+                    return (
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                        <Video size={10} /> {next?.name} Ready
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </div>
 
@@ -1982,8 +1999,20 @@ export default function AdminDashboard() {
                                   <Users size={22} />
                                 </div>
                                 <div>
-                                  <h4 className={`text-xl font-bold tracking-tight transition-colors ${isExpanded ? 'text-fest-gold' : 'text-white'}`}>
-                                    {participantName}
+                                  <h4 className={`text-xl font-bold tracking-tight transition-colors flex items-center gap-2 ${isExpanded ? 'text-fest-gold' : 'text-white'}`}>
+                                    {participantName} 
+                                    {(() => {
+                                      const next = getNextRound(registration.qualification_stage);
+                                      const hasSubmittedForNext = registration.submissions?.some(s => s.round === next?.id);
+                                      if (hasSubmittedForNext) {
+                                        return (
+                                          <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-black uppercase tracking-widest animate-pulse">
+                                            <Video size={10} /> {next?.name} Ready
+                                          </span>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
                                   </h4>
                                   <div className="flex items-center gap-3 mt-1.5">
                                     <div className="flex items-center gap-1.5 text-xs text-white/40 font-medium">
