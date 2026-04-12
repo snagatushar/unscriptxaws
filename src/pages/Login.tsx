@@ -123,7 +123,7 @@ export default function Login() {
 
   return (
     <main className="pt-32 pb-24 px-6 min-h-screen flex items-center justify-center relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-fest-purple/10 blur-[120px] -z-10" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-fest-primary/10 blur-[120px] -z-10" />
       
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -142,32 +142,32 @@ export default function Login() {
         <form className="space-y-6" onSubmit={handleAuth}>
           {!isLogin && (
             <div className="relative group">
-              <User className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-cyan transition-colors" size={18} />
+              <User className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-primary transition-colors" size={18} />
               <input
                 type="text"
                 placeholder="Full Name"
                 required={!isLogin}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-cyan transition-colors text-white placeholder:text-white/20"
+                className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white placeholder:text-white/20"
               />
             </div>
           )}
           
           <div className="relative group">
-            <Mail className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-cyan transition-colors" size={18} />
+            <Mail className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-primary transition-colors" size={18} />
             <input
               type="email"
               placeholder="Email Address"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-cyan transition-colors text-white placeholder:text-white/20"
+              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white placeholder:text-white/20"
             />
           </div>
 
           <div className="relative group">
-            <Lock className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-cyan transition-colors" size={18} />
+            <Lock className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-primary transition-colors" size={18} />
             <input
               type="password"
               placeholder="Password"
@@ -175,7 +175,7 @@ export default function Login() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-cyan transition-colors text-white placeholder:text-white/20"
+              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white placeholder:text-white/20"
             />
           </div>
 
@@ -202,7 +202,7 @@ export default function Login() {
                     toast.error(err.message || 'Could not send reset email.');
                   }
                 }}
-                className="text-xs text-white/40 hover:text-fest-pink transition-colors uppercase tracking-widest font-bold"
+                className="text-xs text-white/40 hover:text-fest-primary transition-colors uppercase tracking-widest font-bold"
               >
                 Forgot Password?
               </button>
@@ -212,7 +212,7 @@ export default function Login() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.25em] rounded-full hover:bg-fest-cyan hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-2xl relative overflow-hidden group"
+            className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.25em] rounded-full hover:bg-fest-primary hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-2xl relative overflow-hidden group"
           >
             {loading ? 'PROCESSING...' : (isLogin ? 'LOGIN' : 'SIGNUP')}
             <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -244,7 +244,7 @@ export default function Login() {
             <button
               onClick={() => setIsLogin(!isLogin)}
               type="button"
-              className="text-fest-pink font-bold hover:underline"
+              className="text-fest-primary font-bold hover:underline"
             >
               {isLogin ? 'Sign Up' : 'Login'}
             </button>

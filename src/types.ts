@@ -100,3 +100,12 @@ export interface Event {
   prizes?: string[];
   coordinators?: { name: string; contact: string }[];
 }
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  status: 'unread' | 'read' | 'archived';
+  created_at: string;
+}

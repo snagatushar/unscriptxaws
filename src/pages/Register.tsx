@@ -158,7 +158,7 @@ export default function Register() {
   if (loadingConfig) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-fest-gold" size={48} />
+        <Loader2 className="animate-spin text-fest-primary" size={48} />
       </div>
     );
   }
@@ -171,18 +171,18 @@ export default function Register() {
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full glass p-12 rounded-[3rem] text-center"
         >
-          <div className="w-20 h-20 bg-fest-gold/20 rounded-full flex items-center justify-center mx-auto mb-8">
-            <CheckCircle2 size={40} className="text-fest-gold" />
+          <div className="w-20 h-20 bg-fest-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
+            <CheckCircle2 size={40} className="text-fest-primary" />
           </div>
           <h2 className="text-3xl font-display font-bold mb-4">Registration Successful</h2>
           <p className="text-white/50 mb-10">
             You've successfully registered for <strong className="text-white">{event?.title}</strong>
-            {subCategory && <span> in the <strong className="text-fest-gold">{subCategory}</strong> category</span>}.
+            {subCategory && <span> in the <strong className="text-fest-primary">{subCategory}</strong> category</span>}.
             Wait for 24 hours for payment approval.
           </p>
           <Link
             to="/dashboard"
-            className="w-full inline-block py-4 bg-fest-gold text-fest-dark rounded-2xl font-bold uppercase tracking-widest hover:bg-fest-gold-light transition-all"
+            className="w-full inline-block py-4 bg-fest-primary text-fest-dark rounded-2xl font-bold uppercase tracking-widest hover:bg-fest-primary-light transition-all"
           >
             Open Registered Events
           </Link>
@@ -196,24 +196,24 @@ export default function Register() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
         <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} className="sticky top-32">
           <h1 className="text-5xl md:text-8xl font-display font-extrabold tracking-tighter mb-8 leading-none">
-            SECURE YOUR <span className="text-fest-gold">SPOT</span>
+            SECURE YOUR <span className="text-fest-primary">SPOT</span>
           </h1>
           <p className="text-white/60 text-xl mb-12 leading-relaxed max-w-lg">
-            Registration for <strong className="text-fest-gold">{event?.title}</strong> is almost complete. Entry fee is
-            {' '}₹{event?.entry_fee} per participant. Total Amount: <strong className="text-fest-gold">₹{(event?.entry_fee || 0) * teamSize}</strong>
+            Registration for <strong className="text-fest-primary">{event?.title}</strong> is almost complete. Entry fee is
+            {' '}₹{event?.entry_fee} per participant. Total Amount: <strong className="text-fest-primary">₹{(event?.entry_fee || 0) * teamSize}</strong>
           </p>
 
-          <div className="space-y-6 glass p-8 rounded-3xl border-l-4 border-fest-pink">
+          <div className="space-y-6 glass p-8 rounded-3xl border-l-4 border-fest-primary">
             <h3 className="font-display font-bold text-xl mb-4">Payment Instructions</h3>
             <ul className="space-y-4 text-white/80">
-              {event?.payment_account_name && <li>Account Name: <strong className="text-fest-gold">{event.payment_account_name}</strong></li>}
-              {event?.payment_account_number && <li>Account Number: <strong className="text-fest-gold">{event.payment_account_number}</strong></li>}
-              {event?.payment_ifsc && <li>IFSC: <strong className="text-fest-gold">{event.payment_ifsc}</strong></li>}
-              {event?.payment_upi_id && <li>UPI ID: <strong className="text-fest-gold">{event.payment_upi_id}</strong></li>}
-              <li>Exact Amount for {teamSize} participants: <strong className="text-xl text-fest-gold">₹{(event?.entry_fee || 0) * teamSize}</strong></li>
+              {event?.payment_account_name && <li>Account Name: <strong className="text-fest-primary">{event.payment_account_name}</strong></li>}
+              {event?.payment_account_number && <li>Account Number: <strong className="text-fest-primary">{event.payment_account_number}</strong></li>}
+              {event?.payment_ifsc && <li>IFSC: <strong className="text-fest-primary">{event.payment_ifsc}</strong></li>}
+              {event?.payment_upi_id && <li>UPI ID: <strong className="text-fest-primary">{event.payment_upi_id}</strong></li>}
+              <li>Exact Amount for {teamSize} participants: <strong className="text-xl text-fest-primary">₹{(event?.entry_fee || 0) * teamSize}</strong></li>
               <li>Upload a clear screenshot of the successful payment.</li>
               <li>Upload a clear photo/scan of your <strong>Student ID Card</strong>.</li>
-              <li>Maximum file size for each: <strong className="text-fest-gold">70KB</strong>.</li>
+              <li>Maximum file size for each: <strong className="text-fest-primary">70KB</strong>.</li>
             </ul>
           </div>
         </motion.div>
@@ -223,7 +223,7 @@ export default function Register() {
           animate={{ opacity: 1, x: 0 }}
           className="glass p-8 md:p-12 rounded-[3rem] relative"
         >
-          <div className="absolute top-0 right-0 w-64 h-64 bg-fest-gold/10 blur-[80px] -z-10" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-fest-primary/10 blur-[80px] -z-10" />
 
           <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
             <div className="relative group">
@@ -234,11 +234,11 @@ export default function Register() {
                 name="user_custom_participant_name_random"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors peer placeholder-transparent"
+                className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors peer placeholder-transparent"
                 placeholder="Participant Full Name"
                 id="participant-full-name-v6"
               />
-              <label htmlFor="participant-full-name-v6" className="absolute left-0 top-3 text-white/30 text-sm transition-all pointer-events-none peer-focus:-top-4 peer-focus:text-fest-gold peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
+              <label htmlFor="participant-full-name-v6" className="absolute left-0 top-3 text-white/30 text-sm transition-all pointer-events-none peer-focus:-top-4 peer-focus:text-fest-primary peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
                 Participant Full Name
               </label>
             </div>
@@ -250,11 +250,11 @@ export default function Register() {
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors peer placeholder-transparent"
+                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors peer placeholder-transparent"
                   placeholder="Phone Number"
                   id="phone"
                 />
-                <label htmlFor="phone" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-gold peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
+                <label htmlFor="phone" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-primary peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
                   Phone Number
                 </label>
               </div>
@@ -264,11 +264,11 @@ export default function Register() {
                   required
                   value={collegeName}
                   onChange={(e) => setCollegeName(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors peer placeholder-transparent"
+                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors peer placeholder-transparent"
                   placeholder="College"
                   id="college"
                 />
-                <label htmlFor="college" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-gold peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
+                <label htmlFor="college" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-primary peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
                   College Name
                 </label>
               </div>
@@ -280,11 +280,11 @@ export default function Register() {
                   type="text"
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors peer placeholder-transparent"
+                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors peer placeholder-transparent"
                   placeholder="Department"
                   id="department"
                 />
-                <label htmlFor="department" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-gold peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
+                <label htmlFor="department" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-primary peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
                   Department
                 </label>
               </div>
@@ -293,11 +293,11 @@ export default function Register() {
                   type="text"
                   value={yearOfStudy}
                   onChange={(e) => setYearOfStudy(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors peer placeholder-transparent"
+                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors peer placeholder-transparent"
                   placeholder="Year"
                   id="year"
                 />
-                <label htmlFor="year" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-gold peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
+                <label htmlFor="year" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-primary peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
                   Year Of Study
                 </label>
               </div>
@@ -309,11 +309,11 @@ export default function Register() {
                   type="text"
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors peer placeholder-transparent"
+                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors peer placeholder-transparent"
                   placeholder="Team Name"
                   id="team"
                 />
-                <label htmlFor="team" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-gold peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
+                <label htmlFor="team" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-primary peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
                   Team Name
                 </label>
               </div>
@@ -324,11 +324,11 @@ export default function Register() {
                   max={event?.max_team_size || 1}
                   value={teamSize}
                   onChange={(e) => setTeamSize(Number(e.target.value))}
-                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors peer placeholder-transparent"
+                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors peer placeholder-transparent"
                   placeholder="Team Size"
                   id="team-size"
                 />
-                <label htmlFor="team-size" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-gold peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
+                <label htmlFor="team-size" className="absolute left-0 top-3 text-white/30 text-sm transition-all peer-focus:-top-4 peer-focus:text-fest-primary peer-focus:text-xs peer-[:not(:placeholder-shown)]:-top-4 peer-[:not(:placeholder-shown)]:text-xs">
                   Team Size
                 </label>
               </div>
@@ -337,7 +337,7 @@ export default function Register() {
             {/* TEAM ROSTER SECTION */}
             {event?.requires_team_details && (
               <div className="space-y-6 mt-10 p-6 rounded-3xl bg-white/5 border border-white/10">
-                <div className="flex items-center gap-3 text-fest-gold text-xs font-black uppercase tracking-[0.2em] mb-4">
+                <div className="flex items-center gap-3 text-fest-primary text-xs font-black uppercase tracking-[0.2em] mb-4">
                   <Users size={16} /> 5-Player Gaming Roster
                 </div>
                 <div className="grid grid-cols-1 gap-6">
@@ -354,7 +354,7 @@ export default function Register() {
                              newMembers[idx].name = e.target.value;
                              setTeamMembers(newMembers);
                            }}
-                           className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-fest-gold transition-all"
+                           className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-fest-primary transition-all"
                            placeholder="Full Name"
                          />
                       </div>
@@ -369,7 +369,7 @@ export default function Register() {
                              newMembers[idx].game_id = e.target.value;
                              setTeamMembers(newMembers);
                            }}
-                           className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-fest-gold transition-all"
+                           className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-fest-primary transition-all"
                            placeholder="ID (e.g. 512344566)"
                          />
                       </div>
@@ -386,14 +386,14 @@ export default function Register() {
                   required
                   value={subCategory}
                   onChange={(e) => setSubCategory(e.target.value)}
-                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-gold transition-colors text-white"
+                  className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white"
                 >
                   <option value="" className="bg-fest-dark text-white/50">Select Category / Slot</option>
                   {event.sub_categories.map((cat, idx) => (
                     <option key={idx} value={cat} className="bg-fest-dark text-white">{cat}</option>
                   ))}
                 </select>
-                <label className="absolute left-0 -top-4 text-fest-gold text-xs">Category / Slot Selection (Required)</label>
+                <label className="absolute left-0 -top-4 text-fest-primary text-xs">Category / Slot Selection (Required)</label>
               </div>
             )}
 
@@ -402,14 +402,14 @@ export default function Register() {
                 type="text"
                 disabled
                 value={event?.title || ''}
-                className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none transition-colors opacity-50 font-bold text-fest-gold cursor-not-allowed"
+                className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none transition-colors opacity-50 font-bold text-fest-primary cursor-not-allowed"
               />
-              <label className="absolute left-0 -top-4 text-fest-gold text-xs">Selected Event</label>
+              <label className="absolute left-0 -top-4 text-fest-primary text-xs">Selected Event</label>
             </div>
 
             <div className="space-y-5 mt-4">
               <div
-                className="relative rounded-3xl border-2 border-dashed border-fest-pink/40 bg-fest-pink/5 p-6 flex flex-col md:flex-row items-center md:items-start gap-4 hover:bg-fest-pink/10 hover:border-fest-pink transition-all cursor-pointer group"
+                className="relative rounded-3xl border-2 border-dashed border-fest-accent/40 bg-fest-accent/5 p-6 flex flex-col md:flex-row items-center md:items-start gap-4 hover:bg-fest-accent/10 hover:border-fest-accent transition-all cursor-pointer group"
                 onClick={() => document.getElementById('payment-upload')?.click()}
               >
                 <input
@@ -419,7 +419,7 @@ export default function Register() {
                   accept="image/*"
                   onChange={(e) => setPaymentFile(e.target.files?.[0] || null)}
                 />
-                <div className={`p-4 rounded-full flex-shrink-0 transition-transform group-hover:scale-110 ${paymentFile ? 'bg-green-500/20 text-green-500' : 'bg-fest-pink/20 text-fest-pink'}`}>
+                <div className={`p-4 rounded-full flex-shrink-0 transition-transform group-hover:scale-110 ${paymentFile ? 'bg-green-500/20 text-green-500' : 'bg-fest-accent/20 text-fest-accent'}`}>
                   <UploadCloud size={28} />
                 </div>
                 <div className="text-center md:text-left flex-1">
@@ -430,7 +430,7 @@ export default function Register() {
               </div>
 
               <div
-                className="relative rounded-3xl border-2 border-dashed border-fest-gold/40 bg-fest-gold/5 p-6 flex flex-col md:flex-row items-center md:items-start gap-4 hover:bg-fest-gold/10 hover:border-fest-gold transition-all cursor-pointer group"
+                className="relative rounded-3xl border-2 border-dashed border-fest-primary/40 bg-fest-primary/5 p-6 flex flex-col md:flex-row items-center md:items-start gap-4 hover:bg-fest-primary/10 hover:border-fest-primary transition-all cursor-pointer group"
                 onClick={() => document.getElementById('id-upload')?.click()}
               >
                 <input
@@ -440,7 +440,7 @@ export default function Register() {
                   accept="image/*"
                   onChange={(e) => setIdCardFile(e.target.files?.[0] || null)}
                 />
-                <div className={`p-4 rounded-full flex-shrink-0 transition-transform group-hover:scale-110 ${idCardFile ? 'bg-green-500/20 text-green-500' : 'bg-fest-gold/20 text-fest-gold'}`}>
+                <div className={`p-4 rounded-full flex-shrink-0 transition-transform group-hover:scale-110 ${idCardFile ? 'bg-green-500/20 text-green-500' : 'bg-fest-primary/20 text-fest-primary'}`}>
                   <UploadCloud size={28} />
                 </div>
                 <div className="text-center md:text-left flex-1">
@@ -452,12 +452,12 @@ export default function Register() {
             </div>
 
             {/* Total Payable Summary */}
-            <div className="bg-fest-gold/10 border border-fest-gold/20 rounded-2xl p-6 flex items-center justify-between">
+            <div className="bg-fest-primary/10 border border-fest-primary/20 rounded-2xl p-6 flex items-center justify-between">
               <div className="space-y-1">
                 <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Total Amount to Pay</div>
                 <div className="text-sm text-white/60">₹{event?.entry_fee} × {teamSize} participant{teamSize > 1 ? 's' : ''}</div>
               </div>
-              <div className="text-3xl font-display font-black text-fest-gold">
+              <div className="text-3xl font-display font-black text-fest-primary">
                 ₹{(event?.entry_fee || 0) * teamSize}
               </div>
             </div>
@@ -465,7 +465,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-5 bg-fest-gold text-fest-dark font-black uppercase tracking-[0.3em] text-lg rounded-2xl hover:bg-fest-gold-light transition-all glow-gold flex items-center justify-center gap-3 disabled:opacity-50"
+              className="w-full py-5 bg-fest-primary text-fest-dark font-black uppercase tracking-[0.2em] text-lg rounded-2xl hover:bg-fest-primary-light transition-all glow-primary flex items-center justify-center gap-3 disabled:opacity-50"
             >
               {submitting ? 'PROCESSING...' : 'SUBMIT REGISTRATION'} {!submitting && <Send size={20} />}
             </button>

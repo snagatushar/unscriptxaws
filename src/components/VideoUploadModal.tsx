@@ -98,12 +98,12 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
 
             <header className="mb-10">
               <h3 className="text-3xl font-display font-bold mb-2">Upload Video</h3>
-              <p className="text-white/50">Submit your entry for <span className="text-fest-gold font-bold">{roundName}</span></p>
+              <p className="text-white/50">Submit your entry for <span className="text-fest-primary font-bold">{roundName}</span></p>
             </header>
 
             <div className="space-y-8">
               <div
-                className="relative rounded-3xl border-2 border-dashed border-white/20 p-10 flex flex-col items-center justify-center hover:bg-white/5 hover:border-fest-gold/50 transition-all cursor-pointer group"
+                className="relative rounded-3xl border-2 border-dashed border-white/20 p-10 flex flex-col items-center justify-center hover:bg-white/5 hover:border-fest-primary/50 transition-all cursor-pointer group"
                 onClick={() => document.getElementById('video-upload')?.click()}
               >
                 <input
@@ -114,9 +114,9 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
                 {file ? (
-                  <PlayCircle className="text-fest-gold mb-4 group-hover:scale-110 transition-transform" size={48} />
+                  <PlayCircle className="text-fest-primary mb-4 group-hover:scale-110 transition-transform" size={48} />
                 ) : (
-                  <UploadCloud className="text-fest-gold mb-4 group-hover:scale-110 transition-transform" size={48} />
+                  <UploadCloud className="text-fest-primary mb-4 group-hover:scale-110 transition-transform" size={48} />
                 )}
                 <p className="font-bold text-xl mb-1">{file ? 'File Selected' : 'Choose Video File'}</p>
                 <p className="text-sm text-white/40">{file ? file.name : 'MP4, MOV or WebM up to 800MB'}</p>
@@ -127,14 +127,14 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Any notes for the reviewer? (Optional)"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-fest-gold transition-colors resize-none h-32"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-fest-primary transition-colors resize-none h-32"
                 />
               </div>
 
               <button
                 disabled={!file || uploading}
                 onClick={handleUpload}
-                className="w-full py-5 bg-fest-gold text-fest-dark font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-fest-gold-light transition-all glow-gold flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale"
+                className="w-full py-5 bg-fest-primary text-fest-dark font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-fest-primary-light transition-all glow-primary flex items-center justify-center gap-3 disabled:opacity-50 disabled:grayscale"
               >
                 {uploading ? (
                   <Loader2 className="animate-spin" size={24} />
@@ -147,7 +147,7 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
                 <div className="space-y-2">
                   <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-fest-gold transition-all duration-200"
+                      className="h-full bg-fest-primary transition-all duration-200"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>

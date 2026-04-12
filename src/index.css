@@ -14,9 +14,10 @@
   --font-display: "Space Grotesk", sans-serif;
   --font-blowbrush: "BlowBrush", sans-serif;
   
-  --color-fest-gold: #d4af37;
-  --color-fest-gold-light: #f9e29c;
-  --color-fest-gold-dark: #996515;
+  --color-fest-primary: #3b82f6;
+  --color-fest-primary-light: #60a5fa;
+  --color-fest-primary-dark: #1e40af;
+  --color-fest-accent: #22d3ee;
   --color-fest-dark: #000000;
   --color-fest-card: #0a0a0a;
   --color-fest-white: #ffffff;
@@ -24,7 +25,7 @@
 
 @layer base {
   body {
-    @apply bg-fest-dark text-fest-white font-sans selection:bg-fest-gold selection:text-fest-dark;
+    @apply bg-fest-dark text-fest-white font-sans selection:bg-fest-primary selection:text-fest-white;
   }
 }
 
@@ -32,12 +33,20 @@
   @apply bg-white/5 backdrop-blur-md border border-white/10;
 }
 
-.glow-gold {
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+.glow-primary {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
-.text-glow-gold {
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+.glow-accent {
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+}
+
+.text-glow-primary {
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.text-glow-accent {
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
 }
 
 /* Admin sidebar scrollbar */
@@ -54,3 +63,4 @@ aside::-webkit-scrollbar-thumb {
 aside::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.15);
 }
+

@@ -72,7 +72,7 @@ export default function EventDetail() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-fest-gold" size={48} />
+        <Loader2 className="animate-spin text-fest-primary" size={48} />
       </div>
     );
   }
@@ -81,7 +81,7 @@ export default function EventDetail() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-6">
         <h1 className="text-4xl font-display font-bold">Event not found</h1>
-        <Link to="/events" className="px-8 py-3 bg-fest-pink rounded-full font-bold uppercase tracking-widest">
+        <Link to="/events" className="px-8 py-3 bg-fest-primary rounded-full font-bold uppercase tracking-widest">
           Back to Events
         </Link>
       </div>
@@ -107,7 +107,7 @@ export default function EventDetail() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6 md:space-y-8"
           >
-            <div className="relative aspect-video rounded-2xl md:rounded-[2rem] overflow-hidden border border-white/10 glow-gold">
+            <div className="relative aspect-video rounded-2xl md:rounded-[2rem] overflow-hidden border border-white/10 glow-primary">
               {event.image_url ? (
                 <img
                   src={event.image_url}
@@ -118,18 +118,18 @@ export default function EventDetail() {
                   decoding="async"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-fest-gold/20 via-fest-pink/10 to-fest-purple/20 flex items-center justify-center">
+                <div className="w-full h-full bg-gradient-to-br from-fest-primary/20 via-fest-accent/10 to-fest-primary-dark/20 flex items-center justify-center">
                   <span className="text-4xl font-display font-bold text-white/20 uppercase tracking-widest">{event.category}</span>
                 </div>
               )}
-              <div className="absolute top-4 left-4 md:top-6 md:left-6 px-3 py-1.5 md:px-4 md:py-2 bg-fest-gold text-fest-dark rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest">
+              <div className="absolute top-4 left-4 md:top-6 md:left-6 px-3 py-1.5 md:px-4 md:py-2 bg-fest-primary text-fest-dark rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest">
                 {event.category}
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3 md:gap-4">
               {[
-                { icon: IndianRupee, label: 'Entry Fee (Per Person)', value: `₹${event.entry_fee}`, color: 'text-fest-gold' },
+                { icon: IndianRupee, label: 'Entry Fee (Per Person)', value: `₹${event.entry_fee}`, color: 'text-fest-primary' },
               ].map((item, index) => (
                 <div key={index} className="glass p-4 md:p-6 rounded-2xl text-center">
                   <item.icon size={20} className={`${item.color} mx-auto mb-2 md:mb-3`} />
@@ -140,7 +140,7 @@ export default function EventDetail() {
             </div>
 
             <div className="glass p-6 md:p-8 rounded-2xl md:rounded-3xl text-sm md:text-base leading-relaxed text-white/70 border border-white/5 ">
-              <strong className="text-fest-gold uppercase tracking-widest text-2xl md:text-3xl block mb-3">Caution:</strong>
+              <strong className="text-fest-primary uppercase tracking-widest text-2xl md:text-3xl block mb-3">Caution:</strong>
               Register for the event, upload your payment proof, wait for payment approval, and then upload your round
               content only for this event when the upload window is opened.
             </div>
@@ -160,7 +160,7 @@ export default function EventDetail() {
 
             {(event.payment_account_name || event.payment_account_number || event.payment_upi_id) && (
               <div className="glass p-6 rounded-3xl border border-white/10">
-                <h3 className="text-2xl md:text-3xl font-bold text-fest-gold uppercase tracking-wider mb-4">Payment Details</h3>
+                <h3 className="text-2xl md:text-3xl font-bold text-fest-primary uppercase tracking-wider mb-4">Payment Details</h3>
                 <div className="space-y-3 text-base md:text-lg text-white/70">
                   {event.payment_account_name && <p>Account Name: {event.payment_account_name}</p>}
                   {event.payment_account_number && <p>Account Number: {event.payment_account_number}</p>}
@@ -172,7 +172,7 @@ export default function EventDetail() {
 
             {event.rules && event.rules.length > 0 && (
               <div className="space-y-4 md:space-y-6">
-                <h3 className="text-2xl md:text-3xl font-display font-bold text-fest-gold uppercase tracking-wider">Event Rules</h3>
+                <h3 className="text-2xl md:text-3xl font-display font-bold text-fest-primary uppercase tracking-wider">Event Rules</h3>
                 <ul className="space-y-3 md:space-y-4">
                   {event.rules.map((rule, index) => (
                     <motion.li
@@ -183,7 +183,7 @@ export default function EventDetail() {
                       transition={{ delay: index * 0.1 }}
                       className="flex gap-3 md:gap-4 text-white/70 bg-white/5 p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/5 text-base md:text-lg leading-relaxed"
                     >
-                      <span className="text-fest-gold font-bold">{(index + 1).toString().padStart(2, '0')}</span>
+                      <span className="text-fest-primary font-bold">{(index + 1).toString().padStart(2, '0')}</span>
                       <span>{rule}</span>
                     </motion.li>
                   ))}
@@ -193,7 +193,7 @@ export default function EventDetail() {
 
             <Link
               to={`/register/${event.id}`}
-              className="block w-full py-4 md:py-6 bg-fest-gold text-fest-dark text-center font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-lg md:text-xl rounded-xl md:rounded-2xl hover:scale-[1.02] transition-transform glow-gold"
+              className="block w-full py-4 md:py-6 bg-fest-primary text-fest-dark text-center font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-lg md:text-xl rounded-xl md:rounded-2xl hover:scale-[1.02] transition-transform glow-primary"
             >
               {user ? 'Register' : 'Login to Register'}
             </Link>

@@ -337,7 +337,7 @@ export default function ContentReviewDashboard() {
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter">
-              {selectedEvent ? selectedEvent.title : 'Content'} <span className="text-fest-gold">Review</span>
+              {selectedEvent ? selectedEvent.title : 'Content'} <span className="text-fest-primary">Review</span>
             </h1>
             <p className="text-white/50 text-lg mt-2">
               {selectedEvent ? `Reviewing submissions for ${selectedEvent.title}` : 'Manage event submissions and decide round status.'}
@@ -359,7 +359,7 @@ export default function ContentReviewDashboard() {
             <div className="flex bg-white/5 rounded-full p-1 border border-white/10 w-fit">
               <button
                 onClick={() => setActiveTab('pending')}
-                className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'pending' ? 'bg-fest-gold text-fest-dark glow-gold' : 'text-white/60 hover:text-white'}`}
+                className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'pending' ? 'bg-fest-primary text-fest-dark glow-primary' : 'text-white/60 hover:text-white'}`}
               >
                 Needs Review
               </button>
@@ -378,7 +378,7 @@ export default function ContentReviewDashboard() {
             </div>
           ) : (
             <div className="flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
-              <div className="w-2 h-2 rounded-full bg-fest-gold animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-fest-primary animate-pulse" />
               {eventList.length} Active Events
             </div>
           )}
@@ -390,14 +390,14 @@ export default function ContentReviewDashboard() {
               placeholder={selectedEventId ? "Search participants..." : "Search events..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-fest-gold transition-colors"
+              className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-fest-primary transition-colors"
             />
           </div>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="animate-spin text-fest-gold" size={48} />
+            <Loader2 className="animate-spin text-fest-primary" size={48} />
           </div>
         ) : !selectedEventId ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -406,13 +406,13 @@ export default function ContentReviewDashboard() {
                 key={evt.id}
                 whileHover={{ scale: 1.02, y: -5 }}
                 onClick={() => setSelectedEventId(evt.id)}
-                className="glass p-8 rounded-[2.5rem] cursor-pointer group border border-white/5 hover:border-fest-gold/30 transition-all relative overflow-hidden"
+                className="glass p-8 rounded-[2.5rem] cursor-pointer group border border-white/5 hover:border-fest-primary/30 transition-all relative overflow-hidden"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-fest-gold/5 blur-3xl -z-10 group-hover:bg-fest-gold/10 transition-colors" />
-                <span className="text-[10px] uppercase tracking-widest text-fest-gold bg-fest-gold/10 px-3 py-1 rounded-full mb-4 inline-block font-bold">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-fest-primary/5 blur-3xl -z-10 group-hover:bg-fest-primary/10 transition-colors" />
+                <span className="text-[10px] uppercase tracking-widest text-fest-primary bg-fest-primary/10 px-3 py-1 rounded-full mb-4 inline-block font-bold">
                   {evt.category}
                 </span>
-                <h3 className="text-2xl font-bold font-display mb-6 group-hover:text-fest-gold transition-colors">{evt.title}</h3>
+                <h3 className="text-2xl font-bold font-display mb-6 group-hover:text-fest-primary transition-colors">{evt.title}</h3>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-3xl font-black">{evt.count}</div>
@@ -420,8 +420,8 @@ export default function ContentReviewDashboard() {
                   </div>
                   {evt.pending > 0 && (
                     <div className="text-right">
-                      <div className="text-3xl font-black text-fest-gold">{evt.pending}</div>
-                      <div className="text-[10px] uppercase text-fest-gold/50 tracking-widest mt-1">To Review</div>
+                      <div className="text-3xl font-black text-fest-primary">{evt.pending}</div>
+                      <div className="text-[10px] uppercase text-fest-primary/50 tracking-widest mt-1">To Review</div>
                     </div>
                   )}
                 </div>
@@ -504,7 +504,7 @@ export default function ContentReviewDashboard() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <span className="text-xs font-mono bg-white/10 px-3 py-1 rounded-full text-fest-gold">
+                      <span className="text-xs font-mono bg-white/10 px-3 py-1 rounded-full text-fest-primary">
                         {submission.events.category}
                       </span>
                       <h3 className="text-2xl font-bold mt-4 font-display leading-tight">{submission.events.title}</h3>
@@ -512,18 +512,18 @@ export default function ContentReviewDashboard() {
                         {submission.participant_name || submission.participant_user?.full_name || submission.participant_user?.email}
                       </p>
                       <div className="flex gap-2 mt-2">
-                        <span className="text-[10px] uppercase tracking-widest bg-fest-gold/10 text-fest-gold px-2 py-0.5 rounded border border-fest-gold/20 font-bold">
+                        <span className="text-[10px] uppercase tracking-widest bg-fest-primary/10 text-fest-primary px-2 py-0.5 rounded border border-fest-primary/20 font-bold">
                           Stage: {submission.qualification_stage.replace(/_/g, ' ')}
                         </span>
                       </div>
                     </div>
-                    <Video className="text-fest-gold" size={24} />
+                    <Video className="text-fest-primary" size={24} />
                   </div>
                   <div className="space-y-4">
                     {submission.submissions.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(s => (
                       <div key={s.id} className="glass bg-black/40 p-5 rounded-2xl border border-white/5">
                         <div className="flex justify-between items-center mb-3">
-                          <span className="text-xs font-bold text-fest-gold uppercase tracking-widest">{s.round.replace(/_/g, ' ').replace('qualified','')} Entry</span>
+                          <span className="text-xs font-bold text-fest-primary uppercase tracking-widest">{s.round.replace(/_/g, ' ').replace('qualified','')} Entry</span>
                           <span className="text-[10px] text-white/30 font-mono">{new Date(s.created_at).toLocaleDateString()}</span>
                         </div>
                         <VideoPreview submission={s} eventTitle={submission.events.title} />
@@ -540,7 +540,7 @@ export default function ContentReviewDashboard() {
                                       max="10"
                                       value={scores[s.id] || 0}
                                       onChange={(e) => setScores(p => ({ ...p, [s.id]: Number(e.target.value) }))}
-                                      className="w-20 px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-fest-gold font-black text-center focus:border-fest-gold transition-all"
+                                      className="w-20 px-4 py-3 bg-black/40 border border-white/10 rounded-xl text-fest-primary font-black text-center focus:border-fest-primary transition-all"
                                     />
                                     <span className="text-white/20 font-display font-medium">/ 10</span>
                                   </div>
@@ -548,7 +548,7 @@ export default function ContentReviewDashboard() {
                                 <button
                                   onClick={() => saveReviewData(s.id)}
                                   disabled={savingScoreId === s.id}
-                                  className="px-6 py-3 bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark rounded-xl text-[10px] uppercase font-bold tracking-widest transition-all border border-fest-gold/20 flex items-center gap-2"
+                                  className="px-6 py-3 bg-fest-primary/10 text-fest-primary hover:bg-fest-primary hover:text-fest-dark rounded-xl text-[10px] uppercase font-bold tracking-widest transition-all border border-fest-primary/20 flex items-center gap-2"
                                 >
                                    {savingScoreId === s.id ? <Loader2 className="animate-spin" size={14} /> : <><Save size={14} /> Save</>}
                                 </button>
@@ -557,7 +557,7 @@ export default function ContentReviewDashboard() {
                                 value={notes[s.id] || ''}
                                 onChange={(e) => setNotes((current) => ({ ...current, [s.id]: e.target.value }))}
                                 placeholder="Add private judge notes..."
-                                className="w-full h-20 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none transition-colors"
+                                className="w-full h-20 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none transition-colors"
                               />
                             </div>
                             {activeTab === 'pending' && (
@@ -565,7 +565,7 @@ export default function ContentReviewDashboard() {
                                 <button
                                   onClick={() => handleDecision(submission.id, s.round, 'selected')}
                                   disabled={actionLoading === submission.id}
-                                  className="py-4 bg-fest-gold text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-2 glow-gold"
+                                  className="py-4 bg-fest-primary text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-primary-light transition-all flex items-center justify-center gap-2 glow-primary"
                                 >
                                   {actionLoading === submission.id ? <Loader2 className="animate-spin" size={16} /> : <><CheckCircle2 size={16} /> Promote</>}
                                 </button>
@@ -581,15 +581,15 @@ export default function ContentReviewDashboard() {
                           </>
                         )}
                         {isRoundPast(submission.qualification_stage, s.round) && (
-                          <div className="mt-4 px-4 py-4 bg-fest-gold/5 border border-fest-gold/10 rounded-2xl flex flex-col gap-3">
+                          <div className="mt-4 px-4 py-4 bg-fest-primary/5 border border-fest-primary/10 rounded-2xl flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                               <div className="flex flex-col">
-                                <div className="text-[10px] text-fest-gold uppercase tracking-[0.2em] font-black mb-1">Final Result</div>
+                                <div className="text-[10px] text-fest-primary uppercase tracking-[0.2em] font-black mb-1">Final Result</div>
                                 <div className="text-[10px] font-bold text-white/60">Stage Successful</div>
                               </div>
-                              <div className="flex items-center gap-2 bg-fest-gold/10 px-4 py-2 rounded-xl border border-fest-gold/20">
-                                <span className="text-2xl font-display font-black text-fest-gold">{scores[s.id] || 0}</span>
-                                <span className="text-[10px] text-fest-gold/40 font-bold uppercase tracking-widest pt-1">/ 10</span>
+                              <div className="flex items-center gap-2 bg-fest-primary/10 px-4 py-2 rounded-xl border border-fest-primary/20">
+                                <span className="text-2xl font-display font-black text-fest-primary">{scores[s.id] || 0}</span>
+                                <span className="text-[10px] text-fest-primary/40 font-bold uppercase tracking-widest pt-1">/ 10</span>
                               </div>
                             </div>
                           </div>
@@ -598,7 +598,7 @@ export default function ContentReviewDashboard() {
                     ))}
                   </div>
                   {activeTab === 'reviewed' && (
-                    <div className={`text-center w-full uppercase tracking-widest text-[10px] font-black py-4 rounded-xl ${submission.qualification_stage === 'eliminated' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-fest-gold/20 text-fest-gold border border-fest-gold/20'}`}>
+                    <div className={`text-center w-full uppercase tracking-widest text-[10px] font-black py-4 rounded-xl ${submission.qualification_stage === 'eliminated' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-fest-primary/20 text-fest-primary border border-fest-primary/20'}`}>
                       STATUS: {submission.qualification_stage === 'eliminated' ? 'Eliminated' : 'Promoted'}
                     </div>
                   )}

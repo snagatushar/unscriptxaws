@@ -62,7 +62,7 @@ const Navbar = () => {
             fetchPriority="high"
             loading="eager"
             decoding="async"
-            className="w-40 h-20 object-contain filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_8px_rgba(255,215,0,0.2)]"
+            className="w-40 h-20 object-contain filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]"
           />
         </Link>
 
@@ -76,7 +76,7 @@ const Navbar = () => {
             >
               {link.name}
               <motion.span
-                className="absolute -bottom-1 left-0 w-0 h-0.5 bg-fest-gold transition-all group-hover:w-full"
+                className="absolute -bottom-1 left-0 w-0 h-0.5 bg-fest-primary transition-all group-hover:w-full"
                 initial={false}
                 animate={{ width: location.pathname === link.path ? '100%' : '0%' }}
               />
@@ -90,7 +90,7 @@ const Navbar = () => {
             >
               Registered Events
               <motion.span
-                className="absolute -bottom-1 left-0 w-0 h-0.5 bg-fest-gold transition-all group-hover:w-full"
+                className="absolute -bottom-1 left-0 w-0 h-0.5 bg-fest-primary transition-all group-hover:w-full"
                 initial={false}
                 animate={{ width: location.pathname === '/dashboard' ? '100%' : '0%' }}
               />
@@ -102,9 +102,9 @@ const Navbar = () => {
             <div className="relative">
               <button
                 onClick={() => setIsProfileOpen((current) => !current)}
-                className="flex items-center gap-3 px-4 py-2 bg-fest-gold hover:bg-fest-gold-light text-fest-dark text-sm font-bold rounded-full transition-all glow-gold"
+                className="flex items-center gap-3 px-4 py-2 bg-fest-primary hover:bg-fest-primary-light text-fest-dark text-sm font-bold rounded-full transition-all glow-primary"
               >
-                <span className="w-8 h-8 rounded-full bg-fest-dark text-fest-gold flex items-center justify-center">
+                <span className="w-8 h-8 rounded-full bg-fest-dark text-fest-primary flex items-center justify-center">
                   <User size={16} />
                 </span>
                 <span className="max-w-32 truncate">{displayName}</span>
@@ -164,7 +164,7 @@ const Navbar = () => {
           ) : (
             <Link
               to="/login"
-              className="px-6 py-2 bg-fest-gold hover:bg-fest-gold-light text-fest-dark text-sm font-bold uppercase tracking-widest rounded-full transition-all glow-gold"
+              className="px-6 py-2 bg-fest-primary hover:bg-fest-primary-light text-fest-dark text-sm font-bold uppercase tracking-widest rounded-full transition-all glow-primary"
             >
               Login/Signup
             </Link>
@@ -220,7 +220,7 @@ const Navbar = () => {
                       <Link
                         to="/admin"
                         onClick={() => setIsOpen(false)}
-                        className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                        className="w-full py-3 flex justify-center items-center gap-2 bg-fest-primary text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
                       >
                         <LayoutDashboard size={18} /> System Admin
                       </Link>
@@ -230,14 +230,14 @@ const Navbar = () => {
                         <Link
                           to="/content"
                           onClick={() => setIsOpen(false)}
-                          className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                          className="w-full py-3 flex justify-center items-center gap-2 bg-fest-primary text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
                         >
                           <User size={18} /> Judging Dashboard
                         </Link>
                         <Link
                           to="/payments"
                           onClick={() => setIsOpen(false)}
-                          className="w-full py-3 flex justify-center items-center gap-2 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                          className="w-full py-3 flex justify-center items-center gap-2 bg-fest-primary text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
                         >
                           <LayoutDashboard size={18} /> Payment Review
                         </Link>
@@ -256,7 +256,7 @@ const Navbar = () => {
               <Link
                 to="/login"
                 onClick={() => setIsOpen(false)}
-                className="w-full py-3 bg-fest-gold text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
+                className="w-full py-3 bg-fest-primary text-center text-fest-dark font-bold uppercase tracking-widest rounded-xl"
               >
                 Login/Signup
               </Link>

@@ -11,10 +11,10 @@ const Footer = () => {
             <img
               src="/logo.png"
               alt="UNSCRIPTX Logo"
-              className="w-48 h-24 object-contain filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_15px_rgba(255,215,0,0.15)]"
+              className="w-48 h-24 object-contain filter invert contrast-125 mix-blend-screen drop-shadow-[0_0_15px_rgba(59,130,246,0.2)]"
             />
             <span className="text-4xl font-blowbrush tracking-widest text-white mt-2">
-              UN<span className="text-fest-gold">SCRIPTX</span> 2026
+              UN<span className="text-fest-primary">SCRIPTX</span>
             </span>
           </Link>
           <p className="text-white/50 max-w-md mb-8 leading-relaxed">
@@ -24,7 +24,7 @@ const Footer = () => {
         </div>
 
         <div>
-          <h4 className="font-display font-bold uppercase tracking-widest mb-6 text-fest-gold-light">Quick Links</h4>
+          <h4 className="font-display font-bold uppercase tracking-widest mb-6 text-fest-accent">Quick Links</h4>
           <ul className="flex flex-col gap-4">
             {['Home', 'About', 'Contact', 'Login'].map((link) => (
               <li key={link}>
@@ -40,14 +40,14 @@ const Footer = () => {
         </div>
 
         <div>
-          <h4 className="font-display font-bold uppercase tracking-widest mb-6 text-fest-gold">Contact Us</h4>
+          <h4 className="font-display font-bold uppercase tracking-widest mb-6 text-fest-primary">Contact Us</h4>
           <ul className="flex flex-col gap-4">
             <li className="flex items-center gap-3 text-white/60 text-sm">
-              <Mail size={16} className="text-fest-gold" />
+              <Mail size={16} className="text-fest-primary" />
               unscriptx@ifim.edu.in
             </li>
             <li className="flex items-center gap-3 text-white/60 text-sm">
-              <Phone size={16} className="text-fest-gold-light" />
+              <Phone size={16} className="text-fest-accent" />
               +91 8660911643
             </li>
             <li className="text-white/40 text-xs mt-4">

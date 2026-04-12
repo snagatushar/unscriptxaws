@@ -239,20 +239,20 @@ export default function PaymentReviewDashboard() {
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                   <div>
                     <h1 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter uppercase leading-none">
-                      Payment <span className="text-fest-gold">Review</span>
+                      Payment <span className="text-fest-primary">Review</span>
                     </h1>
                     <p className="text-white/50 text-sm md:text-lg mt-4 max-w-2xl font-medium">
                       Verifying transactions. {user?.role === 'admin' ? 'Master administrator view' : `Reviewing assigned events.`}
                     </p>
                   </div>
                   <div className="relative w-full md:w-96 group">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-fest-gold transition-colors" size={20} />
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-fest-primary transition-colors" size={20} />
                     <input
                       type="text"
                       placeholder="Search events or participants..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-[2rem] text-sm focus:outline-none focus:border-fest-gold/50 transition-all placeholder:text-white/10"
+                      className="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/10 rounded-[2rem] text-sm focus:outline-none focus:border-fest-primary/50 transition-all placeholder:text-white/10"
                     />
                   </div>
                 </div>
@@ -261,8 +261,8 @@ export default function PaymentReviewDashboard() {
               {loading ? (
                 <div className="flex justify-center py-32">
                   <div className="relative">
-                    <div className="w-16 h-16 rounded-full border-4 border-fest-gold/20 animate-pulse" />
-                    <Loader2 className="absolute top-0 left-0 animate-spin text-fest-gold" size={64} />
+                    <div className="w-16 h-16 rounded-full border-4 border-fest-primary/20 animate-pulse" />
+                    <Loader2 className="absolute top-0 left-0 animate-spin text-fest-primary" size={64} />
                   </div>
                 </div>
               ) : filteredEvents.length === 0 ? (
@@ -279,9 +279,9 @@ export default function PaymentReviewDashboard() {
                     <button
                       key={evt.id}
                       onClick={() => setSelectedEventId(evt.id)}
-                      className="glass text-left p-8 rounded-[2.5rem] border border-white/10 hover:border-fest-gold/30 hover:bg-white/[0.07] transition-all group relative overflow-hidden"
+                      className="glass text-left p-8 rounded-[2.5rem] border border-white/10 hover:border-fest-primary/30 hover:bg-white/[0.07] transition-all group relative overflow-hidden"
                     >
-                      <div className={`absolute top-0 left-0 w-full h-1.5 transition-all ${evt.pending_count > 0 ? 'bg-fest-gold shadow-[0_0_15px_rgba(255,215,0,0.3)]' : 'bg-white/10'}`} />
+                      <div className={`absolute top-0 left-0 w-full h-1.5 transition-all ${evt.pending_count > 0 ? 'bg-fest-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-white/10'}`} />
                       
                       <div className="flex justify-between items-start mb-6">
                         <span className="text-[10px] uppercase tracking-[0.25em] font-black py-1.5 px-4 bg-white/5 rounded-full text-white/50 border border-white/5 group-hover:border-white/10 transition-colors">
@@ -289,20 +289,20 @@ export default function PaymentReviewDashboard() {
                         </span>
                         {evt.pending_count > 0 && (
                           <span className="flex h-3 w-3 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-fest-gold opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-fest-gold"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-fest-primary opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-fest-primary"></span>
                           </span>
                         )}
                       </div>
                       
-                      <h3 className="text-2xl font-display font-bold uppercase tracking-tight group-hover:text-fest-gold transition-colors leading-tight">
+                      <h3 className="text-2xl font-display font-bold uppercase tracking-tight group-hover:text-fest-primary transition-colors leading-tight">
                         {evt.title}
                       </h3>
                       
                       <div className="mt-10 grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <div className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Pending</div>
-                          <div className={`text-2xl font-display font-black ${evt.pending_count > 0 ? 'text-fest-gold' : 'text-white/20'}`}>
+                          <div className={`text-2xl font-display font-black ${evt.pending_count > 0 ? 'text-fest-primary' : 'text-white/20'}`}>
                             {evt.pending_count}
                           </div>
                         </div>
@@ -344,7 +344,7 @@ export default function PaymentReviewDashboard() {
                       {selectedEvent?.title}
                     </h2>
                     <div className="flex items-center gap-3 mt-3">
-                      <span className="text-[10px] uppercase tracking-widest bg-fest-gold/10 text-fest-gold px-3 py-1 rounded-full font-bold border border-fest-gold/20">
+                      <span className="text-[10px] uppercase tracking-widest bg-fest-primary/10 text-fest-primary px-3 py-1 rounded-full font-bold border border-fest-primary/20">
                         {selectedEvent?.category}
                       </span>
                       <span className="text-xs text-white/30 font-bold uppercase tracking-widest">
@@ -357,7 +357,7 @@ export default function PaymentReviewDashboard() {
                 <div className="flex flex-col sm:flex-row bg-white/5 rounded-[1.5rem] p-1 border border-white/10 w-full md:w-fit">
                   <button
                     onClick={() => setActiveTab('pending')}
-                    className={`flex-1 sm:flex-none px-8 py-3 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'pending' ? 'bg-fest-gold text-fest-dark shadow-xl shadow-fest-gold/20' : 'text-white/40 hover:text-white'}`}
+                    className={`flex-1 sm:flex-none px-8 py-3 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'pending' ? 'bg-fest-primary text-fest-dark shadow-xl shadow-fest-primary/20' : 'text-white/40 hover:text-white'}`}
                   >
                     Pending ({selectedEvent?.pending_count})
                   </button>
@@ -384,7 +384,7 @@ export default function PaymentReviewDashboard() {
                         layout
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`glass rounded-[2rem] border overflow-hidden transition-all duration-300 ${isExpanded ? 'border-fest-gold/30 bg-white/[0.08] ring-1 ring-fest-gold/10' : 'border-white/10 hover:border-white/20'}`}
+                        className={`glass rounded-[2rem] border overflow-hidden transition-all duration-300 ${isExpanded ? 'border-fest-primary/30 bg-white/[0.08] ring-1 ring-fest-primary/10' : 'border-white/10 hover:border-white/20'}`}
                       >
                         {/* Header: Clickable Toggle */}
                         <button
@@ -392,11 +392,11 @@ export default function PaymentReviewDashboard() {
                           className="w-full text-left p-6 md:p-8 flex items-center justify-between group"
                         >
                           <div className="flex items-center gap-6">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isExpanded ? 'bg-fest-gold text-fest-dark rotate-180' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${isExpanded ? 'bg-fest-primary text-fest-dark rotate-180' : 'bg-white/5 text-white/40 group-hover:bg-white/10'}`}>
                               <ChevronDown size={24} />
                             </div>
                             <div className="space-y-1">
-                              <h4 className="text-xl md:text-2xl font-bold font-display tracking-tight group-hover:text-fest-gold transition-colors">
+                              <h4 className="text-xl md:text-2xl font-bold font-display tracking-tight group-hover:text-fest-primary transition-colors">
                                 {reg.participant_name || reg.participant_user?.full_name || 'Anonymous User'}
                               </h4>
                               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -404,7 +404,7 @@ export default function PaymentReviewDashboard() {
                                   <User size={12} className="opacity-50" /> {reg.college_name || 'Individual Participant'}
                                 </span>
                                 <span className="hidden md:block w-1 h-1 bg-white/10 rounded-full" />
-                                <span className="text-xs text-fest-gold/50 font-black uppercase tracking-widest flex items-center gap-2">
+                                <span className="text-xs text-fest-primary/50 font-black uppercase tracking-widest flex items-center gap-2">
                                   <Phone size={12} className="opacity-50" /> {reg.phone}
                                 </span>
                               </div>
@@ -413,7 +413,7 @@ export default function PaymentReviewDashboard() {
 
                           <div className="hidden sm:block bg-black/40 px-6 py-3 rounded-2xl border border-white/5 text-right min-w-32">
                             <div className="text-[10px] uppercase tracking-widest text-white/30 font-black mb-0.5">Fee Amount</div>
-                            <div className="text-xl font-display font-black text-fest-gold">₹{reg.events.entry_fee}</div>
+                            <div className="text-xl font-display font-black text-fest-primary">₹{reg.events.entry_fee}</div>
                           </div>
                         </button>
 
@@ -440,11 +440,11 @@ export default function PaymentReviewDashboard() {
                                   >
                                     <div className="text-left">
                                       <div className="text-[10px] uppercase tracking-widest text-white/30 font-black mb-1.5">Transaction</div>
-                                      <div className="text-xs font-black text-fest-gold flex items-center gap-2 group-hover/screenshot:gap-3 transition-all">
+                                      <div className="text-xs font-black text-fest-primary flex items-center gap-2 group-hover/screenshot:gap-3 transition-all">
                                         VIEW SCREENSHOT <ExternalLink size={14} />
                                       </div>
                                     </div>
-                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-white/40 group-hover/screenshot:text-fest-gold transition-colors">
+                                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-white/40 group-hover/screenshot:text-fest-primary transition-colors">
                                       <Camera size={24} />
                                     </div>
                                   </button>
@@ -472,7 +472,7 @@ export default function PaymentReviewDashboard() {
                                     value={notes[reg.id] || ''}
                                     onChange={(e) => setNotes((current) => ({ ...current, [reg.id]: e.target.value }))}
                                     placeholder="Internal note for approval/rejection reasons..."
-                                    className="w-full h-32 rounded-3xl border border-white/10 bg-black/40 px-6 py-5 text-sm outline-none focus:border-fest-gold/40 focus:ring-1 focus:ring-fest-gold/20 resize-none transition-all placeholder:text-white/10"
+                                    className="w-full h-32 rounded-3xl border border-white/10 bg-black/40 px-6 py-5 text-sm outline-none focus:border-fest-primary/40 focus:ring-1 focus:ring-fest-primary/20 resize-none transition-all placeholder:text-white/10"
                                   />
                                 </div>
 
@@ -489,7 +489,7 @@ export default function PaymentReviewDashboard() {
                                     <button
                                       onClick={() => handleDecision(reg.id, 'approved')}
                                       disabled={actionLoading === reg.id}
-                                      className="py-5 bg-fest-gold text-fest-dark rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-3 shadow-xl shadow-fest-gold/10 hover:shadow-fest-gold/20 active:scale-[0.98]"
+                                      className="py-5 bg-fest-primary text-fest-dark rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-fest-primary-light transition-all flex items-center justify-center gap-3 shadow-xl shadow-fest-primary/10 hover:shadow-fest-primary/20 active:scale-[0.98]"
                                     >
                                       {actionLoading === reg.id ? <Loader2 className="animate-spin text-fest-dark" size={18} /> : <><Unlock size={18} /> Approve & Unlock</>}
                                     </button>

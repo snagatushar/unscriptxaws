@@ -17,7 +17,7 @@ export default memo(function Background() {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-fest-gold/10 blur-[120px] will-change-transform"
+        className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-fest-primary/10 blur-[120px] will-change-transform"
       />
       <motion.div
         animate={{
@@ -30,7 +30,7 @@ export default memo(function Background() {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-white/5 blur-[100px] will-change-transform"
+        className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-fest-accent/5 blur-[100px] will-change-transform"
       />
       <motion.div
         animate={{
@@ -43,7 +43,7 @@ export default memo(function Background() {
           repeat: Infinity,
           ease: "linear"
         }}
-        className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-fest-gold-dark/10 blur-[110px] will-change-transform"
+        className="absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] rounded-full bg-fest-primary-dark/10 blur-[110px] will-change-transform"
       />
 
       {/* Grain Texture Overlay — inline SVG data URI instead of external fetch */}

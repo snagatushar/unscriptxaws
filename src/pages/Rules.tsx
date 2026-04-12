@@ -6,7 +6,7 @@ const ruleCategories = [
   {
     title: 'General Rules',
     icon: Info,
-    color: 'text-fest-gold',
+    color: 'text-fest-primary',
     rules: [
       'All participants must carry their college ID cards.',
       'Registration is mandatory for all events.',
@@ -18,7 +18,7 @@ const ruleCategories = [
   {
     title: 'Safety & Conduct',
     icon: ShieldAlert,
-    color: 'text-fest-gold-light',
+    color: 'text-fest-accent',
     rules: [
       'Smoking, alcohol, and prohibited substances are strictly banned on campus.',
       'Damage to college property will be penalized.',
@@ -29,7 +29,7 @@ const ruleCategories = [
   {
     title: 'Registration Policy',
     icon: AlertCircle,
-    color: 'text-fest-gold-dark',
+    color: 'text-fest-primary-dark',
     rules: [
       'Registration fees are non-refundable.',
       'Spot registrations are subject to availability.',
@@ -51,7 +51,7 @@ export default function Rules() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-8xl font-display font-extrabold tracking-tighter mb-6"
           >
-            THE <span className="text-fest-gold italic">PLAYBOOK</span>
+            THE <span className="text-fest-primary italic">PLAYBOOK</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -66,7 +66,7 @@ export default function Rules() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {loading ? (
             <div className="col-span-full flex justify-center py-24">
-              <Loader2 className="animate-spin text-fest-gold" size={48} />
+              <Loader2 className="animate-spin text-fest-primary" size={48} />
             </div>
           ) : (
             ruleCategories.map((category, i) => (
@@ -101,9 +101,9 @@ export default function Rules() {
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="mt-16 p-8 glass rounded-3xl border-l-8 border-fest-gold bg-fest-gold/5"
+          className="mt-16 p-8 glass rounded-3xl border-l-8 border-fest-primary bg-fest-primary/5"
         >
-          <h4 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-2">Important Note</h4>
+          <h4 className="text-fest-primary font-display font-bold uppercase tracking-widest mb-2">Important Note</h4>
           <p className="text-white/70 italic">
             The organizing committee reserves the right to change the rules, schedule, or venue of any event if necessary. Any such changes will be communicated via the official website and social media handles.
           </p>

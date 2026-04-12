@@ -61,19 +61,19 @@ export default function AdminLogin() {
   return (
     <main className="pt-32 pb-24 px-6 min-h-screen flex items-center justify-center relative bg-black overflow-hidden">
       {/* Admin specific background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-fest-gold/5 blur-[150px] -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-fest-primary/5 blur-[150px] -z-10" />
       
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="max-w-md w-full glass p-8 md:p-12 rounded-[3.5rem] border-fest-gold/20 shadow-2xl relative"
+        className="max-w-md w-full glass p-8 md:p-12 rounded-[3.5rem] border-fest-primary/20 shadow-2xl relative"
       >
         <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-fest-gold/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-fest-gold/30">
-            <ShieldCheck size={40} className="text-fest-gold" />
+          <div className="w-20 h-20 bg-fest-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-fest-primary/30">
+            <ShieldCheck size={40} className="text-fest-primary" />
           </div>
           <h2 className="text-4xl font-display font-extrabold tracking-tighter mb-2 text-white">
-            SYSTEM <span className="text-fest-gold">ADMIN</span>
+            SYSTEM <span className="text-fest-primary">ADMIN</span>
           </h2>
           <p className="text-white/40 text-[10px] uppercase tracking-widest font-bold">
             Restricted Access Center
@@ -82,33 +82,33 @@ export default function AdminLogin() {
 
         <form className="space-y-6" onSubmit={handleAdminAuth}>
           <div className="relative group">
-            <Mail className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-gold transition-colors" size={18} />
+            <Mail className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-primary transition-colors" size={18} />
             <input
               type="email"
               placeholder="Admin Email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-gold transition-colors text-white placeholder:text-white/20"
+              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white placeholder:text-white/20"
             />
           </div>
 
           <div className="relative group">
-            <Lock className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-gold transition-colors" size={18} />
+            <Lock className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-primary transition-colors" size={18} />
             <input
               type="password"
               placeholder="System Password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-gold transition-colors text-white placeholder:text-white/20"
+              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white placeholder:text-white/20"
             />
           </div>
 
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-5 bg-fest-gold text-fest-dark font-black uppercase tracking-[0.3em] text-lg rounded-2xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold flex items-center justify-center gap-3 disabled:opacity-50"
+            className="w-full py-5 bg-fest-primary text-fest-dark font-black uppercase tracking-[0.2em] text-lg rounded-2xl hover:bg-fest-primary-light transition-all shadow-lg glow-primary flex items-center justify-center gap-3 disabled:opacity-50"
           >
             {loading ? <Loader2 className="animate-spin" size={24} /> : 'AUTHENTICATE'} {!loading && <ArrowRight size={20} />}
           </button>

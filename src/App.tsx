@@ -27,7 +27,7 @@ const ContentReviewDashboard = lazy(() => import('./pages/ContentReviewDashboard
 function PageLoader() {
   return (
     <div className="fixed inset-0 z-[100] bg-fest-dark flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-fest-gold border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-12 h-12 border-4 border-fest-primary border-t-transparent rounded-full animate-spin"></div>
     </div>
   );
 }
@@ -94,7 +94,7 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <Router>
-      <div className="relative min-h-screen selection:bg-fest-pink selection:text-white overflow-x-hidden">
+      <div className="relative min-h-screen selection:bg-fest-primary selection:text-white overflow-x-hidden">
         <Background />
         <Navbar />
         <ScrollToTop />

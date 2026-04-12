@@ -28,7 +28,7 @@ export default function Events() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-7xl font-display font-extrabold tracking-tighter mb-6"
           >
-            The <span className="text-fest-gold">Event</span> Lineup
+            The <span className="text-fest-primary">Event</span> Lineup
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -49,7 +49,7 @@ export default function Events() {
                 onClick={() => setActiveCategory(cat)}
                 className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${
                   activeCategory === cat
-                    ? 'bg-fest-gold text-fest-dark glow-gold'
+                    ? 'bg-fest-primary text-fest-dark glow-primary'
                     : 'glass text-white/60 hover:text-white hover:bg-white/10'
                 }`}
               >
@@ -65,7 +65,7 @@ export default function Events() {
               placeholder="Search events..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-6 py-3 glass rounded-2xl text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-fest-gold/50 transition-all"
+              className="w-full pl-12 pr-6 py-3 glass rounded-2xl text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-fest-primary/50 transition-all"
             />
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function Events() {
         {/* Events Grid */}
         {loading ? (
            <div className="flex justify-center py-24 w-full">
-             <Loader2 className="animate-spin text-fest-gold" size={48} />
+            <Loader2 className="animate-spin text-fest-primary" size={48} />
            </div>
         ) : filteredEvents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

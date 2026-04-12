@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-type DashboardTab = 'events' | 'payment_reviews' | 'qualified_rounds' | 'users' | 'judges_access' | 'payment_access' | 'registrations' | 'ui' | 'system_logs';
+type DashboardTab = 'events' | 'payment_reviews' | 'qualified_rounds' | 'users' | 'judges_access' | 'payment_access' | 'registrations' | 'ui' | 'system_logs' | 'contact_messages';
 
 type AuditLogRow = {
   id: string;
@@ -165,7 +165,7 @@ function VideoPreview({ submission, eventTitle, onSave, isPast }: { submission: 
       <div className="flex justify-between items-center px-1">
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-fest-gold uppercase tracking-widest text-shadow-glow">
+            <span className="text-[10px] font-bold text-fest-primary uppercase tracking-widest text-shadow-glow">
               {submission.round.replace(/_/g, ' ').replace('qualified','')} Entry
             </span>
             {isPast && (
@@ -179,7 +179,7 @@ function VideoPreview({ submission, eventTitle, onSave, isPast }: { submission: 
               max="10"
               value={score}
               onChange={(e) => setScore(Number(e.target.value))}
-              className="w-12 bg-white/10 border border-white/10 rounded-lg text-fest-gold font-black text-center text-sm py-1 focus:border-fest-gold transition-all"
+              className="w-12 bg-white/10 border border-white/10 rounded-lg text-fest-primary font-black text-center text-sm py-1 focus:border-fest-primary transition-all"
             />
             <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">/ 10 PTS</span>
           </div>
@@ -187,7 +187,7 @@ function VideoPreview({ submission, eventTitle, onSave, isPast }: { submission: 
         
         <button
           onClick={() => onSave(submission.id, score, remarks)}
-          className="p-2 bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark rounded-lg transition-all border border-fest-gold/20"
+          className="p-2 bg-fest-primary/10 text-fest-primary hover:bg-fest-primary hover:text-fest-dark rounded-lg transition-all border border-fest-primary/20"
           title="Update Points & Remarks"
         >
           <Save size={14} />
@@ -260,6 +260,12 @@ export default function AdminDashboard() {
     home_about_college: defaultSiteContent('home_about_college'),
     home_about_school: defaultSiteContent('home_about_school'),
     home_why_join: defaultSiteContent('home_why_join'),
+    about_hero: defaultSiteContent('about_hero'),
+    about_mission: defaultSiteContent('about_mission'),
+    about_community: defaultSiteContent('about_community'),
+    about_vision: defaultSiteContent('about_vision'),
+    about_story: defaultSiteContent('about_story'),
+    contact_info: defaultSiteContent('contact_info'),
   });
   const [committeeEntries, setCommitteeEntries] = useState<CommitteeMember[]>([]);
   const [guidelineEntries, setGuidelineEntries] = useState<GeneralRule[]>([]);
@@ -279,6 +285,7 @@ export default function AdminDashboard() {
   const [qualificationNotes, setQualificationNotes] = useState<Record<string, string>>({});
   const [expandedQualifiedRows, setExpandedQualifiedRows] = useState<Record<string, boolean>>({});
   const [expandedRegisterRows, setExpandedRegisterRows] = useState<Record<string, boolean>>({});
+  const [contactMessages, setContactMessages] = useState<any[]>([]);
 
   const [newEvent, setNewEvent] = useState(emptyEventForm);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -484,7 +491,7 @@ export default function AdminDashboard() {
           { data: rulesData, error: rulesError },
         ] = await Promise.all([
           supabase.from('hero_slideshow').select('*').order('display_order', { ascending: true }),
-          supabase.from('site_content').select('*').in('content_key', ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join']),
+          supabase.from('site_content').select('*').in('content_key', ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join', 'about_hero', 'about_mission', 'about_community', 'about_vision', 'about_story', 'contact_info']),
           supabase.from('committee').select('*').order('display_order', { ascending: true }),
           supabase.from('general_rules').select('*').order('display_order', { ascending: true }),
         ]);
@@ -503,6 +510,12 @@ export default function AdminDashboard() {
           home_about_college: defaultSiteContent('home_about_college'),
           home_about_school: defaultSiteContent('home_about_school'),
           home_why_join: defaultSiteContent('home_why_join'),
+          about_hero: defaultSiteContent('about_hero'),
+          about_mission: defaultSiteContent('about_mission'),
+          about_community: defaultSiteContent('about_community'),
+          about_vision: defaultSiteContent('about_vision'),
+          about_story: defaultSiteContent('about_story'),
+          contact_info: defaultSiteContent('contact_info'),
         } as Record<string, SiteContent>;
 
         ((contentData as SiteContent[]) || []).forEach((entry) => {
@@ -518,6 +531,12 @@ export default function AdminDashboard() {
 
       if (activeTab === 'system_logs') {
         await fetchAuditLogs();
+      }
+
+      if (activeTab === 'contact_messages') {
+        const { data, error } = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        setContactMessages(data || []);
       }
 
     } catch (err: any) {
@@ -1197,7 +1216,7 @@ export default function AdminDashboard() {
                     ? 'bg-green-500/10 text-green-400'
                     : registration.payment_status === 'rejected'
                       ? 'bg-red-500/10 text-red-400'
-                      : 'bg-fest-gold/10 text-fest-gold'
+                      : 'bg-fest-primary/10 text-fest-primary'
                 }`}>
                   {registration.payment_status}
                 </div>
@@ -1221,16 +1240,16 @@ export default function AdminDashboard() {
                 <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Phone</div>
                 <div className="font-semibold">{registration.phone}</div>
               </div>
-              <div className="rounded-2xl bg-fest-gold/5 border border-fest-gold/20 p-3.5 col-span-2 flex justify-between items-center">
+              <div className="rounded-2xl bg-fest-primary/5 border border-fest-primary/20 p-3.5 col-span-2 flex justify-between items-center">
                 <div>
-                  <div className="text-fest-gold/80 text-[10px] uppercase tracking-widest mb-1 font-black">Total Participants</div>
-                  <div className="font-black text-fest-gold text-lg">{registration.team_size || 1} {registration.team_size === 1 ? 'Member' : 'Members'}</div>
+                  <div className="text-fest-primary/80 text-[10px] uppercase tracking-widest mb-1 font-black">Total Participants</div>
+                  <div className="font-black text-fest-primary text-lg">{registration.team_size || 1} {registration.team_size === 1 ? 'Member' : 'Members'}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Team Name / Category</div>
                   <div className="font-semibold">
                     {registration.team_name || 'Solo'} 
-                    {registration.sub_category ? ` • ${registration.sub_category}` : ''}
+                    {registration.sub_category ? ` â€¢ ${registration.sub_category}` : ''}
                   </div>
                 </div>
               </div>
@@ -1248,22 +1267,22 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => void handleViewScreenshot(registration.payment_screenshot_url)}
-                className="flex justify-center items-center gap-2 py-3 border border-white/10 border-dashed rounded-xl hover:bg-white/5 hover:border-white/30 transition-all text-[10px] font-bold uppercase tracking-widest text-fest-gold-light"
+                className="flex justify-center items-center gap-2 py-3 border border-white/10 border-dashed rounded-xl hover:bg-white/5 hover:border-white/30 transition-all text-[10px] font-bold uppercase tracking-widest text-fest-primary-light"
               >
                 Payment <ExternalLink size={12} />
               </button>
               <button
                 type="button"
                 onClick={() => void handleViewIdCard(registration.id_card_url || '')}
-                className="flex justify-center items-center gap-2 py-3 border border-white/10 border-dashed rounded-xl hover:bg-white/5 hover:border-white/30 transition-all text-[10px] font-bold uppercase tracking-widest text-fest-gold-light"
+                className="flex justify-center items-center gap-2 py-3 border border-white/10 border-dashed rounded-xl hover:bg-white/5 hover:border-white/30 transition-all text-[10px] font-bold uppercase tracking-widest text-fest-primary-light"
               >
                 ID Card <ExternalLink size={12} />
               </button>
             </div>
 
             {registration.team_members && registration.team_members.length > 0 && (
-              <div className="rounded-2xl border border-fest-gold/20 bg-fest-gold/5 p-4 overflow-hidden relative">
-                <div className="flex items-center gap-3 text-fest-gold text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+              <div className="rounded-2xl border border-fest-primary/20 bg-fest-primary/5 p-4 overflow-hidden relative">
+                <div className="flex items-center gap-3 text-fest-primary text-[10px] font-black uppercase tracking-[0.2em] mb-4">
                   <Users size={14} /> 5-Player Gaming Roster
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -1271,7 +1290,7 @@ export default function AdminDashboard() {
                     <div key={idx} className="rounded-xl bg-black/40 border border-white/5 p-2.5">
                       <div className="text-[8px] font-black text-white/20 uppercase tracking-widest">P{idx + 1}</div>
                       <div className="font-bold text-white/90 text-[11px] truncate">{member.name}</div>
-                      <div className="text-[9px] text-fest-gold font-mono opacity-60 truncate">{member.game_id}</div>
+                      <div className="text-[9px] text-fest-primary font-mono opacity-60 truncate">{member.game_id}</div>
                     </div>
                   ))}
                 </div>
@@ -1282,7 +1301,7 @@ export default function AdminDashboard() {
               value={paymentNotes[registration.id] || ''}
               onChange={(e) => setPaymentNotes((current) => ({ ...current, [registration.id]: e.target.value }))}
               placeholder="Optional admin note for this registration"
-              className="w-full h-20 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none"
+              className="w-full h-20 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
             />
 
             {section === 'pending' ? (
@@ -1297,7 +1316,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => void handlePaymentDecision(registration.id, 'approved')}
                   disabled={actionLoadingId === registration.id}
-                  className="w-full py-2.5 bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full py-2.5 bg-fest-primary/10 text-fest-primary hover:bg-fest-primary hover:text-fest-dark rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {actionLoadingId === registration.id ? <Loader2 className="animate-spin" size={16} /> : <><CheckCircle2 size={16} /> Approve</>}
                 </button>
@@ -1339,6 +1358,7 @@ export default function AdminDashboard() {
       label: 'System',
       tabs: [
         { id: 'ui' as DashboardTab, label: 'Site Editor', icon: SlidersHorizontal },
+        { id: 'contact_messages' as DashboardTab, label: 'Messages', icon: Mail },
         { id: 'system_logs' as DashboardTab, label: 'Audit Logs', icon: History },
       ],
     },
@@ -1369,7 +1389,7 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-display font-extrabold tracking-tight text-white">Admin</h2>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-fest-gold font-bold mt-1">UNSCRIPTX</p>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-fest-primary font-bold mt-1">UNSCRIPTX</p>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="lg:hidden w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-white transition-colors">
                 <X size={18} />
@@ -1391,11 +1411,11 @@ export default function AdminDashboard() {
                         onClick={() => { setActiveTab(tab.id); setSidebarOpen(false); }}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group ${
                           isActive
-                            ? 'bg-fest-gold/10 text-fest-gold shadow-[inset_3px_0_0_0_#d4af37]'
+                            ? 'bg-fest-primary/10 text-fest-primary shadow-[inset_3px_0_0_0_#3b82f6]'
                             : 'text-white/45 hover:text-white hover:bg-white/[0.04]'
                         }`}
                       >
-                        <tab.icon size={16} className={isActive ? 'text-fest-gold' : 'text-white/25 group-hover:text-white/50'} />
+                        <tab.icon size={16} className={isActive ? 'text-fest-primary' : 'text-white/25 group-hover:text-white/50'} />
                         {tab.label}
                       </button>
                     );
@@ -1426,7 +1446,7 @@ export default function AdminDashboard() {
               }}
               title="Double click to reconnect Google Drive"
             >
-              <div className="w-8 h-8 rounded-full bg-fest-gold/20 flex items-center justify-center text-fest-gold text-xs font-black transition-transform group-hover:scale-110">
+              <div className="w-8 h-8 rounded-full bg-fest-primary/20 flex items-center justify-center text-fest-primary text-xs font-black transition-transform group-hover:scale-110">
                 {(user as any)?.email?.charAt(0).toUpperCase() || 'A'}
               </div>
               <div className="flex-1 min-w-0">
@@ -1450,7 +1470,7 @@ export default function AdminDashboard() {
                   <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-white/25 font-bold">
                     <span>Dashboard</span>
                     <ChevronRight size={10} />
-                    <span className="text-fest-gold">{activeTabMeta?.label}</span>
+                    <span className="text-fest-primary">{activeTabMeta?.label}</span>
                   </div>
                   <h1 className="text-xl md:text-2xl font-display font-extrabold tracking-tight mt-0.5">
                     {activeTabMeta?.label || 'Dashboard'}
@@ -1464,14 +1484,14 @@ export default function AdminDashboard() {
           <div className="px-6 lg:px-10 py-8">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-32 gap-4">
-                <Loader2 className="animate-spin text-fest-gold" size={40} />
+                <Loader2 className="animate-spin text-fest-primary" size={40} />
                 <p className="text-xs uppercase tracking-[0.3em] text-white/20 font-bold">Loading data...</p>
               </div>
             ) : activeTab === 'events' ? (
             <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8">
               <form onSubmit={handleEventCreate} className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-6">
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 text-fest-gold font-bold uppercase tracking-widest text-sm">
+                  <div className="flex items-center gap-2 text-fest-primary font-bold uppercase tracking-widest text-sm">
                     {editingEventId ? <Pencil size={16} /> : <Plus size={16} />}
                     {editingEventId ? 'Edit Event' : 'Create Event'}
                   </div>
@@ -1485,13 +1505,13 @@ export default function AdminDashboard() {
                     </button>
                   ) : null}
                 </div>
-                <input placeholder="Title" required className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.title} onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })} />
-                <input placeholder="Category" required className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.category} onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })} />
+                <input placeholder="Title" required className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary" value={newEvent.title} onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })} />
+                <input placeholder="Category" required className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary" value={newEvent.category} onChange={(e) => setNewEvent({ ...newEvent, category: e.target.value })} />
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-4">
                   <div className="flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-widest">
                     <ImagePlus size={16} /> Event Front Image
                   </div>
-                  <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-6 text-center cursor-pointer hover:border-fest-gold/60 transition-colors">
+                  <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-6 text-center cursor-pointer hover:border-fest-primary/60 transition-colors">
                     <input
                       type="file"
                       accept="image/*"
@@ -1503,7 +1523,7 @@ export default function AdminDashboard() {
                       }}
                     />
                     {eventImageUploading ? (
-                      <div className="flex items-center gap-2 text-fest-gold text-sm font-semibold">
+                      <div className="flex items-center gap-2 text-fest-primary text-sm font-semibold">
                         <Loader2 className="animate-spin" size={16} /> Uploading image...
                       </div>
                     ) : (
@@ -1537,14 +1557,14 @@ export default function AdminDashboard() {
                     </div>
                   ) : null}
                 </div>
-                <textarea placeholder="Description" required className="w-full h-24 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none" value={newEvent.description} onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })} />
+                <textarea placeholder="Description" required className="w-full h-24 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none" value={newEvent.description} onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
-                  <input type="number" min={0} placeholder="Entry Fee" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.entry_fee} onChange={(e) => setNewEvent({ ...newEvent, entry_fee: Number(e.target.value) })} />
-                  <input type="number" min={1} placeholder="Team Limit" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.max_team_size} onChange={(e) => setNewEvent({ ...newEvent, max_team_size: Number(e.target.value) })} />
+                  <input type="number" min={0} placeholder="Entry Fee" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary" value={newEvent.entry_fee} onChange={(e) => setNewEvent({ ...newEvent, entry_fee: Number(e.target.value) })} />
+                  <input type="number" min={1} placeholder="Team Limit" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary" value={newEvent.max_team_size} onChange={(e) => setNewEvent({ ...newEvent, max_team_size: Number(e.target.value) })} />
                 </div>
 
-                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-fest-gold/30 transition-all cursor-pointer select-none" onClick={() => setNewEvent({ ...newEvent, requires_team_details: !newEvent.requires_team_details })}>
-                  <div className={`w-10 h-5 rounded-full relative transition-all ${newEvent.requires_team_details ? 'bg-fest-gold' : 'bg-white/10'}`}>
+                <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:border-fest-primary/30 transition-all cursor-pointer select-none" onClick={() => setNewEvent({ ...newEvent, requires_team_details: !newEvent.requires_team_details })}>
+                  <div className={`w-10 h-5 rounded-full relative transition-all ${newEvent.requires_team_details ? 'bg-fest-primary' : 'bg-white/10'}`}>
                     <div className={`absolute top-1 w-3 h-3 rounded-full bg-fest-dark transition-all ${newEvent.requires_team_details ? 'right-1' : 'left-1'}`} />
                   </div>
                   <div className="flex flex-col">
@@ -1556,12 +1576,12 @@ export default function AdminDashboard() {
                 {/* Sub-categories List Manager */}
                 <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-widest mb-2">
-                    <ListFilter size={16} className="text-fest-gold" /> Categories / Slots
+                    <ListFilter size={16} className="text-fest-primary" /> Categories / Slots
                   </div>
                   <div className="flex gap-2">
                     <input 
                       placeholder="Add Category (e.g. Solo, Duet, Slot 1...)" 
-                      className="flex-1 rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold transition-all" 
+                      className="flex-1 rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary transition-all" 
                       value={subCategoryInput} 
                       onChange={(e) => setSubCategoryInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -1574,7 +1594,7 @@ export default function AdminDashboard() {
                     <button
                       type="button"
                       onClick={handleAddSubCategory}
-                      className="px-6 rounded-xl bg-fest-gold text-fest-dark font-black uppercase text-xs tracking-widest hover:bg-fest-gold-light transition-all"
+                      className="px-6 rounded-xl bg-fest-primary text-fest-dark font-black uppercase text-xs tracking-widest hover:bg-fest-primary-light transition-all"
                     >
                       Add
                     </button>
@@ -1583,7 +1603,7 @@ export default function AdminDashboard() {
                   {newEvent.sub_categories.length > 0 ? (
                     <div className="flex flex-wrap gap-2 mt-4">
                       {newEvent.sub_categories.map((cat) => (
-                        <div key={cat} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-fest-gold/10 border border-fest-gold/20 text-fest-gold text-xs font-bold">
+                        <div key={cat} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-fest-primary/10 border border-fest-primary/20 text-fest-primary text-xs font-bold">
                           {cat}
                           <button 
                             type="button"
@@ -1602,14 +1622,14 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                <input placeholder="Payment Account Name" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.payment_account_name} onChange={(e) => setNewEvent({ ...newEvent, payment_account_name: e.target.value })} />
+                <input placeholder="Payment Account Name" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary" value={newEvent.payment_account_name} onChange={(e) => setNewEvent({ ...newEvent, payment_account_name: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="Account Number" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.payment_account_number} onChange={(e) => setNewEvent({ ...newEvent, payment_account_number: e.target.value })} />
-                  <input placeholder="IFSC" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.payment_ifsc} onChange={(e) => setNewEvent({ ...newEvent, payment_ifsc: e.target.value })} />
+                  <input placeholder="Account Number" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary" value={newEvent.payment_account_number} onChange={(e) => setNewEvent({ ...newEvent, payment_account_number: e.target.value })} />
+                  <input placeholder="IFSC" className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary" value={newEvent.payment_ifsc} onChange={(e) => setNewEvent({ ...newEvent, payment_ifsc: e.target.value })} />
                 </div>
-                <input placeholder="UPI ID" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold" value={newEvent.payment_upi_id} onChange={(e) => setNewEvent({ ...newEvent, payment_upi_id: e.target.value })} />
-                <textarea placeholder="Rules, one per line" className="w-full h-28 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none" value={newEvent.rules} onChange={(e) => setNewEvent({ ...newEvent, rules: e.target.value })} />
-                <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold">
+                <input placeholder="UPI ID" className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary" value={newEvent.payment_upi_id} onChange={(e) => setNewEvent({ ...newEvent, payment_upi_id: e.target.value })} />
+                <textarea placeholder="Rules, one per line" className="w-full h-28 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none" value={newEvent.rules} onChange={(e) => setNewEvent({ ...newEvent, rules: e.target.value })} />
+                <button type="submit" className="w-full py-4 bg-fest-primary text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-primary-light transition-all shadow-lg glow-primary">
                   {editingEventId ? 'Update Event' : 'Create Event'}
                 </button>
               </form>
@@ -1620,7 +1640,7 @@ export default function AdminDashboard() {
                     onClick={() => setIsCreatedEventsExpanded(!isCreatedEventsExpanded)}
                     className="flex-1 cursor-pointer group"
                   >
-                    <h3 className="text-xl font-bold transition-colors group-hover:text-fest-gold">Created Events</h3>
+                    <h3 className="text-xl font-bold transition-colors group-hover:text-fest-primary">Created Events</h3>
                     <p className="text-white/45 text-sm mt-1">Click the arrow to expand and view, edit, or delete any of the {events.length} events created.</p>
                   </div>
                   <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -1636,13 +1656,13 @@ export default function AdminDashboard() {
                             setIsCreatedEventsExpanded(true);
                           }
                         }}
-                        className="pl-12 pr-4 py-2 bg-black/40 border border-white/10 rounded-xl w-full text-sm focus:border-fest-gold outline-none transition-all"
+                        className="pl-12 pr-4 py-2 bg-black/40 border border-white/10 rounded-xl w-full text-sm focus:border-fest-primary outline-none transition-all"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={() => setIsCreatedEventsExpanded(!isCreatedEventsExpanded)}
-                      className={`w-10 h-10 shrink-0 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all duration-300 hover:bg-white/10 ${isCreatedEventsExpanded ? 'rotate-180 bg-fest-gold/10 border-fest-gold/30 text-fest-gold' : 'text-white/60'}`}
+                      className={`w-10 h-10 shrink-0 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all duration-300 hover:bg-white/10 ${isCreatedEventsExpanded ? 'rotate-180 bg-fest-primary/10 border-fest-primary/30 text-fest-primary' : 'text-white/60'}`}
                     >
                       <ChevronDown size={20} />
                     </button>
@@ -1685,7 +1705,7 @@ export default function AdminDashboard() {
                                     </div>
                                     <div className="min-w-0">
                                       <div className="font-bold text-lg">{event.title}</div>
-                                      <div className="text-sm text-white/55 mt-1">{event.category} • ₹{event.entry_fee}</div>
+                                      <div className="text-sm text-white/55 mt-1">{event.category} â€¢ â‚¹{event.entry_fee}</div>
                                       <div className="text-xs text-white/35 mt-2">{eventRegistrationCount} registrations</div>
                                     </div>
                                   </div>
@@ -1693,7 +1713,7 @@ export default function AdminDashboard() {
                                     <button
                                       type="button"
                                       onClick={() => startEditingEvent(event)}
-                                      className="px-4 py-3 rounded-2xl bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
+                                      className="px-4 py-3 rounded-2xl bg-fest-primary/10 text-fest-primary hover:bg-fest-primary hover:text-fest-dark transition-colors text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
                                     >
                                       <Pencil size={16} /> Edit Event
                                     </button>
@@ -1730,20 +1750,20 @@ export default function AdminDashboard() {
                         key={event.id}
                         onClick={() => setSelectedPaymentEventId(event.id)}
                         whileHover={{ y: -5 }}
-                        className="glass p-8 rounded-[3rem] text-left group hover:border-fest-gold/40 transition-all flex flex-col justify-between"
+                        className="glass p-8 rounded-[3rem] text-left group hover:border-fest-primary/40 transition-all flex flex-col justify-between"
                       >
                         <div className="flex justify-between items-start mb-8">
-                          <div className="w-14 h-14 rounded-2xl bg-fest-gold/10 flex items-center justify-center text-fest-gold">
+                          <div className="w-14 h-14 rounded-2xl bg-fest-primary/10 flex items-center justify-center text-fest-primary">
                             <ShieldCheck size={28} />
                           </div>
                           <div className="text-right">
                             <div className="text-[10px] text-white/30 uppercase tracking-[0.25em] mb-1">Pending</div>
-                            <div className="text-sm font-bold text-fest-gold uppercase tracking-tighter">{pending}</div>
+                            <div className="text-sm font-bold text-fest-primary uppercase tracking-tighter">{pending}</div>
                           </div>
                         </div>
 
                         <div>
-                          <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter mb-4 group-hover:text-fest-gold transition-colors">
+                          <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter mb-4 group-hover:text-fest-primary transition-colors">
                             {event.title}
                           </h3>
                           <div className="text-sm text-white/45 mb-6">{event.category}</div>
@@ -1757,7 +1777,7 @@ export default function AdminDashboard() {
                               <div className="text-green-400 mt-2 font-bold">{approved}</div>
                             </div>
                             <div className="flex items-end justify-end">
-                              <ChevronRight className="text-white/20 group-hover:text-fest-gold transition-all" size={20} />
+                              <ChevronRight className="text-white/20 group-hover:text-fest-primary transition-all" size={20} />
                             </div>
                           </div>
                         </div>
@@ -1785,7 +1805,7 @@ export default function AdminDashboard() {
                         <h3 className="text-3xl md:text-4xl font-display font-extrabold uppercase tracking-tighter">
                           {selectedPaymentEvent?.title}
                         </h3>
-                        <p className="text-fest-gold-light text-xs font-bold uppercase tracking-widest mt-1 opacity-60">
+                        <p className="text-fest-primary-light text-xs font-bold uppercase tracking-widest mt-1 opacity-60">
                           {selectedPaymentEvent?.category} | {selectedPaymentEventSummary.total} Registrations
                         </p>
                       </div>
@@ -1798,14 +1818,14 @@ export default function AdminDashboard() {
                           value={paymentSearch}
                           onChange={(e) => setPaymentSearch(e.target.value)}
                           placeholder="Search participants"
-                          className="w-full rounded-2xl bg-white/5 border border-white/10 pl-11 pr-4 py-3 text-sm outline-none focus:border-fest-gold"
+                          className="w-full rounded-2xl bg-white/5 border border-white/10 pl-11 pr-4 py-3 text-sm outline-none focus:border-fest-primary"
                         />
                       </div>
                       {selectedPaymentEvent && (
                         <button
                           type="button"
                           onClick={() => exportRegistrationsForEvent(selectedPaymentEvent, selectedPaymentEventRows)}
-                          className="w-full sm:w-auto px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all shadow-lg glow-gold"
+                          className="w-full sm:w-auto px-6 py-3 bg-fest-primary text-fest-dark rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-primary-light transition-all shadow-lg glow-primary"
                         >
                           <Download size={16} /> Export Excel
                         </button>
@@ -1839,7 +1859,7 @@ export default function AdminDashboard() {
                           {
                             id: 'pending' as const,
                             label: 'Pending Container',
-                            tone: 'text-fest-gold',
+                            tone: 'text-fest-primary',
                             count: selectedPaymentEventRows.filter((registration) => registration.payment_status === 'pending').length,
                           },
                           {
@@ -1861,7 +1881,7 @@ export default function AdminDashboard() {
                             onClick={() => setActivePaymentSection(section.id)}
                             className={`rounded-3xl border p-5 text-left transition-all ${
                               activePaymentSection === section.id
-                                ? 'border-fest-gold bg-fest-gold/10'
+                                ? 'border-fest-primary bg-fest-primary/10'
                                 : 'border-white/10 bg-white/5 hover:bg-white/10'
                             }`}
                           >
@@ -1879,7 +1899,7 @@ export default function AdminDashboard() {
                               ? 'text-green-400'
                               : activePaymentSection === 'rejected'
                                 ? 'text-red-400'
-                                : 'text-fest-gold'
+                                : 'text-fest-primary'
                           }`}>
                             {activePaymentSection === 'approved'
                               ? 'Approved Section'
@@ -1915,20 +1935,20 @@ export default function AdminDashboard() {
                         key={event.id}
                         onClick={() => setSelectedQualifiedEventId(event.id)}
                         whileHover={{ y: -5 }}
-                        className="glass p-8 rounded-[3rem] text-left group hover:border-fest-gold/40 transition-all flex flex-col justify-between"
+                        className="glass p-8 rounded-[3rem] text-left group hover:border-fest-primary/40 transition-all flex flex-col justify-between"
                       >
                         <div className="flex justify-between items-start mb-8">
-                          <div className="w-14 h-14 rounded-2xl bg-fest-gold/10 flex items-center justify-center text-fest-gold">
+                          <div className="w-14 h-14 rounded-2xl bg-fest-primary/10 flex items-center justify-center text-fest-primary">
                             <CheckCircle2 size={28} />
                           </div>
                           <div className="text-right">
                             <div className="text-[10px] text-white/30 uppercase tracking-[0.25em] mb-1">Qualified</div>
-                            <div className="text-sm font-bold text-fest-gold uppercase tracking-tighter">{qualifiedCount}</div>
+                            <div className="text-sm font-bold text-fest-primary uppercase tracking-tighter">{qualifiedCount}</div>
                           </div>
                         </div>
 
                         <div>
-                          <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter mb-4 group-hover:text-fest-gold transition-colors">
+                          <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter mb-4 group-hover:text-fest-primary transition-colors">
                             {event.title}
                           </h3>
                           <div className="text-sm text-white/45 mb-6">{event.category}</div>
@@ -1942,7 +1962,7 @@ export default function AdminDashboard() {
                               <div className="text-red-400 mt-2 font-bold">{eliminatedCount}</div>
                             </div>
                             <div className="flex items-end justify-end">
-                              <ChevronRight className="text-white/20 group-hover:text-fest-gold transition-all" size={20} />
+                              <ChevronRight className="text-white/20 group-hover:text-fest-primary transition-all" size={20} />
                             </div>
                           </div>
                         </div>
@@ -1964,7 +1984,7 @@ export default function AdminDashboard() {
                         <h3 className="text-3xl md:text-4xl font-display font-extrabold uppercase tracking-tighter">
                           {selectedQualifiedEvent?.title}
                         </h3>
-                        <p className="text-fest-gold-light text-xs font-bold uppercase tracking-widest mt-1 opacity-60">
+                        <p className="text-fest-primary-light text-xs font-bold uppercase tracking-widest mt-1 opacity-60">
                           {selectedQualifiedEvent?.category} | {registrations.filter((registration) => registration.event_id === selectedQualifiedEventId).length} Registered
                         </p>
                       </div>
@@ -1977,25 +1997,25 @@ export default function AdminDashboard() {
                           value={qualificationSearch}
                           onChange={(e) => setQualificationSearch(e.target.value)}
                           placeholder="Search participants"
-                          className="w-full rounded-2xl bg-white/5 border border-white/10 pl-11 pr-4 py-3 text-sm outline-none focus:border-fest-gold"
+                          className="w-full rounded-2xl bg-white/5 border border-white/10 pl-11 pr-4 py-3 text-sm outline-none focus:border-fest-primary"
                         />
                       </div>
                       <button
                         type="button"
                         onClick={exportQualifiedToExcel}
-                        className="w-full sm:w-auto px-6 py-3 bg-fest-gold text-fest-dark rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all shadow-lg glow-gold shadow-fest-gold/20"
+                        className="w-full sm:w-auto px-6 py-3 bg-fest-primary text-fest-dark rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-primary-light transition-all shadow-lg glow-primary shadow-fest-primary/20"
                       >
                         <Download size={16} /> Export Round Excel
                       </button>
                     </div>
                   </header>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
                     {[
                       { id: 'all' as const, label: 'All', tone: 'text-white' },
-                      { id: 'round_1_qualified' as const, label: '1st Round', tone: 'text-fest-gold' },
-                      { id: 'round_2_qualified' as const, label: '2nd Round', tone: 'text-fest-gold' },
-                      { id: 'semifinal' as const, label: 'Semifinal', tone: 'text-fest-gold' },
+                      { id: 'round_1_qualified' as const, label: '1st Round', tone: 'text-fest-primary' },
+                      { id: 'round_2_qualified' as const, label: '2nd Round', tone: 'text-fest-primary' },
+                      { id: 'semifinal' as const, label: 'Semifinal', tone: 'text-fest-primary' },
                       { id: 'final' as const, label: 'Final', tone: 'text-green-400' },
                       { id: 'eliminated' as const, label: 'Eliminated', tone: 'text-red-400' },
                     ].map((stage) => (
@@ -2005,7 +2025,7 @@ export default function AdminDashboard() {
                         onClick={() => setActiveQualifiedStage(stage.id)}
                         className={`rounded-3xl border p-4 text-left transition-all ${
                           activeQualifiedStage === stage.id
-                            ? 'border-fest-gold bg-fest-gold/10'
+                            ? 'border-fest-primary bg-fest-primary/10'
                             : 'border-white/10 bg-white/5 hover:bg-white/10'
                         }`}
                       >
@@ -2037,11 +2057,11 @@ export default function AdminDashboard() {
                               className="w-full text-left px-8 py-6 flex flex-col md:flex-row md:items-center justify-between gap-4 select-none"
                             >
                               <div className="flex items-center gap-5">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${isExpanded ? 'bg-fest-gold text-fest-dark' : 'bg-white/5 text-fest-gold'}`}>
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${isExpanded ? 'bg-fest-primary text-fest-dark' : 'bg-white/5 text-fest-primary'}`}>
                                   <Users size={22} />
                                 </div>
                                 <div>
-                                  <h4 className={`text-xl font-bold tracking-tight transition-colors flex items-center gap-2 ${isExpanded ? 'text-fest-gold' : 'text-white'}`}>
+                                  <h4 className={`text-xl font-bold tracking-tight transition-colors flex items-center gap-2 ${isExpanded ? 'text-fest-primary' : 'text-white'}`}>
                                     {participantName} 
                                     {(() => {
                                       const next = getNextRound(registration.qualification_stage);
@@ -2058,7 +2078,7 @@ export default function AdminDashboard() {
                                   </h4>
                                   <div className="flex items-center gap-3 mt-1.5">
                                     <div className="flex items-center gap-1.5 text-xs text-white/40 font-medium">
-                                      <Mail size={12} className="text-fest-gold/40" /> {registration.email || registration.participant_user?.email}
+                                      <Mail size={12} className="text-fest-primary/40" /> {registration.email || registration.participant_user?.email}
                                     </div>
                                     <span className="w-1 h-1 bg-white/10 rounded-full" />
                                     <div className="px-3 py-0.5 rounded-full bg-white/5 border border-white/5 text-[9px] font-black uppercase tracking-widest text-white/30">
@@ -2071,17 +2091,17 @@ export default function AdminDashboard() {
                               <div className="flex items-center gap-6 self-end md:self-auto">
                                 <div className="text-right flex flex-col items-end gap-1.5">
                                   <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-colors ${
-                                    registration.qualification_stage === 'eliminated' ? 'border-red-500/20 bg-red-500/10 text-red-400' : 'border-fest-gold/20 bg-fest-gold/10 text-fest-gold'
+                                    registration.qualification_stage === 'eliminated' ? 'border-red-500/20 bg-red-500/10 text-red-400' : 'border-fest-primary/20 bg-fest-primary/10 text-fest-primary'
                                   }`}>
                                     {registration.qualification_stage.replaceAll('_', ' ')}
                                   </div>
                                   {lastScore > 0 && (
                                     <div className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                                      LAST SCORE: <span className="text-fest-gold">{lastScore}</span> / 10
+                                      LAST SCORE: <span className="text-fest-primary">{lastScore}</span> / 10
                                     </div>
                                   )}
                                 </div>
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center glass transition-all ${isExpanded ? 'rotate-90 bg-fest-gold text-fest-dark border-transparent' : 'text-white/40'}`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center glass transition-all ${isExpanded ? 'rotate-90 bg-fest-primary text-fest-dark border-transparent' : 'text-white/40'}`}>
                                   <ChevronRight size={20} />
                                 </div>
                               </div>
@@ -2120,26 +2140,26 @@ export default function AdminDashboard() {
                                         </div>
                                       </div>
                                       <div className="rounded-2xl bg-white/5 p-5 border border-white/5 group">
-                                        <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5 text-fest-gold">Current Status</div>
+                                        <div className="text-white/30 text-[10px] uppercase tracking-widest font-black mb-1.5 text-fest-primary">Current Status</div>
                                         <div className="font-black uppercase text-xs tracking-widest text-white/80">{registration.qualification_stage.replace(/_/g, ' ')}</div>
                                       </div>
                                     </div>
 
                                     {/* TEAM ROSTER SECTION */}
                                     {registration.team_members && registration.team_members.length > 0 && (
-                                      <div className="mb-10 rounded-3xl border border-fest-gold/20 bg-fest-gold/5 p-6 overflow-hidden relative">
+                                      <div className="mb-10 rounded-3xl border border-fest-primary/20 bg-fest-primary/5 p-6 overflow-hidden relative">
                                         <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
                                           <Users size={120} />
                                         </div>
-                                        <div className="flex items-center gap-3 text-fest-gold text-xs font-black uppercase tracking-[0.2em] mb-6">
+                                        <div className="flex items-center gap-3 text-fest-primary text-xs font-black uppercase tracking-[0.2em] mb-6">
                                           <Users size={16} /> 5-Player Gaming Roster
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                                           {registration.team_members.map((member, idx) => (
-                                            <div key={idx} className="rounded-2xl bg-black/40 border border-white/5 p-4 transition-all hover:border-fest-gold/30 group">
-                                              <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover:text-fest-gold/40 transition-colors">Player {idx + 1}</div>
+                                            <div key={idx} className="rounded-2xl bg-black/40 border border-white/5 p-4 transition-all hover:border-fest-primary/30 group">
+                                              <div className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1 group-hover:text-fest-primary/40 transition-colors">Player {idx + 1}</div>
                                               <div className="font-bold text-white/90 text-sm truncate">{member.name}</div>
-                                              <div className="text-[10px] text-fest-gold font-mono mt-1 opacity-60">ID: {member.game_id}</div>
+                                              <div className="text-[10px] text-fest-primary font-mono mt-1 opacity-60">ID: {member.game_id}</div>
                                             </div>
                                           ))}
                                         </div>
@@ -2173,7 +2193,7 @@ export default function AdminDashboard() {
                                             className={`py-3.5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all ${
                                               stage.id === 'eliminated'
                                                 ? 'bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white'
-                                                : 'bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark'
+                                                : 'bg-fest-primary/10 text-fest-primary hover:bg-fest-primary hover:text-fest-dark'
                                             } disabled:opacity-50`}
                                           >
                                             {stage.label}
@@ -2192,7 +2212,7 @@ export default function AdminDashboard() {
                                         <div className="space-y-10">
                                           <div className="space-y-4">
                                             <div className="flex items-center justify-between px-2">
-                                              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-fest-gold font-black">
+                                              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-fest-primary font-black">
                                                 <Activity size={14} /> Active Competition Submission
                                               </div>
                                               <div className="text-[10px] text-white/20 font-bold uppercase tracking-widest">
@@ -2223,7 +2243,7 @@ export default function AdminDashboard() {
                                           {pastSubs.length > 0 && (
                                             <details className="group">
                                               <summary className="flex items-center gap-2 cursor-pointer text-[10px] uppercase tracking-widest text-white/20 font-black hover:text-white transition-colors py-4 bg-white/5 border border-white/5 rounded-3xl px-8 select-none list-none">
-                                                <ChevronRight size={14} className="group-open:rotate-90 transition-transform text-fest-gold" />
+                                                <ChevronRight size={14} className="group-open:rotate-90 transition-transform text-fest-primary" />
                                                 View Previous Round Archive ({pastSubs.length})
                                               </summary>
                                               <div className="grid grid-cols-1 gap-12 mt-8 pt-8 border-t border-white/5">
@@ -2265,7 +2285,7 @@ export default function AdminDashboard() {
                                         value={qualificationNotes[registration.id] || ''}
                                         onChange={(e) => setQualificationNotes(cur => ({ ...cur, [registration.id]: e.target.value }))}
                                         placeholder="Record internal staff notes for this candidate's journey..."
-                                        className="w-full h-36 rounded-[2rem] border border-white/10 bg-black/40 px-8 py-6 text-sm outline-none focus:border-fest-gold resize-none transition-all"
+                                        className="w-full h-36 rounded-[2rem] border border-white/10 bg-black/40 px-8 py-6 text-sm outline-none focus:border-fest-primary resize-none transition-all"
                                       />
                                     </div>
                                   </div>
@@ -2297,10 +2317,10 @@ export default function AdminDashboard() {
                         min={1}
                         value={newSlideDuration}
                         onChange={(e) => setNewSlideDuration(Number(e.target.value))}
-                        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                       />
                     </div>
-                    <label className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs cursor-pointer hover:bg-fest-gold-light transition-all flex items-center gap-2">
+                    <label className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs cursor-pointer hover:bg-fest-primary-light transition-all flex items-center gap-2">
                       <ImagePlus size={16} /> Add Slide
                       <input
                         type="file"
@@ -2353,7 +2373,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_event: { ...current.home_about_event, title: e.target.value },
                     }))}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <input
                     placeholder="Highlighted subtitle"
@@ -2362,7 +2382,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_event: { ...current.home_about_event, subtitle: e.target.value },
                     }))}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <textarea
                     placeholder="About the event description"
@@ -2371,13 +2391,13 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_event: { ...current.home_about_event, body: e.target.value },
                     }))}
-                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none"
+                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
                   />
                   <button
                     type="button"
                     onClick={() => void saveSiteContent('home_about_event')}
                     disabled={uiSaving}
-                    className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all"
+                    className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-primary-light transition-all"
                   >
                     <Save size={16} /> Save Event Content
                   </button>
@@ -2398,7 +2418,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_college: { ...current.home_about_college, title: e.target.value },
                     }))}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <input
                     placeholder="Highlighted word"
@@ -2407,7 +2427,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_college: { ...current.home_about_college, subtitle: e.target.value },
                     }))}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <textarea
                     placeholder="College description"
@@ -2416,7 +2436,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_college: { ...current.home_about_college, body: e.target.value },
                     }))}
-                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none"
+                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
                   />
                   <div className="grid grid-cols-2 gap-4">
                     <input
@@ -2429,7 +2449,7 @@ export default function AdminDashboard() {
                           metadata: { ...current.home_about_college.metadata, highlight_one_value: e.target.value },
                         },
                       }))}
-                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                     />
                     <input
                       placeholder="Highlight 1 label"
@@ -2441,7 +2461,7 @@ export default function AdminDashboard() {
                           metadata: { ...current.home_about_college.metadata, highlight_one_label: e.target.value },
                         },
                       }))}
-                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                     />
                     <input
                       placeholder="Highlight 2 value"
@@ -2453,7 +2473,7 @@ export default function AdminDashboard() {
                           metadata: { ...current.home_about_college.metadata, highlight_two_value: e.target.value },
                         },
                       }))}
-                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                     />
                     <input
                       placeholder="Highlight 2 label"
@@ -2465,7 +2485,7 @@ export default function AdminDashboard() {
                           metadata: { ...current.home_about_college.metadata, highlight_two_label: e.target.value },
                         },
                       }))}
-                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                     />
                   </div>
                   <div className="space-y-3">
@@ -2500,7 +2520,7 @@ export default function AdminDashboard() {
                     type="button"
                     onClick={() => void saveSiteContent('home_about_college')}
                     disabled={uiSaving}
-                    className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all"
+                    className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-primary-light transition-all"
                   >
                     <Save size={16} /> Save College Content
                   </button>
@@ -2519,7 +2539,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_school: { ...current.home_about_school, title: e.target.value },
                     }))}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <input
                     placeholder="Highlighted subtitle"
@@ -2528,7 +2548,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_school: { ...current.home_about_school, subtitle: e.target.value },
                     }))}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <textarea
                     placeholder="School description"
@@ -2537,7 +2557,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_about_school: { ...current.home_about_school, body: e.target.value },
                     }))}
-                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none"
+                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
                   />
                   
                   <div className="space-y-3">
@@ -2572,7 +2592,7 @@ export default function AdminDashboard() {
                     type="button"
                     onClick={() => void saveSiteContent('home_about_school')}
                     disabled={uiSaving}
-                    className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all"
+                    className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-primary-light transition-all"
                   >
                     <Save size={16} /> Save School Content
                   </button>
@@ -2591,7 +2611,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_why_join: { ...current.home_why_join, title: e.target.value },
                     }))}
-                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <textarea
                     placeholder="Description paragraph..."
@@ -2600,7 +2620,7 @@ export default function AdminDashboard() {
                       ...current,
                       home_why_join: { ...current.home_why_join, body: e.target.value },
                     }))}
-                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none"
+                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
                   />
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -2614,7 +2634,7 @@ export default function AdminDashboard() {
                           metadata: { ...current.home_why_join.metadata, f1: e.target.value },
                         },
                       }))}
-                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                     />
                     <input
                       placeholder="Feature 2 (e.g. High Energy)"
@@ -2626,7 +2646,7 @@ export default function AdminDashboard() {
                           metadata: { ...current.home_why_join.metadata, f2: e.target.value },
                         },
                       }))}
-                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                     />
                     <input
                       placeholder="Feature 3 (e.g. Star Guests)"
@@ -2638,7 +2658,7 @@ export default function AdminDashboard() {
                           metadata: { ...current.home_why_join.metadata, f3: e.target.value },
                         },
                       }))}
-                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                     />
                     <input
                       placeholder="Feature 4 (e.g. Artistic Souls)"
@@ -2650,7 +2670,7 @@ export default function AdminDashboard() {
                           metadata: { ...current.home_why_join.metadata, f4: e.target.value },
                         },
                       }))}
-                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                      className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                     />
                   </div>
 
@@ -2658,7 +2678,7 @@ export default function AdminDashboard() {
                     type="button"
                     onClick={() => void saveSiteContent('home_why_join')}
                     disabled={uiSaving}
-                    className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all"
+                    className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-primary-light transition-all"
                   >
                     <Save size={16} /> Save 'Why Join' Content
                   </button>
@@ -2673,7 +2693,7 @@ export default function AdminDashboard() {
                     placeholder="Add a universal guideline"
                     value={ruleForm.rule_text}
                     onChange={(e) => setRuleForm((current) => ({ ...current, rule_text: e.target.value }))}
-                    className="w-full h-24 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none"
+                    className="w-full h-24 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
                   />
                   <div className="flex gap-4 items-end">
                     <div className="w-40">
@@ -2682,13 +2702,13 @@ export default function AdminDashboard() {
                         type="number"
                         value={ruleForm.display_order}
                         onChange={(e) => setRuleForm((current) => ({ ...current, display_order: Number(e.target.value) }))}
-                        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={() => void handleAddGuideline()}
-                      className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all"
+                      className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs hover:bg-fest-primary-light transition-all"
                     >
                       {editingGuidelineId ? 'Update Guideline' : 'Add Guideline'}
                     </button>
@@ -2713,7 +2733,7 @@ export default function AdminDashboard() {
                           <button
                             type="button"
                             onClick={() => startEditingGuideline(rule)}
-                            className="px-3 py-2 rounded-xl bg-fest-gold/10 text-fest-gold hover:bg-fest-gold hover:text-fest-dark transition-colors text-xs font-bold uppercase tracking-widest"
+                            className="px-3 py-2 rounded-xl bg-fest-primary/10 text-fest-primary hover:bg-fest-primary hover:text-fest-dark transition-colors text-xs font-bold uppercase tracking-widest"
                           >
                             Edit
                           </button>
@@ -2746,20 +2766,20 @@ export default function AdminDashboard() {
                     placeholder="Name"
                     value={committeeForm.name}
                     onChange={(e) => setCommitteeForm((current) => ({ ...current, name: e.target.value }))}
-                    className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <input
                     placeholder="Designation"
                     value={committeeForm.role}
                     onChange={(e) => setCommitteeForm((current) => ({ ...current, role: e.target.value }))}
-                    className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <input
                     type="number"
                     placeholder="Display Order"
                     value={committeeForm.display_order}
                     onChange={(e) => setCommitteeForm((current) => ({ ...current, display_order: Number(e.target.value) }))}
-                    className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                    className="rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
                   />
                   <label className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors text-sm font-medium">
                     <ImageIcon size={16} /> Upload Photo
@@ -2785,7 +2805,7 @@ export default function AdminDashboard() {
                 <button
                   type="button"
                   onClick={() => void handleAddCommitteeMember()}
-                  className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all"
+                  className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs hover:bg-fest-primary-light transition-all"
                 >
                   Add Committee Member
                 </button>
@@ -2812,6 +2832,232 @@ export default function AdminDashboard() {
                   )}
                 </div>
               </div>
+
+              {/* ABOUT PAGE EDITOR */}
+              <div className="rounded-3xl border border-white/10 bg-black/20 p-6 space-y-5">
+                <div>
+                  <h3 className="text-xl font-bold">About Page Content</h3>
+                  <p className="text-white/45 text-sm mt-1">Control the text and story on the main About page.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* About Hero */}
+                  <div className="space-y-4 p-4 border border-white/5 bg-white/5 rounded-2xl">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-fest-primary">Hero Section</h4>
+                    <input
+                      placeholder="Title (e.g. ABOUT)"
+                      value={siteContent.about_hero.title || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_hero: { ...c.about_hero, title: e.target.value } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
+                    />
+                    <input
+                      placeholder="Subtitle (e.g. UNSCRIPTX)"
+                      value={siteContent.about_hero.subtitle || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_hero: { ...c.about_hero, subtitle: e.target.value } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
+                    />
+                    <textarea
+                      placeholder="Hero Body Text"
+                      value={siteContent.about_hero.body || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_hero: { ...c.about_hero, body: e.target.value } }))}
+                      className="w-full h-24 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
+                    />
+                    <button onClick={() => void saveSiteContent('about_hero')} className="w-full py-2.5 bg-fest-primary/10 text-fest-primary hover:bg-fest-primary hover:text-fest-dark rounded-xl font-bold text-xs uppercase transition-all">Save Hero</button>
+                  </div>
+
+                  {/* About Mission */}
+                  <div className="space-y-4 p-4 border border-white/5 bg-white/5 rounded-2xl">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-fest-accent">Our Mission</h4>
+                    <input
+                      placeholder="Title"
+                      value={siteContent.about_mission.title || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_mission: { ...c.about_mission, title: e.target.value } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-accent"
+                    />
+                    <textarea
+                      placeholder="Mission Body Text"
+                      value={siteContent.about_mission.body || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_mission: { ...c.about_mission, body: e.target.value } }))}
+                      className="w-full h-24 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-accent resize-none"
+                    />
+                    <button onClick={() => void saveSiteContent('about_mission')} className="w-full py-2.5 bg-fest-accent/10 text-fest-accent hover:bg-fest-accent hover:text-fest-dark rounded-xl font-bold text-xs uppercase transition-all">Save Mission</button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* About Community */}
+                  <div className="space-y-4 p-4 border border-white/5 bg-white/5 rounded-2xl">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-fest-primary">Our Community</h4>
+                    <input
+                      placeholder="Title"
+                      value={siteContent.about_community.title || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_community: { ...c.about_community, title: e.target.value } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
+                    />
+                    <textarea
+                      placeholder="Community Body Text"
+                      value={siteContent.about_community.body || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_community: { ...c.about_community, body: e.target.value } }))}
+                      className="w-full h-24 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
+                    />
+                    <button onClick={() => void saveSiteContent('about_community')} className="w-full py-2.5 bg-fest-primary/10 text-fest-primary hover:bg-fest-primary hover:text-fest-dark rounded-xl font-bold text-xs uppercase transition-all">Save Community</button>
+                  </div>
+
+                  {/* About Vision */}
+                  <div className="space-y-4 p-4 border border-white/5 bg-white/5 rounded-2xl">
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-fest-accent">Our Vision</h4>
+                    <input
+                      placeholder="Title"
+                      value={siteContent.about_vision.title || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_vision: { ...c.about_vision, title: e.target.value } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-accent"
+                    />
+                    <textarea
+                      placeholder="Vision Body Text"
+                      value={siteContent.about_vision.body || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_vision: { ...c.about_vision, body: e.target.value } }))}
+                      className="w-full h-24 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-accent resize-none"
+                    />
+                    <button onClick={() => void saveSiteContent('about_vision')} className="w-full py-2.5 bg-fest-accent/10 text-fest-accent hover:bg-fest-accent hover:text-fest-dark rounded-xl font-bold text-xs uppercase transition-all">Save Vision</button>
+                  </div>
+                </div>
+
+                {/* About Story */}
+                <div className="space-y-4 p-6 border border-white/5 bg-white/5 rounded-3xl">
+                  <h4 className="text-sm font-bold uppercase tracking-widest text-fest-primary">Our Story</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      placeholder="Story Title (e.g. The Story Behind The)"
+                      value={siteContent.about_story.title || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_story: { ...c.about_story, title: e.target.value } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
+                    />
+                    <input
+                      placeholder="Story Subtitle (e.g. Script)"
+                      value={siteContent.about_story.subtitle || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, about_story: { ...c.about_story, subtitle: e.target.value } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
+                    />
+                  </div>
+                  <textarea
+                    placeholder="Main story text..."
+                    value={siteContent.about_story.body || ''}
+                    onChange={(e) => setSiteContent(c => ({ ...c, about_story: { ...c.about_story, body: e.target.value } }))}
+                    className="w-full h-32 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
+                  />
+                  <textarea
+                    placeholder="Secondary story text (optional)..."
+                    value={siteContent.about_story.secondary_body || ''}
+                    onChange={(e) => setSiteContent(c => ({ ...c, about_story: { ...c.about_story, secondary_body: e.target.value } }))}
+                    className="w-full h-24 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
+                  />
+                  <div className="flex items-center gap-4">
+                    <label className="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors text-xs font-bold uppercase flex items-center gap-2">
+                      <ImageIcon size={16} /> Story Image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const imageUrl = await uploadAsset(file, 'about');
+                            setSiteContent(c => ({ ...c, about_story: { ...c.about_story, image_url: imageUrl } }));
+                            toast.success('Story image uploaded.');
+                          } catch (err: any) {
+                            toast.error(err.message || 'Upload failed.');
+                          }
+                        }}
+                      />
+                    </label>
+                    {siteContent.about_story.image_url && (
+                      <img src={siteContent.about_story.image_url} alt="Story preview" className="w-16 h-12 object-cover rounded-lg border border-white/10" />
+                    )}
+                  </div>
+                  <button onClick={() => void saveSiteContent('about_story')} className="w-full py-4 bg-fest-primary text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-primary-light transition-all shadow-lg glow-primary">
+                    <Save size={16} className="inline mr-2" /> Save Story Content
+                  </button>
+                </div>
+              </div>
+
+              {/* CONTACT INFO EDITOR */}
+              <div className="rounded-3xl border border-white/10 bg-black/20 p-6 space-y-5">
+                <div>
+                  <h3 className="text-xl font-bold">Contact Page Info</h3>
+                  <p className="text-white/45 text-sm mt-1">Update global contact details, address, and office hours.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-white/30 ml-1 mb-2 block tracking-widest">Main Emails</label>
+                    <input
+                      placeholder="Primary Email"
+                      value={siteContent.contact_info.metadata?.email_1 || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, contact_info: { ...c.contact_info, metadata: { ...c.contact_info.metadata, email_1: e.target.value } } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary mb-3"
+                    />
+                    <input
+                      placeholder="Secondary Email"
+                      value={siteContent.contact_info.metadata?.email_2 || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, contact_info: { ...c.contact_info, metadata: { ...c.contact_info.metadata, email_2: e.target.value } } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-white/30 ml-1 mb-2 block tracking-widest">Phone Numbers</label>
+                    <input
+                      placeholder="Primary Phone"
+                      value={siteContent.contact_info.metadata?.phone_1 || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, contact_info: { ...c.contact_info, metadata: { ...c.contact_info.metadata, phone_1: e.target.value } } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-accent mb-3"
+                    />
+                    <input
+                      placeholder="Secondary Phone"
+                      value={siteContent.contact_info.metadata?.phone_2 || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, contact_info: { ...c.contact_info, metadata: { ...c.contact_info.metadata, phone_2: e.target.value } } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-accent"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-white/30 ml-1 mb-2 block tracking-widest">Address Details</label>
+                    <input
+                      placeholder="Address Title (e.g. IFIM SCHOOL OF TECHNOLOGY)"
+                      value={siteContent.contact_info.metadata?.address_title || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, contact_info: { ...c.contact_info, metadata: { ...c.contact_info.metadata, address_title: e.target.value } } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary mb-3"
+                    />
+                    <textarea
+                      placeholder="Address Body (e.g. electronic city...)"
+                      value={siteContent.contact_info.metadata?.address_body || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, contact_info: { ...c.contact_info, metadata: { ...c.contact_info.metadata, address_body: e.target.value } } }))}
+                      className="w-full h-20 rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-white/30 ml-1 mb-2 block tracking-widest">Office Hours</label>
+                    <input
+                      placeholder="Weekdays (e.g. Mon-Fri 10AM-5PM)"
+                      value={siteContent.contact_info.metadata?.hours_weekday || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, contact_info: { ...c.contact_info, metadata: { ...c.contact_info.metadata, hours_weekday: e.target.value } } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-accent mb-3"
+                    />
+                    <input
+                      placeholder="Weekends (e.g. Sat 10AM-2PM)"
+                      value={siteContent.contact_info.metadata?.hours_weekend || ''}
+                      onChange={(e) => setSiteContent(c => ({ ...c, contact_info: { ...c.contact_info, metadata: { ...c.contact_info.metadata, hours_weekend: e.target.value } } }))}
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-accent"
+                    />
+                  </div>
+                </div>
+
+                <button onClick={() => void saveSiteContent('contact_info')} className="w-full py-4 bg-fest-accent text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-white transition-all shadow-lg glow-accent">
+                  <Save size={16} className="inline mr-2" /> Update Global Contact Info
+                </button>
+              </div>
             </div>
           ) : activeTab === 'users' ? (
             <div className="overflow-x-auto">
@@ -2834,7 +3080,7 @@ export default function AdminDashboard() {
                         <select
                           value={entry.role}
                           onChange={(e) => void handleRoleChange(entry.id, e.target.value as AppRole)}
-                          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest text-fest-gold outline-none focus:border-fest-gold"
+                          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest text-fest-primary outline-none focus:border-fest-primary"
                         >
                           {ROLE_OPTIONS.map((role) => (
                             <option key={role} value={role}>{role}</option>
@@ -2849,7 +3095,7 @@ export default function AdminDashboard() {
           ) : activeTab === 'judges_access' ? (
             <div className="space-y-6">
               <div className="max-w-3xl">
-                <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter text-fest-gold flex items-center gap-3">
+                <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter text-fest-primary flex items-center gap-3">
                   <ShieldCheck size={28} /> Video Judge Assignments
                 </h3>
                 <p className="text-white/50 text-sm mt-2">
@@ -2866,7 +3112,7 @@ export default function AdminDashboard() {
                     <select 
                       value={reviewerId} 
                       onChange={(e) => setReviewerId(e.target.value)} 
-                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-gold text-white appearance-none cursor-pointer"
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-primary text-white appearance-none cursor-pointer"
                     >
                       <option value="" className="bg-fest-dark text-white">Choose a judge...</option>
                       {users.filter(u => u.role !== 'user').map((entry) => (
@@ -2882,7 +3128,7 @@ export default function AdminDashboard() {
                     <select 
                       value={assignmentEventId} 
                       onChange={(e) => setAssignmentEventId(e.target.value)} 
-                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-gold text-white appearance-none cursor-pointer"
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-primary text-white appearance-none cursor-pointer"
                     >
                       <option value="" className="bg-fest-dark text-white">Choose an event...</option>
                       {events.map((event) => (
@@ -2893,7 +3139,7 @@ export default function AdminDashboard() {
                     </select>
                   </div>
 
-                  <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold mt-4">
+                  <button type="submit" className="w-full py-4 bg-fest-primary text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-primary-light transition-all shadow-lg glow-primary mt-4">
                     Link Judge to Event
                   </button>
                 </form>
@@ -2918,7 +3164,7 @@ export default function AdminDashboard() {
                               {assignment.reviewer_user?.full_name || assignment.reviewer_user?.email}
                             </td>
                             <td className="px-6 py-5">
-                              <span className="px-2 py-1 bg-fest-gold/10 border border-fest-gold/20 rounded text-[10px] font-bold text-fest-gold uppercase">
+                              <span className="px-2 py-1 bg-fest-primary/10 border border-fest-primary/20 rounded text-[10px] font-bold text-fest-primary uppercase">
                                 {assignment.assigned_event?.title}
                               </span>
                             </td>
@@ -2941,7 +3187,7 @@ export default function AdminDashboard() {
           ) : activeTab === 'payment_access' ? (
             <div className="space-y-6">
               <div className="max-w-3xl">
-                <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter text-fest-gold flex items-center gap-3">
+                <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter text-fest-primary flex items-center gap-3">
                   <DollarSign size={28} /> Payment Access Control
                 </h3>
                 <p className="text-white/50 text-sm mt-2">
@@ -2958,7 +3204,7 @@ export default function AdminDashboard() {
                     <select 
                       value={reviewerId} 
                       onChange={(e) => setReviewerId(e.target.value)} 
-                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-gold text-white appearance-none cursor-pointer"
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-primary text-white appearance-none cursor-pointer"
                     >
                       <option value="" className="bg-fest-dark text-white">Choose staff...</option>
                       {users.filter(u => u.role !== 'user').map((entry) => (
@@ -2974,7 +3220,7 @@ export default function AdminDashboard() {
                     <select 
                       value={assignmentEventId} 
                       onChange={(e) => setAssignmentEventId(e.target.value)} 
-                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-gold text-white appearance-none cursor-pointer"
+                      className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-4 text-sm outline-none focus:border-fest-primary text-white appearance-none cursor-pointer"
                     >
                       <option value="" className="bg-fest-dark text-white">Choose an event...</option>
                       {events.map((event) => (
@@ -2985,7 +3231,7 @@ export default function AdminDashboard() {
                     </select>
                   </div>
 
-                  <button type="submit" className="w-full py-4 bg-fest-gold text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-gold-light transition-all shadow-lg glow-gold mt-4">
+                  <button type="submit" className="w-full py-4 bg-fest-primary text-fest-dark font-black uppercase tracking-widest rounded-xl hover:bg-fest-primary-light transition-all shadow-lg glow-primary mt-4">
                     Link Staff to Payments
                   </button>
                 </form>
@@ -3010,7 +3256,7 @@ export default function AdminDashboard() {
                               {assignment.reviewer_user?.full_name || assignment.reviewer_user?.email}
                             </td>
                             <td className="px-6 py-5">
-                              <span className="px-2 py-1 bg-fest-gold/10 border border-fest-gold/20 rounded text-[10px] font-bold text-fest-gold uppercase">
+                              <span className="px-2 py-1 bg-fest-primary/10 border border-fest-primary/20 rounded text-[10px] font-bold text-fest-primary uppercase">
                                 {assignment.assigned_event?.title}
                               </span>
                             </td>
@@ -3042,28 +3288,28 @@ export default function AdminDashboard() {
                         key={event.id}
                         onClick={() => setSelectedEventId(event.id)}
                         whileHover={{ y: -5 }}
-                        className="glass p-8 rounded-[3rem] text-left group hover:border-fest-gold/40 transition-all flex flex-col justify-between"
+                        className="glass p-8 rounded-[3rem] text-left group hover:border-fest-primary/40 transition-all flex flex-col justify-between"
                       >
                         <div className="flex justify-between items-start mb-8">
-                          <div className="w-14 h-14 rounded-2xl bg-fest-gold/10 flex items-center justify-center text-fest-gold">
+                          <div className="w-14 h-14 rounded-2xl bg-fest-primary/10 flex items-center justify-center text-fest-primary">
                             <CalendarDays size={28} />
                           </div>
                           <div className="text-right">
                             <div className="text-[10px] text-white/30 uppercase tracking-[0.25em] mb-1">Type</div>
-                            <div className="text-sm font-bold text-fest-gold uppercase tracking-tighter">{event.category}</div>
+                            <div className="text-sm font-bold text-fest-primary uppercase tracking-tighter">{event.category}</div>
                           </div>
                         </div>
 
                         <div>
-                          <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter mb-6 group-hover:text-fest-gold transition-colors">
+                          <h3 className="text-2xl font-display font-extrabold uppercase tracking-tighter mb-6 group-hover:text-fest-primary transition-colors">
                             {event.title}
                           </h3>
                           <div className="flex items-center justify-between pt-6 border-t border-white/5">
-                            <div className="flex items-center gap-2 text-fest-gold-light">
+                            <div className="flex items-center gap-2 text-fest-primary-light">
                               <Users size={18} />
                               <span className="font-bold text-sm tracking-widest">{eventRows.length} Students</span>
                             </div>
-                            <ChevronRight className="text-white/20 group-hover:text-fest-gold transition-all" size={20} />
+                            <ChevronRight className="text-white/20 group-hover:text-fest-primary transition-all" size={20} />
                           </div>
                         </div>
                       </motion.button>
@@ -3090,8 +3336,8 @@ export default function AdminDashboard() {
                         <h3 className="text-3xl md:text-4xl font-display font-extrabold uppercase tracking-tighter">
                           {events.find((e) => e.id === selectedEventId)?.title}
                         </h3>
-                        <p className="text-fest-gold-light text-xs font-bold uppercase tracking-widest mt-1 opacity-60">
-                          {events.find((e) => e.id === selectedEventId)?.category} — {registrations.filter((r) => r.event_id === selectedEventId).length} Participants
+                        <p className="text-fest-primary-light text-xs font-bold uppercase tracking-widest mt-1 opacity-60">
+                          {events.find((e) => e.id === selectedEventId)?.category} â€” {registrations.filter((r) => r.event_id === selectedEventId).length} Participants
                         </p>
                       </div>
                     </div>
@@ -3102,7 +3348,7 @@ export default function AdminDashboard() {
                         const rows = registrations.filter((r) => r.event_id === selectedEventId);
                         if (event) exportRegistrationsForEvent(event, rows);
                       }}
-                      className="px-8 py-4 bg-fest-gold text-fest-dark rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-white hover:text-fest-dark transition-all flex items-center justify-center gap-2 shadow-lg glow-gold"
+                      className="px-8 py-4 bg-fest-primary text-fest-dark rounded-2xl font-bold uppercase tracking-widest text-xs hover:bg-white hover:text-fest-dark transition-all flex items-center justify-center gap-2 shadow-lg glow-primary"
                     >
                       <Download size={16} /> Export Excel
                     </button>
@@ -3140,15 +3386,15 @@ export default function AdminDashboard() {
                                   </td>
                                   <td className="px-10 py-8 text-white/50 text-sm">
                                     <div className="font-medium text-white/70">{reg.college_name}</div>
-                                    <div className="text-xs uppercase tracking-widest mt-1 opacity-40">{reg.team_name || 'Solo'} • {reg.team_size || 1} Members</div>
+                                    <div className="text-xs uppercase tracking-widest mt-1 opacity-40">{reg.team_name || 'Solo'} â€¢ {reg.team_size || 1} Members</div>
                                   </td>
                                   <td className="px-10 py-8">
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-center gap-2 text-white/60 text-xs">
-                                        <Mail size={12} className="text-fest-gold/60" /> {reg.email || reg.participant_user?.email}
+                                        <Mail size={12} className="text-fest-primary/60" /> {reg.email || reg.participant_user?.email}
                                       </div>
                                       <div className="flex items-center gap-2 text-white/60 text-xs">
-                                        <Phone size={12} className="text-fest-gold/60" /> {reg.phone}
+                                        <Phone size={12} className="text-fest-primary/60" /> {reg.phone}
                                       </div>
                                     </div>
                                   </td>
@@ -3167,8 +3413,8 @@ export default function AdminDashboard() {
                                         onClick={() => setExpandedRegisterRows(prev => ({ ...prev, [reg.id]: !prev[reg.id] }))}
                                         className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all font-bold text-[10px] uppercase tracking-widest border ${
                                           expandedRegisterRows[reg.id]
-                                            ? 'bg-fest-gold text-fest-dark border-transparent'
-                                            : 'border-fest-gold/30 text-fest-gold hover:bg-fest-gold/10'
+                                            ? 'bg-fest-primary text-fest-dark border-transparent'
+                                            : 'border-fest-primary/30 text-fest-primary hover:bg-fest-primary/10'
                                         }`}
                                       >
                                         <Users size={12} /> {expandedRegisterRows[reg.id] ? 'Hide' : 'View'}
@@ -3193,7 +3439,7 @@ export default function AdminDashboard() {
                                 {/* ROSTER COLLAPSIBLE DETAIL */}
                                 <AnimatePresence>
                                   {expandedRegisterRows[reg.id] && reg.team_members && (
-                                    <tr className="bg-fest-gold/[0.02]">
+                                    <tr className="bg-fest-primary/[0.02]">
                                       <td colSpan={6} className="px-10 pb-10 pt-2">
                                         <motion.div
                                           initial={{ opacity: 0, height: 0 }}
@@ -3201,11 +3447,11 @@ export default function AdminDashboard() {
                                           exit={{ opacity: 0, height: 0 }}
                                           className="overflow-hidden"
                                         >
-                                          <div className="rounded-3xl border border-fest-gold/20 bg-fest-gold/5 p-6 relative">
+                                          <div className="rounded-3xl border border-fest-primary/20 bg-fest-primary/5 p-6 relative">
                                             <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
                                               <Users size={80} />
                                             </div>
-                                            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-fest-gold mb-4 flex items-center gap-2">
+                                            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-fest-primary mb-4 flex items-center gap-2">
                                               <ShieldCheck size={14} /> Team Participant Roster
                                             </div>
                                             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -3213,7 +3459,7 @@ export default function AdminDashboard() {
                                                 <div key={idx} className="bg-black/40 border border-white/5 rounded-2xl p-4">
                                                   <div className="text-[9px] font-black text-white/20 uppercase mb-1">Player {idx + 1}</div>
                                                   <div className="text-xs font-bold text-white truncate">{member.name}</div>
-                                                  <div className="text-[10px] text-fest-gold/60 font-mono mt-1">ID: {member.game_id}</div>
+                                                  <div className="text-[10px] text-fest-primary/60 font-mono mt-1">ID: {member.game_id}</div>
                                                 </div>
                                               ))}
                                             </div>
@@ -3231,13 +3477,85 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               )}
+              </div>
+          ) : activeTab === 'contact_messages' ? (
+            <div className="space-y-8">
+              <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <h3 className="text-3xl md:text-4xl font-display font-extrabold uppercase tracking-tighter">
+                    Contact <span className="text-fest-accent">Messages</span>
+                  </h3>
+                  <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2">
+                    {contactMessages.length} user inquiries received
+                  </p>
+                </div>
+                <button
+                  onClick={() => fetchData(true)}
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
+                >
+                  <Clock size={16} className="text-fest-accent" /> Refresh Messages
+                </button>
+              </header>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {contactMessages.length === 0 ? (
+                  <div className="col-span-full py-32 glass rounded-[3rem] text-center border-dashed border-white/10">
+                    <Mail size={48} className="mx-auto mb-4 text-white/10" />
+                    <div className="text-xs font-bold uppercase tracking-widest text-white/20">No messages found in the system.</div>
+                  </div>
+                ) : (
+                  contactMessages.map((msg) => (
+                    <div key={msg.id} className="glass p-8 rounded-[3rem] border border-white/10 hover:border-fest-accent/40 transition-all flex flex-col justify-between group">
+                      <div>
+                        <div className="flex justify-between items-start mb-6">
+                          <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                            msg.status === 'unread' ? 'border-fest-accent/30 bg-fest-accent/10 text-fest-accent' : 'border-white/10 bg-white/5 text-white/30'
+                          }`}>
+                            {msg.status}
+                          </div>
+                          <div className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{new Date(msg.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <h4 className="text-lg font-bold group-hover:text-fest-accent transition-colors">{msg.name}</h4>
+                        <p className="text-xs text-white/40 font-medium mb-6">{msg.email}</p>
+                        <div className="bg-black/20 rounded-2xl p-4 border border-white/5 min-h-[100px] text-sm text-white/70 leading-relaxed italic">
+                          "{msg.message}"
+                        </div>
+                      </div>
+                      <div className="mt-8 flex gap-3">
+                        {msg.status === 'unread' && (
+                          <button
+                            onClick={async () => {
+                              const { error } = await supabase.from('contact_messages').update({ status: 'read' }).eq('id', msg.id);
+                              if (!error) fetchData();
+                            }}
+                            className="flex-1 py-3 bg-fest-accent/10 text-fest-accent hover:bg-fest-accent hover:text-fest-dark rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+                          >
+                            Mark Read
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (window.confirm('Delete this message permanently?')) {
+                              const { error } = await supabase.from('contact_messages').delete().eq('id', msg.id);
+                              if (!error) fetchData();
+                            }
+                          }}
+                          className="px-4 py-3 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl text-xs transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           ) : activeTab === 'system_logs' ? (
             <div className="space-y-8">
               <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                   <h3 className="text-3xl md:text-4xl font-display font-extrabold uppercase tracking-tighter">
-                    Audit <span className="text-fest-gold">Logs</span>
+                    Audit <span className="text-fest-primary">Logs</span>
                   </h3>
                   <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-2">
                     {auditLogs.length} recent administrative actions tracked
@@ -3247,7 +3565,7 @@ export default function AdminDashboard() {
                   onClick={fetchAuditLogs}
                   className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all"
                 >
-                  <Clock size={16} className="text-fest-gold" /> Refresh Feed
+                  <Clock size={16} className="text-fest-primary" /> Refresh Feed
                 </button>
               </header>
 
@@ -3275,7 +3593,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <div className="flex items-center gap-3">
-                             <span className="text-xs font-black uppercase tracking-[0.2em] text-fest-gold">
+                             <span className="text-xs font-black uppercase tracking-[0.2em] text-fest-primary">
                                {log.action_type.replace(/_/g, ' ')}
                              </span>
                              <span className="w-1 H-1 bg-white/10 rounded-full" />
@@ -3299,7 +3617,7 @@ export default function AdminDashboard() {
                           )}
                         </div>
                       </div>
-                      <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/20 group-hover:text-fest-gold transition-colors">
+                      <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest text-white/20 group-hover:text-fest-primary transition-colors">
                         ACTOR ID: {log.actor_id.slice(0, 8)}...
                       </div>
                     </motion.div>

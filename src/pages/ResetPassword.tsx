@@ -67,7 +67,7 @@ export default function ResetPassword() {
 
   return (
     <main className="pt-32 pb-24 px-6 min-h-screen flex items-center justify-center relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-fest-pink/10 blur-[120px] -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-fest-primary/10 blur-[120px] -z-10" />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -75,8 +75,8 @@ export default function ResetPassword() {
         className="max-w-md w-full glass p-8 md:p-12 rounded-[3rem] relative"
       >
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-fest-pink/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-fest-pink/30">
-            <Lock size={32} className="text-fest-pink" />
+          <div className="w-16 h-16 bg-fest-primary/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-fest-primary/30">
+            <Lock size={32} className="text-fest-primary" />
           </div>
           <h2 className="text-4xl font-display font-extrabold tracking-tighter mb-2">
             NEW PASSWORD
@@ -88,7 +88,7 @@ export default function ResetPassword() {
 
         <form className="space-y-6" onSubmit={handleReset}>
           <div className="relative group">
-            <Lock className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-pink transition-colors" size={18} />
+            <Lock className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-primary transition-colors" size={18} />
             <input
               type="password"
               placeholder="New Password"
@@ -96,12 +96,12 @@ export default function ResetPassword() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-pink transition-colors text-white placeholder:text-white/20"
+              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white placeholder:text-white/20"
             />
           </div>
 
           <div className="relative group">
-            <Lock className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-pink transition-colors" size={18} />
+            <Lock className="absolute left-0 top-3 text-white/20 group-focus-within:text-fest-primary transition-colors" size={18} />
             <input
               type="password"
               placeholder="Confirm Password"
@@ -109,14 +109,14 @@ export default function ResetPassword() {
               minLength={6}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-pink transition-colors text-white placeholder:text-white/20"
+              className="w-full bg-transparent border-b-2 border-white/10 pl-8 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white placeholder:text-white/20"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.25em] rounded-full hover:bg-fest-pink hover:text-white hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-2xl"
+            className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.25em] rounded-full hover:bg-fest-primary hover:text-white hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-2xl"
           >
             {loading ? 'UPDATING...' : 'SET NEW PASSWORD'}
             {!loading && <ArrowRight size={20} />}

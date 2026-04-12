@@ -26,7 +26,7 @@ export default function ProtectedRoute({ children, allowedRoles, redirectPath = 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-fest-gold" size={48} />
+        <Loader2 className="animate-spin text-fest-primary" size={48} />
       </div>
     );
   }
@@ -39,7 +39,7 @@ export default function ProtectedRoute({ children, allowedRoles, redirectPath = 
   if (!profile && !profileTimeout) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-fest-gold" size={48} />
+        <Loader2 className="animate-spin text-fest-primary" size={48} />
       </div>
     );
   }

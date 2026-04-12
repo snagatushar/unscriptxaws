@@ -123,7 +123,7 @@ export default function UserDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen pt-32 flex items-center justify-center">
-        <Loader2 className="animate-spin text-fest-gold" size={48} />
+        <Loader2 className="animate-spin text-fest-primary" size={48} />
       </div>
     );
   }
@@ -133,7 +133,7 @@ export default function UserDashboard() {
       <div className="max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl md:text-6xl font-display font-extrabold uppercase mb-4 tracking-tighter">
-            Registered <span className="text-fest-gold">Events</span>
+            Registered <span className="text-fest-primary">Events</span>
           </h1>
           <p className="text-white/60 mb-8 md:mb-12 text-sm md:text-lg">
             Track payment approval and round results for each event you registered in.
@@ -165,7 +165,7 @@ export default function UserDashboard() {
                   <h3 className="text-xl md:text-2xl font-display font-bold mb-2 pr-16 leading-tight">
                     {registration.events.title}
                     {registration.sub_category && (
-                      <span className="block text-fest-gold text-sm font-bold mt-1 tracking-normal">
+                      <span className="block text-fest-primary text-sm font-bold mt-1 tracking-normal">
                          {registration.sub_category}
                       </span>
                     )}
@@ -180,7 +180,7 @@ export default function UserDashboard() {
                     ) : registration.payment_status === 'rejected' ? (
                       <XCircle className="text-red-400" size={20} />
                     ) : (
-                      <Clock className="text-fest-gold-light" size={20} />
+                      <Clock className="text-fest-accent" size={20} />
                     )}
                     <div>
                       <div className="text-[10px] uppercase text-white/40 tracking-widest">Payment Approval</div>
@@ -190,7 +190,7 @@ export default function UserDashboard() {
 
                   <div className="flex items-center gap-3 bg-black/20 p-3 rounded-2xl">
                     {registration.qualification_stage === 'final' ? (
-                      <Trophy className="text-fest-gold" size={20} />
+                      <Trophy className="text-fest-primary" size={20} />
                     ) : registration.qualification_stage === 'eliminated' ? (
                       <XCircle className="text-red-400" size={20} />
                     ) : (
@@ -204,7 +204,7 @@ export default function UserDashboard() {
                 </div>
 
                 {registration.qualification_notes && (
-                  <div className="rounded-2xl border border-fest-gold/20 bg-fest-gold/5 p-4 text-xs text-white/80">
+                  <div className="rounded-2xl border border-fest-primary/20 bg-fest-primary/5 p-4 text-xs text-white/80">
                     Qualification note: {registration.qualification_notes}
                   </div>
                 )}
@@ -237,7 +237,7 @@ export default function UserDashboard() {
                               roundName: next.name,
                               eventTitle: registration.events.title
                             })}
-                            className="w-full py-4 bg-fest-gold text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-gold-light transition-all flex items-center justify-center gap-2 glow-gold"
+                            className="w-full py-4 bg-fest-primary text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-primary-light transition-all flex items-center justify-center gap-2 glow-primary"
                           >
                             <Video size={18} /> Upload for {next.name}
                           </button>
@@ -246,7 +246,7 @@ export default function UserDashboard() {
 
                       if (hasSubmittedForNext) {
                         return (
-                          <div className="text-center text-[10px] uppercase tracking-widest text-fest-gold/70 p-4 border border-fest-gold/20 rounded-2xl bg-fest-gold/5 flex flex-col gap-1 items-center">
+                          <div className="text-center text-[10px] uppercase tracking-widest text-fest-primary/70 p-4 border border-fest-primary/20 rounded-2xl bg-fest-primary/5 flex flex-col gap-1 items-center">
                             <CheckCircle size={14} /> Submission for {next?.name} Received
                           </div>
                         );

@@ -95,7 +95,7 @@ const Hero = () => {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <h1 className="text-5xl sm:text-6xl md:text-9xl font-blowbrush tracking-wide mb-6 leading-none">
-            UN<span className="text-fest-gold text-glow-gold">SCRIPTX</span>
+            UN<span className="text-fest-primary text-glow-primary">SCRIPTX</span>
           </h1>
           <p className="text-sm sm:text-base md:text-2xl text-white/70 max-w-2xl mx-auto mb-10 font-light italic px-4">
             "Break the script, own your moment"
@@ -104,7 +104,7 @@ const Hero = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-6 md:px-0">
             <Link
               to="/events"
-              className="w-full sm:w-auto px-10 py-4 bg-fest-gold text-fest-dark font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform glow-gold text-sm md:text-base"
+              className="w-full sm:w-auto px-10 py-4 bg-fest-primary text-fest-dark font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform glow-primary text-sm md:text-base"
             >
               Explore Events
             </Link>
