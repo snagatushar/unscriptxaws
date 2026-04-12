@@ -260,6 +260,7 @@ export default function AdminDashboard() {
     home_about_college: defaultSiteContent('home_about_college'),
     home_about_school: defaultSiteContent('home_about_school'),
     home_why_join: defaultSiteContent('home_why_join'),
+    home_team_group: defaultSiteContent('home_team_group'),
     about_hero: defaultSiteContent('about_hero'),
     about_mission: defaultSiteContent('about_mission'),
     about_community: defaultSiteContent('about_community'),
@@ -491,7 +492,7 @@ export default function AdminDashboard() {
           { data: rulesData, error: rulesError },
         ] = await Promise.all([
           supabase.from('hero_slideshow').select('*').order('display_order', { ascending: true }),
-          supabase.from('site_content').select('*').in('content_key', ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join', 'about_hero', 'about_mission', 'about_community', 'about_vision', 'about_story', 'contact_info']),
+          supabase.from('site_content').select('*').in('content_key', ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join', 'home_team_group', 'about_hero', 'about_mission', 'about_community', 'about_vision', 'about_story', 'contact_info']),
           supabase.from('committee').select('*').order('display_order', { ascending: true }),
           supabase.from('general_rules').select('*').order('display_order', { ascending: true }),
         ]);
@@ -510,6 +511,7 @@ export default function AdminDashboard() {
           home_about_college: defaultSiteContent('home_about_college'),
           home_about_school: defaultSiteContent('home_about_school'),
           home_why_join: defaultSiteContent('home_why_join'),
+          home_team_group: defaultSiteContent('home_team_group'),
           about_hero: defaultSiteContent('about_hero'),
           about_mission: defaultSiteContent('about_mission'),
           about_community: defaultSiteContent('about_community'),
@@ -2681,6 +2683,79 @@ export default function AdminDashboard() {
                     className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-primary-light transition-all"
                   >
                     <Save size={16} /> Save 'Why Join' Content
+                  </button>
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-black/20 p-6 space-y-5">
+                  <div>
+                    <h3 className="text-xl font-bold">Event Management Team Section</h3>
+                    <p className="text-white/45 text-sm mt-1">Manage the team group photo and introductory text.</p>
+                  </div>
+
+                  <input
+                    placeholder="Section Title"
+                    value={siteContent.home_team_group.title || ''}
+                    onChange={(e) => setSiteContent((current) => ({
+                      ...current,
+                      home_team_group: { ...current.home_team_group, title: e.target.value },
+                    }))}
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
+                  />
+                  <input
+                    placeholder="Subtitle"
+                    value={siteContent.home_team_group.subtitle || ''}
+                    onChange={(e) => setSiteContent((current) => ({
+                      ...current,
+                      home_team_group: { ...current.home_team_group, subtitle: e.target.value },
+                    }))}
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary"
+                  />
+                  <textarea
+                    placeholder="Team description..."
+                    value={siteContent.home_team_group.body || ''}
+                    onChange={(e) => setSiteContent((current) => ({
+                      ...current,
+                      home_team_group: { ...current.home_team_group, body: e.target.value },
+                    }))}
+                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-primary resize-none"
+                  />
+                  
+                  <div className="space-y-3">
+                    <label className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors text-sm font-medium">
+                      <ImageIcon size={16} /> Upload Team Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const imageUrl = await uploadAsset(file, 'team');
+                            setSiteContent((current) => ({
+                              ...current,
+                              home_team_group: { ...current.home_team_group, image_url: imageUrl },
+                            }));
+                            toast.success('Team photo uploaded.');
+                          } catch (err: any) {
+                            toast.error(err.message || 'Could not upload team photo.');
+                          }
+                          e.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    {siteContent.home_team_group.image_url ? (
+                      <img src={siteContent.home_team_group.image_url} alt="Team preview" className="w-full h-40 object-cover rounded-2xl border border-white/10" />
+                    ) : null}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => void saveSiteContent('home_team_group')}
+                    disabled={uiSaving}
+                    className="px-5 py-3 rounded-2xl bg-fest-primary text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-primary-light transition-all"
+                  >
+                    <Save size={16} /> Save Team Content
                   </button>
                 </div>
 

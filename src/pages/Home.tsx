@@ -13,6 +13,7 @@ export default function Home() {
   const { content: aboutCollege } = useSiteContent('home_about_college');
   const { content: aboutSchool } = useSiteContent('home_about_school');
   const { content: whyJoin } = useSiteContent('home_why_join');
+  const { content: teamSection } = useSiteContent('home_team_group');
 
   const parseTitle = (raw: string | null | undefined) => {
     const text = raw ? raw.replace(/\[|\]/g, '') : "Why wait for the future when you can create it?";
@@ -293,6 +294,60 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Event Management Team Section */}
+      {(teamSection?.title || teamSection?.image_url) && (
+        <section className="py-24 px-6 relative overflow-hidden bg-black/30 border-y border-white/5">
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-fest-primary/20 to-transparent" />
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 md:gap-24">
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="flex-1 space-y-8"
+            >
+              <div>
+                <h2 className="text-fest-accent font-display font-bold uppercase tracking-[0.3em] mb-4 text-xs md:text-sm">
+                  {teamSection?.subtitle || 'Event Management Team'}
+                </h2>
+                <h3 className="text-4xl md:text-7xl font-display font-extrabold tracking-tighter leading-tight">
+                  {teamSection?.title || 'The Powerhouse Behind UNSCRIPTX'}
+                </h3>
+              </div>
+              <p className="text-white/50 text-lg md:text-xl leading-relaxed max-w-xl">
+                {teamSection?.body || 'A dedicated collective of visionaries and executors working tirelessly to bring you the most spectacular festival experience.'}
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
+              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              className="flex-1 relative group"
+            >
+              {/* Decorative elements */}
+              <div className="absolute -inset-4 bg-fest-primary/10 rounded-[3rem] blur-3xl group-hover:bg-fest-primary/20 transition-all duration-700" />
+              <div className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-fest-primary/30 rounded-tr-[3rem] -mr-4 -mt-4" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-fest-primary/30 rounded-bl-[3rem] -ml-4 -mb-4" />
+              
+              <div className="relative glass rounded-[2.5rem] p-3 border border-white/10 overflow-hidden shadow-2xl">
+                <img
+                  src={teamSection?.image_url || 'https://picsum.photos/seed/team/1200/800'}
+                  alt="Event Management Team"
+                  className="w-full aspect-[4/3] object-cover rounded-[1.8rem] shadow-inner"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center pb-8">
+                  <span className="text-fest-primary text-xs font-black uppercase tracking-[0.4em] text-shadow-glow">
+                    UNSCRIPTX 2026 STAFF
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+          <div className="absolute bottom-0 right-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-20 md:py-32 px-6 text-center">
