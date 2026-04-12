@@ -11,6 +11,7 @@ export default function Home() {
   const { rules, loading: rulesLoading } = useGeneralRules();
   const { content: aboutEvent } = useSiteContent('home_about_event');
   const { content: aboutCollege } = useSiteContent('home_about_college');
+  const { content: aboutSchool } = useSiteContent('home_about_school');
   const { content: whyJoin } = useSiteContent('home_why_join');
 
   const parseTitle = (raw: string | null | undefined) => {
@@ -18,7 +19,7 @@ export default function Home() {
     const parts = raw.split(/\[(.*?)\]/g);
     return (
       <>
-        {parts.map((part, i) => 
+        {parts.map((part, i) =>
           i % 2 === 1 ? <span key={i} className="text-fest-gold">{part}</span> : <span key={i}>{part}</span>
         )}
       </>
@@ -82,6 +83,38 @@ export default function Home() {
               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_one_value || 'A++')}</span> {String(aboutCollege?.metadata?.highlight_one_label || 'NAAC Grade')}</div>
               <div className="w-1 h-1 bg-white/20 rounded-full"></div>
               <div><span className="text-fest-gold text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_two_value || 'Top 10')}</span> {String(aboutCollege?.metadata?.highlight_two_label || 'State Rank')}</div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* About the School of Technology Section */}
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex-1 order-2 md:order-1"
+          >
+            <h2 className="text-fest-gold font-display font-bold uppercase tracking-widest mb-4">About School of Technology</h2>
+            <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-6">
+              {aboutSchool?.title}<span className="text-fest-gold-light italic">{aboutSchool?.subtitle}</span>
+            </h3>
+            <p className="text-white/60 text-lg leading-relaxed mb-6">
+              {aboutSchool?.body}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex-1 order-1 md:order-2"
+          >
+            <div className="w-full aspect-video rounded-[2rem] overflow-hidden border-4 border-white/10 relative">
+              <div className="absolute inset-0 bg-fest-gold/20 mix-blend-overlay"></div>
+              <img src={aboutSchool?.image_url || 'https://picsum.photos/seed/tech/800/400'} alt="School of Technology" className="w-full h-full object-cover" />
             </div>
           </motion.div>
         </div>

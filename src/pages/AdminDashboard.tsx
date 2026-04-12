@@ -244,6 +244,7 @@ export default function AdminDashboard() {
   const [siteContent, setSiteContent] = useState<Record<string, SiteContent>>({
     home_about_event: defaultSiteContent('home_about_event'),
     home_about_college: defaultSiteContent('home_about_college'),
+    home_about_school: defaultSiteContent('home_about_school'),
     home_why_join: defaultSiteContent('home_why_join'),
   });
   const [committeeEntries, setCommitteeEntries] = useState<CommitteeMember[]>([]);
@@ -465,7 +466,7 @@ export default function AdminDashboard() {
           { data: rulesData, error: rulesError },
         ] = await Promise.all([
           supabase.from('hero_slideshow').select('*').order('display_order', { ascending: true }),
-          supabase.from('site_content').select('*').in('content_key', ['home_about_event', 'home_about_college', 'home_why_join']),
+          supabase.from('site_content').select('*').in('content_key', ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join']),
           supabase.from('committee').select('*').order('display_order', { ascending: true }),
           supabase.from('general_rules').select('*').order('display_order', { ascending: true }),
         ]);
@@ -482,6 +483,7 @@ export default function AdminDashboard() {
         const contentMap = {
           home_about_event: defaultSiteContent('home_about_event'),
           home_about_college: defaultSiteContent('home_about_college'),
+          home_about_school: defaultSiteContent('home_about_school'),
           home_why_join: defaultSiteContent('home_why_join'),
         } as Record<string, SiteContent>;
 
@@ -2323,6 +2325,78 @@ export default function AdminDashboard() {
                     className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all"
                   >
                     <Save size={16} /> Save College Content
+                  </button>
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-black/20 p-6 space-y-5">
+                  <div>
+                    <h3 className="text-xl font-bold">About School of Technology</h3>
+                    <p className="text-white/45 text-sm mt-1">Control the School of Technology section text and image.</p>
+                  </div>
+
+                  <input
+                    placeholder="Title"
+                    value={siteContent.home_about_school.title || ''}
+                    onChange={(e) => setSiteContent((current) => ({
+                      ...current,
+                      home_about_school: { ...current.home_about_school, title: e.target.value },
+                    }))}
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                  />
+                  <input
+                    placeholder="Highlighted subtitle"
+                    value={siteContent.home_about_school.subtitle || ''}
+                    onChange={(e) => setSiteContent((current) => ({
+                      ...current,
+                      home_about_school: { ...current.home_about_school, subtitle: e.target.value },
+                    }))}
+                    className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold"
+                  />
+                  <textarea
+                    placeholder="School description"
+                    value={siteContent.home_about_school.body || ''}
+                    onChange={(e) => setSiteContent((current) => ({
+                      ...current,
+                      home_about_school: { ...current.home_about_school, body: e.target.value },
+                    }))}
+                    className="w-full h-36 rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-fest-gold resize-none"
+                  />
+                  
+                  <div className="space-y-3">
+                    <label className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors text-sm font-medium">
+                      <ImageIcon size={16} /> Upload School Image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const imageUrl = await uploadAsset(file, 'college');
+                            setSiteContent((current) => ({
+                              ...current,
+                              home_about_school: { ...current.home_about_school, image_url: imageUrl },
+                            }));
+                            toast.success('School image uploaded.');
+                          } catch (err: any) {
+                            toast.error(err.message || 'Could not upload school image.');
+                          }
+                          e.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    {siteContent.home_about_school.image_url ? (
+                      <img src={siteContent.home_about_school.image_url} alt="School preview" className="w-full h-40 object-cover rounded-2xl border border-white/10" />
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void saveSiteContent('home_about_school')}
+                    disabled={uiSaving}
+                    className="px-5 py-3 rounded-2xl bg-fest-gold text-fest-dark font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-fest-gold-light transition-all"
+                  >
+                    <Save size={16} /> Save School Content
                   </button>
                 </div>
 

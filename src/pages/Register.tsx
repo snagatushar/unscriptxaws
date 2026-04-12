@@ -33,7 +33,7 @@ export default function Register() {
         const { data, error } = await supabase.from('events').select('*').eq('id', eventId).single();
         if (error) throw error;
         setEvent(data as DatabaseEvent);
-        setTeamSize(Math.max(1, data.max_team_size || 1));
+        setTeamSize(1);
       } catch {
         toast.error('Could not load event details.');
       } finally {
@@ -366,6 +366,17 @@ export default function Register() {
                   <p className="text-xs text-white/50">{idCardFile ? idCardFile.name : 'Upload ID Photo / Max 70KB (.jpg, .png)'}</p>
                 </div>
                 {idCardFile && <CheckCircle2 className="text-green-500 hidden md:block" size={24} />}
+              </div>
+            </div>
+
+            {/* Total Payable Summary */}
+            <div className="bg-fest-gold/10 border border-fest-gold/20 rounded-2xl p-6 flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Total Amount to Pay</div>
+                <div className="text-sm text-white/60">₹{event?.entry_fee} × {teamSize} participant{teamSize > 1 ? 's' : ''}</div>
+              </div>
+              <div className="text-3xl font-display font-black text-fest-gold">
+                ₹{(event?.entry_fee || 0) * teamSize}
               </div>
             </div>
 

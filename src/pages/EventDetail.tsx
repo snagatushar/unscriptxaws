@@ -129,7 +129,7 @@ export default function EventDetail() {
 
             <div className="grid grid-cols-1 gap-3 md:gap-4">
               {[
-                { icon: IndianRupee, label: 'Entry Fee', value: `₹${event.entry_fee}`, color: 'text-fest-gold' },
+                { icon: IndianRupee, label: 'Entry Fee (Per Person)', value: `₹${event.entry_fee}`, color: 'text-fest-gold' },
               ].map((item, index) => (
                 <div key={index} className="glass p-4 md:p-6 rounded-2xl text-center">
                   <item.icon size={20} className={`${item.color} mx-auto mb-2 md:mb-3`} />
