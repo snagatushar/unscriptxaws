@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 const Hero = () => {
@@ -71,10 +70,10 @@ const Hero = () => {
               key={currentSlide}
               src={slides[currentSlide]?.image_url}
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.7 }}
+              animate={{ opacity: 0.75 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 2, ease: "easeInOut" }}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover object-center"
               referrerPolicy="no-referrer"
               loading="eager"
               decoding="async"
@@ -84,7 +83,7 @@ const Hero = () => {
              <div className="absolute inset-0 bg-fest-dark-light/20" />
           )}
         </AnimatePresence>
-        <div className="absolute inset-0 bg-gradient-to-b from-fest-dark/60 via-transparent to-fest-dark/90 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-fest-dark/60 via-fest-dark/20 to-fest-dark/70 pointer-events-none" />
       </div>
 
       {/* Content */}
@@ -94,21 +93,19 @@ const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
         >
-          <h1 className="text-5xl sm:text-6xl md:text-9xl font-blowbrush tracking-wide mb-6 leading-none">
+          <h1
+            className="text-5xl sm:text-6xl md:text-9xl font-blowbrush tracking-wide mb-6 leading-none"
+            style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5), 0 0 30px rgba(0,0,0,0.3)' }}
+          >
             UN<span className="text-fest-primary text-glow-primary">SCRIPTX</span>
           </h1>
-          <p className="text-sm sm:text-base md:text-2xl text-white/70 max-w-2xl mx-auto mb-10 font-light italic px-4">
+          <p
+            className="text-sm sm:text-base md:text-2xl text-white/90 max-w-2xl mx-auto mb-10 font-light italic px-4"
+            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.4), 0 0 20px rgba(0,0,0,0.2)' }}
+          >
             "Break the script, own your moment"
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-6 md:px-0">
-            <Link
-              to="/events"
-              className="w-full sm:w-auto px-10 py-4 bg-fest-primary text-fest-dark font-bold uppercase tracking-widest rounded-full hover:scale-105 transition-transform glow-primary text-sm md:text-base"
-            >
-              Explore Events
-            </Link>
-          </div>
         </motion.div>
       </div>
 
