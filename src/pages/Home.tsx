@@ -82,7 +82,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About the School of Technology Section */}
+      {/* { About the School of Technology Section
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
           <motion.div
@@ -112,7 +112,7 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </section> } */}
 
       {/* Featured Events */}
       <section className="py-16 md:py-24 px-6">
@@ -285,7 +285,7 @@ export default function Home() {
                 className="absolute inset-0 border-2 border-dashed border-white/10 rounded-full"
               />
               <img
-                src="https://picsum.photos/seed/crowd/800/800"
+                src={whyJoin?.image_url || "https://picsum.photos/seed/crowd/800/800"}
                 alt="Fest Crowd"
                 className="rounded-full w-full aspect-square object-cover border-8 border-white/5"
                 referrerPolicy="no-referrer"
@@ -300,7 +300,7 @@ export default function Home() {
         <section className="py-24 px-6 relative overflow-hidden bg-black/30 border-y border-white/5">
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-fest-primary/20 to-transparent" />
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 md:gap-24">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -329,7 +329,7 @@ export default function Home() {
               <div className="absolute -inset-4 bg-fest-primary/10 rounded-[3rem] blur-3xl group-hover:bg-fest-primary/20 transition-all duration-700" />
               <div className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-fest-primary/30 rounded-tr-[3rem] -mr-4 -mt-4" />
               <div className="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-fest-primary/30 rounded-bl-[3rem] -ml-4 -mb-4" />
-              
+
               <div className="relative glass rounded-[2.5rem] p-3 border border-white/10 overflow-hidden shadow-2xl">
                 <img
                   src={teamSection?.image_url || 'https://picsum.photos/seed/team/1200/800'}

@@ -2676,6 +2676,35 @@ export default function AdminDashboard() {
                     />
                   </div>
 
+                  <div className="space-y-3">
+                    <label className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors text-sm font-medium">
+                      <ImageIcon size={16} /> Upload Why Join Image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const imageUrl = await uploadAsset(file, 'why-join');
+                            setSiteContent((current) => ({
+                              ...current,
+                              home_why_join: { ...current.home_why_join, image_url: imageUrl },
+                            }));
+                            toast.success('Why Join image uploaded.');
+                          } catch (err: any) {
+                            toast.error(err.message || 'Could not upload Why Join image.');
+                          }
+                          e.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    {siteContent.home_why_join.image_url ? (
+                      <img src={siteContent.home_why_join.image_url} alt="Why Join preview" className="w-full h-40 object-cover rounded-2xl border border-white/10" />
+                    ) : null}
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => void saveSiteContent('home_why_join')}
