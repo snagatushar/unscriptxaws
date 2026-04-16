@@ -48,7 +48,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const action = req.query.action; // High reliability: action always from URL query for dispatch
+  // Auto-detect google-callback if 'code' is present but 'action' is missing (for clean Redirect URIs)
+  const action = req.query.action || (req.query.code ? 'google-callback' : null);
 
     // 1. Signup, Login, Me... (Standard handlers)
     if (action === 'signup' && req.method === 'POST') {
