@@ -1,40 +1,22 @@
 import { useState, useEffect, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { supabase } from '../lib/supabase';
+
+/**
+ * Hardcoded slideshow configuration.
+ * To update slides: replace/add images in /public/slides/ and update this array.
+ * No Supabase egress — images are served statically from the build.
+ */
+const HERO_SLIDES: { image_url: string; duration_seconds: number }[] = [
+  { image_url: '/slides/slide1.jpg', duration_seconds: 5 },
+  { image_url: '/slides/slide2.jpg', duration_seconds: 5 },
+  { image_url: '/slides/slide3.jpg', duration_seconds: 5 },
+];
 
 const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [slides, setSlides] = useState<{ image_url: string; duration_seconds: number }[]>([]);
 
-  useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('hero_slideshow')
-          .select('image_url, duration_seconds')
-          .order('display_order', { ascending: true });
-        
-        if (error) throw error;
-        if (data && data.length > 0) {
-          const validSlides = data
-            .filter((slide) => Boolean(slide.image_url))
-            .map((slide) => ({
-              image_url: slide.image_url,
-              duration_seconds: Math.max(4, Number(slide.duration_seconds || 4)),
-            }));
-
-          if (validSlides.length > 0) {
-            setSlides(validSlides);
-            setCurrentSlide(0);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching hero images:', error);
-      }
-    };
-
-    fetchImages();
-  }, []);
+  // Only use slides that have valid URLs (in case user hasn't added all images yet)
+  const slides = HERO_SLIDES;
 
   // Preload the next image in the slideshow
   useEffect(() => {

@@ -3,12 +3,27 @@ import { Mail, Phone, MapPin, Send } from 'lucide-react';
 import { useState, FormEvent } from 'react';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
-import { useSiteContent } from '../hooks/useSupabase';
+
+/**
+ * Static contact page — contact info is hardcoded (no Supabase read egress).
+ * The form still saves messages to Supabase (write-only, no egress cost).
+ * To update contact details, edit the CONTACT_INFO constant below.
+ */
+
+const CONTACT_INFO = {
+  email_1: 'hello@UNSCRIPTXfest.com',
+  email_2: 'support@UNSCRIPTXfest.com',
+  phone_1: '+91 9999999999',
+  phone_2: '+91 8660911643',
+  address_title: 'IFIM SCHOOL OF TECHNOLOGY',
+  address_body: 'Electronic City Phase 1, Bangalore, Karnataka - 560100',
+  hours_weekday: 'Monday - Friday: 10:00 AM - 5:00 PM',
+  hours_weekend: 'Saturday: 10:00 AM - 2:00 PM',
+};
 
 export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { content: info } = useSiteContent('contact_info');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -71,8 +86,8 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="text-xl font-display font-bold uppercase tracking-widest mb-2">Email Us</h4>
-                  <p className="text-white/60">{info?.metadata?.email_1 || 'hello@UNSCRIPTXfest.com'}</p>
-                  <p className="text-white/60">{info?.metadata?.email_2 || 'support@UNSCRIPTXfest.com'}</p>
+                  <p className="text-white/60">{CONTACT_INFO.email_1}</p>
+                  <p className="text-white/60">{CONTACT_INFO.email_2}</p>
                 </div>
               </div>
 
@@ -82,8 +97,8 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="text-xl font-display font-bold uppercase tracking-widest mb-2">Call Us</h4>
-                  <p className="text-white/60">{info?.metadata?.phone_1 || '+91 9999999999'}</p>
-                  <p className="text-white/60">{info?.metadata?.phone_2 || '+91 8660911643'}</p>
+                  <p className="text-white/60">{CONTACT_INFO.phone_1}</p>
+                  <p className="text-white/60">{CONTACT_INFO.phone_2}</p>
                 </div>
               </div>
 
@@ -93,16 +108,16 @@ export default function Contact() {
                 </div>
                 <div>
                   <h4 className="text-xl font-display font-bold uppercase tracking-widest mb-2">Visit Us</h4>
-                  <p className="text-white/60">{info?.metadata?.address_title || 'IFIM SCHOOL OF TECHNOLOGY'}</p>
-                  <p className="text-white/60">{info?.metadata?.address_body || 'Electronic City Phase 1, Bangalore, Karnataka - 560100'}</p>
+                  <p className="text-white/60">{CONTACT_INFO.address_title}</p>
+                  <p className="text-white/60">{CONTACT_INFO.address_body}</p>
                 </div>
               </div>
             </div>
 
             <div className="glass p-10 rounded-[3rem] bg-fest-primary/5 border-fest-primary/20">
               <h4 className="text-fest-primary font-display font-bold uppercase tracking-widest mb-4">Office Hours</h4>
-              <p className="text-white/60">{info?.metadata?.hours_weekday || 'Monday - Friday: 10:00 AM - 5:00 PM'}</p>
-              <p className="text-white/60">{info?.metadata?.hours_weekend || 'Saturday: 10:00 AM - 2:00 PM'}</p>
+              <p className="text-white/60">{CONTACT_INFO.hours_weekday}</p>
+              <p className="text-white/60">{CONTACT_INFO.hours_weekend}</p>
             </div>
           </motion.div>
 
