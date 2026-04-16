@@ -1,4 +1,4 @@
-import { verifyUserToken } from './_lib/supabase-admin.js';
+import { verifyUserToken } from './_lib/auth-util.js';
 
 /**
  * Tell Vercel NOT to parse the request body — we need the raw binary chunk data.

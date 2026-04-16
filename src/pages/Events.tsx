@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import EventCard from '../components/EventCard';
 import { Search, Loader2 } from 'lucide-react';
-import { useEvents } from '../hooks/useSupabase';
+import { useEvents } from '../hooks/useAwsData';
 
 const categories = ['All', 'Music', 'Dance', 'Drama', 'Art', 'Tech', 'Gaming']; // We can keep these static filters or derive them from data
 

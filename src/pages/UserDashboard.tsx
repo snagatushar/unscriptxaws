@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Loader2, CheckCircle, Clock, XCircle, Trophy, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PaymentStatus, QualificationStage, ReviewStatus, SubmissionStatus, Submission } from '../types';
@@ -18,11 +18,8 @@ type UserRegistration = {
   qualification_notes: string | null;
   review_notes: string | null;
   payment_review_notes: string | null;
-  events: {
-    id: string;
-    title: string;
-    category: string;
-  };
+  event_title: string;
+  event_category: string;
   sub_category: string | null;
   submissions?: Submission[];
 };
@@ -81,43 +78,20 @@ export default function UserDashboard() {
   });
 
   const fetchRegistrations = async () => {
-      if (!user) return;
-      try {
-        const { data, error } = await supabase
-          .from('registrations')
-          .select(`
-            id,
-            event_id,
-            payment_status,
-            upload_enabled,
-            submission_status,
-            review_status,
-            qualification_stage,
-            qualification_notes,
-            review_notes,
-            payment_review_notes,
-            sub_category,
-            events ( id, title, category ),
-            submissions (*)
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        const rows = (data as unknown as UserRegistration[]) || [];
-        setRegistrations(rows);
-      } catch {
-        toast.error('Failed to load dashboard.');
-      } finally {
-        setLoading(false);
-      }
+    if (!user) return;
+    try {
+      const rows = await api.get<UserRegistration[]>('/api/user?resource=registrations');
+      setRegistrations(rows || []);
+    } catch {
+      toast.error('Failed to load dashboard.');
+    } finally {
+      setLoading(false);
     }
+  };
 
   useEffect(() => {
-    // Use user?.id (stable string) not user (object reference).
-    // Using the full user object would cause re-fetch every time Supabase
-    // fires any auth event that rebuilds the User object, even for the same user.
+    // Using the full user object would cause re-fetch every time auth
+    // fires any event that rebuilds the User object.
     fetchRegistrations();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -158,13 +132,13 @@ export default function UserDashboard() {
               >
                 <div className="absolute top-0 right-0 p-4">
                   <span className="text-[10px] uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full opacity-70">
-                    {registration.events.category}
+                    {registration.event_category}
                   </span>
                 </div>
 
                 <div>
                   <h3 className="text-xl md:text-2xl font-display font-bold mb-2 pr-16 leading-tight">
-                    {registration.events.title}
+                    {registration.event_title}
                     {registration.sub_category && (
                       <span className="block text-fest-primary text-sm font-bold mt-1 tracking-normal">
                          {registration.sub_category}
@@ -236,7 +210,7 @@ export default function UserDashboard() {
                               regId: registration.id,
                               round: next.id,
                               roundName: next.name,
-                              eventTitle: registration.events.title,
+                              eventTitle: registration.event_title,
                               subCategory: registration.sub_category || '',
                             })}
                             className="w-full py-4 bg-fest-primary text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-primary-light transition-all flex items-center justify-center gap-2 glow-primary"

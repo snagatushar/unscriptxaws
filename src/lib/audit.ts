@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { api } from './api';
 
 export type AuditAction = 
   | 'PAYMENT_APPROVE' 
@@ -21,14 +21,17 @@ export async function logAdminAction(
   details: Record<string, any> = {}
 ) {
   try {
-    const { error } = await supabase.from('audit_logs').insert({
-      actor_id: actorId,
-      action_type: actionType,
-      target_id: targetId,
-      details: details
+    // Audit logs are stored via the admin API
+    await api.post('/api/admin', {
+      action: 'insert',
+      table: 'audit_logs',
+      record: {
+        actor_id: actorId,
+        action_type: actionType,
+        target_id: targetId,
+        details: details
+      }
     });
-    
-    if (error) console.error('Error recording audit log:', error);
   } catch (err) {
     console.error('Audit logging failed:', err);
   }

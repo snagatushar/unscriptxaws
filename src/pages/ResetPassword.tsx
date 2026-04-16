@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 
 export default function ResetPassword() {
@@ -24,15 +24,10 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      // First, explicitly check if we have a session
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      if (!sessionData.session) {
-        throw new Error('Authentication session not found. Please try clicking the link in your email again.');
-      }
-
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      await api.post('/api/auth', { 
+        action: 'update-password',
+        password 
+      });
 
       setSuccess(true);
       toast.success('Password updated successfully!');

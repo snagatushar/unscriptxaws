@@ -2,7 +2,8 @@ import { motion } from 'motion/react';
 import { useState, FormEvent, useEffect } from 'react';
 import { CheckCircle2, Send, UploadCloud, Loader2, Users } from 'lucide-react';
 import { useParams, Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+
+import { uploadToS3 } from '../lib/storage';
 import { useAuth } from '../contexts/AuthContext';
 import { DatabaseEvent } from '../types';
 import toast from 'react-hot-toast';
@@ -36,25 +37,16 @@ export default function Register() {
       if (!eventId) return;
 
       try {
-        const { data, error } = await supabase.from('events').select('*').eq('id', eventId).single();
-        if (error) throw error;
-        setEvent(data as DatabaseEvent);
+        const url = `/api/event-registration-data?eventId=${eventId}` + (user ? `&userId=${user.id}` : '');
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Could not load event data');
+        const data = await res.json();
+
+        setEvent(data.event);
         setTeamSize(1);
-
-        // Fetch user's existing registrations for this event to know which subcategories are taken
-        if (user) {
-          const { data: existingRegs } = await supabase
-            .from('registrations')
-            .select('sub_category')
-            .eq('user_id', user.id)
-            .eq('event_id', eventId);
-
-          if (existingRegs) {
-            const registered = existingRegs
-              .map(r => r.sub_category)
-              .filter((v): v is string => v !== null && v !== '');
-            setRegisteredSubCategories(registered);
-          }
+        
+        if (data.registeredCategories) {
+          setRegisteredSubCategories(data.registeredCategories);
         }
       } catch {
         toast.error('Could not load event details.');
@@ -116,16 +108,10 @@ export default function Register() {
     setSubmitting(true);
     try {
       // 1. Upload Payment Screenshot
-      const payExt = paymentFile.name.split('.').pop();
-      const payFileName = `pay_${user.id}_${event.id}_${Date.now()}.${payExt}`;
-      const { data: payData, error: payError } = await supabase.storage.from('payments').upload(payFileName, paymentFile);
-      if (payError) throw payError;
+      const { key: paymentKey } = await uploadToS3(paymentFile, 'payments');
 
       // 2. Upload ID Card
-      const idExt = idCardFile.name.split('.').pop();
-      const idFileName = `id_${user.id}_${event.id}_${Date.now()}.${idExt}`;
-      const { data: idData, error: idError } = await supabase.storage.from('payments').upload(idFileName, idCardFile);
-      if (idError) throw idError;
+      const { key: idCardKey } = await uploadToS3(idCardFile, 'id_cards');
 
       const payload = {
         user_id: user.id,
@@ -140,26 +126,19 @@ export default function Register() {
         team_size: teamSize,
         sub_category: subCategory || null,
         team_members: event.requires_team_details ? teamMembers : [],
-        payment_screenshot_url: payData.path,
-        id_card_url: idData.path,
+        payment_screenshot_url: paymentKey,
+        id_card_url: idCardKey,
       };
 
-      const { error: insertError } = await supabase.from('registrations').insert(payload);
-      if (insertError) {
-        if (insertError.code === '23505') {
-          throw new Error(subCategory
-            ? `You have already registered for the "${subCategory}" category in this event.`
-            : 'You have already registered for this event.');
-        }
-        throw new Error('Registration failed. Please try again or contact support.');
-      }
+      const res = await fetch('/api/register-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-      if (profile && (phone !== profile.phone || collegeName !== profile.college_name || fullName !== profile.full_name)) {
-        await supabase.from('users').update({ 
-          phone: phoneDigits, 
-          college_name: collegeName || null,
-          full_name: fullName || profile.full_name
-        }).eq('id', user.id);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Registration failed. Please try again or contact support.');
       }
 
       toast.success('Registration successful. Wait up to 24 hours for payment approval.');

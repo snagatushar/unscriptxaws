@@ -1,5 +1,5 @@
 import { getDriveClientWithOAuth } from './_lib/google-oauth.js';
-import { verifyAdminOrJudge } from './_lib/supabase-admin.js';
+import { verifyAdminOrJudge } from './_lib/auth-util.js';
 
 const ALLOWED_ORIGIN = process.env.SITE_ORIGIN || 'https://www.unscriptx.com';
 

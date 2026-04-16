@@ -1,5 +1,6 @@
 import { getDriveClientWithOAuth } from './_lib/google-oauth.js';
-import { getSupabaseAdmin, verifyUserToken } from './_lib/supabase-admin.js';
+import { verifyUserToken } from './_lib/auth-util.js';
+import { query } from './_lib/db.js';
 
 function setCors(res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,18 +17,14 @@ export default async function handler(req: any, res: any) {
     const user = await verifyUserToken(req);
     const userId = user.id;
 
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from('registrations')
-      .select('event_id, submissions(video_path, created_at)')
-      .eq('user_id', userId);
+    const result = await query(`
+      SELECT s.video_path 
+      FROM registrations r
+      JOIN submissions s ON s.registration_id = r.id
+      WHERE r.user_id = $1
+    `, [userId]);
 
-    if (error) throw error;
-
-    const fileIds = (data || [])
-      .flatMap((row: any) => row.submissions || [])
-      .map((submission: any) => submission.video_path)
-      .filter(Boolean);
+    const fileIds = result.rows.map(r => r.video_path).filter(Boolean);
 
     if (fileIds.length === 0) return res.status(200).json({ files: [] });
 

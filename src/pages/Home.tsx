@@ -3,14 +3,35 @@ import Hero from '../components/Hero';
 import EventCard from '../components/EventCard';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Music, Zap, Palette, Loader2 } from 'lucide-react';
-import { useEvents, useSiteContentBatch } from '../hooks/useSupabase';
+import { useEvents } from '../hooks/useAwsData';
 
-// Batched content keys — fetched in a single Supabase query instead of N separate ones
-const HOME_CONTENT_KEYS = ['home_about_event', 'home_about_college', 'home_about_school'];
+/**
+ * Hardcoded "About The Event" section.
+ */
+const ABOUT_EVENT = {
+  title: 'UNSCRIPTX 2026:',
+  subtitle: 'Where Talent Meets Opportunity',
+  body: "UNSCRIPTX is the premier annual cultural festival uniting creatives, technologists, and innovators globally. It's a three-day celebration blending technology, art, dance, and music into a single spectacular dimension. Prepare to break the norms, go UNSCRIPTX, and witness history in the making."
+};
+
+/**
+ * Hardcoded "About the College" section.
+ */
+const ABOUT_COLLEGE = {
+  title: 'A Legacy of ',
+  subtitle: 'Excellence',
+  body: 'Founded on the principles of innovation and integrity, our institution has been at the forefront of quality education for decades. We believe in nurturing raw talent and providing a dynamic environment where ideas flourish.',
+  image_url: 'https://picsum.photos/seed/college/800/400',
+  metadata: {
+    highlight_one_value: 'A++',
+    highlight_one_label: 'NAAC Grade',
+    highlight_two_value: 'Top 10',
+    highlight_two_label: 'State Rank'
+  }
+};
 
 /**
  * Hardcoded universal guidelines — no Supabase egress.
- * To update rules, edit this array directly.
  */
 const GENERAL_RULES = [
   'All participants must carry a valid college ID card at all times during the event.',
@@ -24,9 +45,7 @@ const GENERAL_RULES = [
 ];
 
 /**
- * Hardcoded Organizing Committee — no Supabase egress.
- * To update committee members, edit this array directly.
- * Place images in the /public folder (e.g. /public/committee/member1.jpg).
+ * Hardcoded Organizing Committee.
  */
 const COMMITTEE_MEMBERS = [
   { id: 1, name: 'Dr. Salur Srikant Patnaik', role: 'Dean of School of Technology, IFIM College', image_url: '/Srikanth.jpeg' },
@@ -40,7 +59,7 @@ const COMMITTEE_MEMBERS = [
 const WHY_JOIN = {
   title: "[Why wait for the future] when you can create it?",
   body: "UNSCRIPTX is more than just a fest. It's a platform where creativity meets competition, and passion meets performance. Join thousands of students in the biggest celebration of talent.",
-  image_url: "/music.png", // Place your image in public/why-join.jpg
+  image_url: "/music.png",
   features: [
     { id: 'f1', title: 'Musical Nights', color: 'text-fest-primary' },
     { id: 'f2', title: 'High Energy', color: 'text-fest-accent' },
@@ -49,22 +68,8 @@ const WHY_JOIN = {
   ]
 };
 
-/**
- * Hardcoded Event Management Team Section.
- */
-const EVENT_TEAM = {
-  subtitle: 'Event Management Team',
-  title: 'The Powerhouse Behind UNSCRIPTX',
-  body: 'A dedicated collective of visionaries and executors working tirelessly to bring you the most spectacular festival experience.',
-  image_url: '/team.jpg', // Place your image in public/team.jpg
-};
-
 export default function Home() {
   const { events, loading: eventsLoading } = useEvents();
-  const { contentMap } = useSiteContentBatch(HOME_CONTENT_KEYS);
-  const aboutEvent = contentMap['home_about_event'] || null;
-  const aboutCollege = contentMap['home_about_college'] || null;
-  const aboutSchool = contentMap['home_about_school'] || null;
 
   const parseTitle = (raw: string | null | undefined) => {
     const text = raw ? raw.replace(/\[|\]/g, '') : "Why wait for the future when you can create it?";
@@ -74,8 +79,6 @@ export default function Home() {
   return (
     <main>
       <Hero />
-
-
 
       {/* About Section */}
       <section className="py-16 md:py-20 px-6">
@@ -87,10 +90,10 @@ export default function Home() {
           >
             <h2 className="text-fest-accent font-display font-bold uppercase tracking-widest mb-4">About The Event</h2>
             <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-8">
-              {aboutEvent?.title || 'UNSCRIPTX 2026:'} <br /> <span className="text-white/80">{aboutEvent?.subtitle || 'Where Talent Meets Opportunity'}</span>
+              {ABOUT_EVENT.title} <br /> <span className="text-white/80">{ABOUT_EVENT.subtitle}</span>
             </h3>
             <p className="text-white/60 text-lg leading-relaxed">
-              {aboutEvent?.body || "UNSCRIPTX is the premier annual cultural festival uniting creatives, technologists, and innovators globally. It's a three-day celebration blending technology, art, dance, and music into a single spectacular dimension. Prepare to break the norms, go UNSCRIPTX, and witness history in the making."}
+              {ABOUT_EVENT.body}
             </p>
           </motion.div>
         </div>
@@ -107,7 +110,7 @@ export default function Home() {
           >
             <div className="w-full aspect-video rounded-[2rem] overflow-hidden border-4 border-white/10 relative">
               <div className="absolute inset-0 bg-fest-primary/20 mix-blend-overlay"></div>
-              <img src={aboutCollege?.image_url || 'https://picsum.photos/seed/college/800/400'} alt="College Campus" className="w-full h-full object-cover" />
+              <img src={ABOUT_COLLEGE.image_url} alt="College Campus" className="w-full h-full object-cover" />
             </div>
           </motion.div>
 
@@ -119,15 +122,15 @@ export default function Home() {
           >
             <h2 className="text-fest-accent font-display font-bold uppercase tracking-widest mb-4">About the College</h2>
             <h3 className="text-4xl md:text-5xl font-display font-extrabold tracking-tighter mb-6">
-              {aboutCollege?.title || 'A Legacy of '}<span className="text-fest-accent italic">{aboutCollege?.subtitle || 'Excellence'}</span>
+              {ABOUT_COLLEGE.title}<span className="text-fest-accent italic">{ABOUT_COLLEGE.subtitle}</span>
             </h3>
             <p className="text-white/60 text-lg leading-relaxed mb-6">
-              {aboutCollege?.body || 'Founded on the principles of innovation and integrity, our institution has been at the forefront of quality education for decades. We believe in nurturing raw talent and providing a dynamic environment where ideas flourish.'}
+              {ABOUT_COLLEGE.body}
             </p>
             <div className="flex items-center gap-4 text-sm font-bold uppercase tracking-widest text-white/50">
-              <div><span className="text-fest-primary text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_one_value || 'A++')}</span> {String(aboutCollege?.metadata?.highlight_one_label || 'NAAC Grade')}</div>
+              <div><span className="text-fest-primary text-xl md:text-2xl mr-2">{ABOUT_COLLEGE.metadata.highlight_one_value}</span> {ABOUT_COLLEGE.metadata.highlight_one_label}</div>
               <div className="w-1 h-1 bg-white/20 rounded-full"></div>
-              <div><span className="text-fest-primary text-xl md:text-2xl mr-2">{String(aboutCollege?.metadata?.highlight_two_value || 'Top 10')}</span> {String(aboutCollege?.metadata?.highlight_two_label || 'State Rank')}</div>
+              <div><span className="text-fest-primary text-xl md:text-2xl mr-2">{ABOUT_COLLEGE.metadata.highlight_two_value}</span> {ABOUT_COLLEGE.metadata.highlight_two_label}</div>
             </div>
           </motion.div>
         </div>

@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
 import { AppRole } from '../types';
 
-interface UserProfile {
+export interface UserProfile {
   id: string;
   full_name: string | null;
   email: string;
@@ -12,10 +10,12 @@ interface UserProfile {
   college_name?: string | null;
 }
 
+// Emulate a unified Object for backwards compatibility where user and profile used to be separate.
+// Now, user and profile are identically merged.
 interface AuthContextType {
-  user: User | null;
-  profile: UserProfile | null;
-  session: Session | null;
+  user: UserProfile | null;
+  profile: UserProfile | null; // Points to identical object as user for backwards compatibility
+  session: any | null; // Kept for legacy typing purposes (like passing mock objects)
   isLoading: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -31,146 +31,75 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  // Read backend URL
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+
+  const applySession = async () => {
+    setIsLoading(true);
+    const token = localStorage.getItem('unscriptx_token');
+    if (!token) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      let { data, error } = await supabase
-        .from('users')
-        .select('id, full_name, email, role, phone, college_name')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          const authUser = session?.user ?? (await supabase.auth.getUser()).data.user;
-
-          if (authUser?.email) {
-            const { error: upsertError } = await supabase.from('users').upsert({
-              id: authUser.id,
-              full_name: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
-              email: authUser.email,
-            });
-
-            if (upsertError) throw upsertError;
-
-            const retry = await supabase
-              .from('users')
-              .select('id, full_name, email, role, phone, college_name')
-              .eq('id', userId)
-              .single();
-
-            data = retry.data;
-            error = retry.error;
-          }
-        }
-
-        if (error) throw error;
+      const res = await fetch(`${backendUrl}/api/auth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'me', token })
+      });
+      
+      const data = await res.json();
+      if (data.success && data.user) {
+        setUser(data.user);
+      } else {
+        localStorage.removeItem('unscriptx_token');
+        setUser(null);
       }
-
-      setProfile(data as UserProfile);
     } catch (err) {
-      console.error('Error fetching profile:', err);
-      // Ensure loading turns off even on error
-      setProfile(null);
+      console.error('Error fetching user session:', err);
+      // Do not destroy token on network failure, keep them logged in but maybe unverified
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+         // Offline handling, we can trust token locally if offline
+      } else {
+         setUser(null);
+      }
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const applySession = async (nextSession: Session | null) => {
-    setSession(nextSession);
-    setUser(nextSession?.user || null);
-
-    if (nextSession?.user) {
-      await fetchProfile(nextSession.user.id);
-    } else {
-      setProfile(null);
-    }
-
-    setIsLoading(false);
   };
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        await applySession(currentSession);
-      } catch (err) {
-        console.error('Auth initialization error:', err);
-      } finally {
-        setIsLoading(false);
-      }
+    applySession();
+
+    // Listen for custom token updates from login screen
+    const handleStorage = () => {
+      applySession();
     };
-
-    initializeAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-      // Detect password recovery flow and redirect to reset page
-      if (event === 'PASSWORD_RECOVERY') {
-        // Delay hash change slightly to ensure Supabase persists its session first
-        setTimeout(() => {
-          window.location.hash = '#/reset-password';
-        }, 100);
-        return;
-      }
-
-      // TOKEN_REFRESHED fires every time the tab regains focus (Supabase silently
-      // extends the session). The user identity is IDENTICAL — only update the
-      // session token in state. Do NOT call setUser() here: even if the new object
-      // has the same data, it is a different reference, which would trigger every
-      // downstream useEffect([user]) and cause dashboards to re-fetch/re-render.
-      if (event === 'TOKEN_REFRESHED') {
-        console.debug('[Auth] Token refreshed silently — session updated, user reference preserved');
-        setSession(newSession);
-        // ← intentionally NOT calling setUser() to keep the same object reference
-        return;
-      }
-
-      // For genuine auth changes (SIGNED_IN, SIGNED_OUT, USER_UPDATED),
-      // only show the loading state if the user identity actually changed.
-      const currentUserId = newSession?.user?.id ?? null;
-      setUser(prev => {
-        const prevId = prev?.id ?? null;
-        if (prevId === currentUserId) {
-          // Same user — silently update session without a loading flash
-          console.debug('[Auth] Auth event', event, '— same user, silent update');
-          setSession(newSession);
-          return prev;
-        }
-        // Different user (or signed out) — run full applySession with loading
-        console.debug('[Auth] Auth event', event, '— user changed, applying session');
-        setIsLoading(true);
-        window.setTimeout(() => {
-          void applySession(newSession);
-        }, 0);
-        return prev; // applySession will call setUser properly
-      });
-    });
-
+    window.addEventListener('unscriptx_auth_change', handleStorage);
     return () => {
-      subscription.unsubscribe();
+      window.removeEventListener('unscriptx_auth_change', handleStorage);
     };
   }, []);
 
   const signOut = async () => {
     setIsLoading(true);
-    await supabase.auth.signOut();
+    localStorage.removeItem('unscriptx_token');
     setUser(null);
-    setProfile(null);
-    setSession(null);
+    window.dispatchEvent(new Event('unscriptx_auth_change'));
     setIsLoading(false);
   };
 
   const refreshProfile = async () => {
-    if (user) {
-      await fetchProfile(user.id);
-    }
+    await applySession();
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, isLoading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile: user, session: user ? { access_token: localStorage.getItem('unscriptx_token') } : null, isLoading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

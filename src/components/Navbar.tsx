@@ -44,7 +44,7 @@ const Navbar = () => {
   }
 
   const showUserActions = !isLoading && !!user;
-  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Profile';
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Profile';
   const showDashboardShortcut = !!profile && profile.role !== 'user';
 
   return (

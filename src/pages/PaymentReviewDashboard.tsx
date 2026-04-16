@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Loader2, CheckCircle2, XCircle, Search, ExternalLink, Unlock, ArrowLeft, Calendar, User, DollarSign, ChevronDown, Phone, Camera, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -60,48 +60,18 @@ export default function PaymentReviewDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Get assigned events if not admin
-      let assignedEventIds: string[] = [];
-      if (user?.role !== 'admin') {
-        const { data: assignments } = await supabase
-          .from('reviewer_event_assignments')
-          .select('event_id')
-          .eq('reviewer_id', user?.id)
-          .eq('role_type', 'payment');
-        assignedEventIds = (assignments || []).map(a => a.event_id);
-        
-        if (assignedEventIds.length === 0) {
-          setRegistrations([]);
-          setEventSummaries([]);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // 2. Fetch all relevant registrations
-      let query = supabase
-        .from('registrations')
-        .select(`
-          id, user_id, event_id, participant_name, email, phone, college_name, team_name, payment_status,
-          payment_screenshot_url, payment_review_notes, upload_enabled, created_at,
-          participant_user:users!registrations_user_id_fkey ( email, full_name ),
-          events ( id, title, entry_fee, category )
-        `);
-
-      if (user?.role !== 'admin') {
-        query = query.in('event_id', assignedEventIds);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const rows = (data as unknown as RegistrationReview[]) || [];
-      setRegistrations(rows);
+      const rowsData = await api.get<any[]>('/api/admin?resource=payment_review_data');
       
-      // 3. Generate event summaries for the drill-down view
+      const rows = rowsData.map(reg => ({
+        ...reg,
+        participant_user: { full_name: reg.participant_user_name, email: reg.participant_user_email },
+        events: { id: reg.event_id, title: reg.event_title, entry_fee: reg.event_entry_fee, category: reg.event_category }
+      })) as RegistrationReview[];
+
+      setRegistrations(rows || []);
+      
       const eventMap = new Map<string, EventSummary>();
-      rows.forEach(reg => {
+      rows?.forEach(reg => {
         if (!eventMap.has(reg.event_id)) {
           eventMap.set(reg.event_id, {
             id: reg.event_id,
@@ -119,13 +89,13 @@ export default function PaymentReviewDashboard() {
       setEventSummaries(Array.from(eventMap.values()));
 
       setNotes(
-        rows.reduce((acc, row) => {
+        rows?.reduce((acc, row) => {
           acc[row.id] = row.payment_review_notes || '';
           return acc;
-        }, {} as Record<string, string>)
+        }, {} as Record<string, string>) || {}
       );
     } catch (err: any) {
-      toast.error('Failed to load data: ' + err.message);
+      toast.error('Failed to load data.');
     } finally {
       setLoading(false);
     }
@@ -135,9 +105,11 @@ export default function PaymentReviewDashboard() {
     setActionLoading(registrationId);
     try {
       const approve = decision === 'approved';
-      const { error } = await supabase
-        .from('registrations')
-        .update({
+      await api.post('/api/admin', {
+        action: 'update',
+        table: 'registrations',
+        id: registrationId,
+        record: {
           payment_status: decision,
           payment_review_notes: notes[registrationId] || null,
           payment_reviewed_by: user?.id || null,
@@ -146,10 +118,8 @@ export default function PaymentReviewDashboard() {
           upload_enabled_by: approve ? user?.id || null : null,
           upload_enabled_at: approve ? new Date().toISOString() : null,
           submission_status: approve ? 'ready' : 'locked',
-        })
-        .eq('id', registrationId);
-
-      if (error) throw error;
+        }
+      });
 
       // Log the admin action
       const regObj = registrations.find(r => r.id === registrationId);
@@ -212,7 +182,7 @@ export default function PaymentReviewDashboard() {
     const participantText = reg.participant_name || reg.participant_user?.full_name || reg.participant_user?.email || '';
     return (
       participantText.toLowerCase().includes(search.toLowerCase()) ||
-      (reg.email || '').toLowerCase().includes(search.toLowerCase()) ||
+      (reg.participant_user?.email || '').toLowerCase().includes(search.toLowerCase()) ||
       reg.events.title.toLowerCase().includes(search.toLowerCase())
     );
   });

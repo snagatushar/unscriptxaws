@@ -1,54 +1,83 @@
-import { supabase } from './supabase';
+export async function uploadToS3(file: File, folder: string): Promise<{ key: string, publicUrl: string }> {
+  const fileType = file.type || 'application/octet-stream';
+  const fileName = file.name;
 
-function extractPaymentsPath(value: string) {
-  const publicPrefix = '/storage/v1/object/public/payments/';
-  const signPrefix = '/storage/v1/object/sign/payments/';
+  // 1. Get presigned URL
+  const response = await fetch('/api/s3-presign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName, fileType, folder })
+  });
 
-  if (!value) return value;
-  if (!value.startsWith('http')) return value;
-
-  try {
-    const url = new URL(value);
-
-    if (url.pathname.includes(publicPrefix)) {
-      return decodeURIComponent(url.pathname.split(publicPrefix)[1] || '');
-    }
-
-    if (url.pathname.includes(signPrefix)) {
-      return decodeURIComponent(url.pathname.split(signPrefix)[1] || '');
-    }
-
-    const pathParts = url.pathname.split('/payments/');
-    if (pathParts[1]) {
-      return decodeURIComponent(pathParts[1]);
-    }
-  } catch {
-    return value;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to get upload URL');
   }
 
-  return value;
+  const { uploadUrl, key, publicUrl } = await response.json();
+
+  // 2. Upload file directly to S3
+  const uploadResponse = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': fileType },
+    body: file
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error('Failed to upload file to S3');
+  }
+
+  return { key, publicUrl };
+}
+
+export async function deleteFromS3(key: string): Promise<void> {
+  const response = await fetch('/api/s3-delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to delete file from S3');
+  }
 }
 
 export async function openPaymentScreenshot(value: string) {
-  const path = extractPaymentsPath(value);
-  if (!path) {
-    throw new Error('Payment screenshot path is missing.');
+  if (!value) throw new Error('Payment screenshot path is missing.');
+
+  // Check if it's already a full http URL (e.g. from an older storage structure)
+  if (value.startsWith('http')) {
+     window.open(value, '_blank', 'noopener,noreferrer');
+     return;
   }
 
-  const { data, error } = await supabase.storage.from('payments').createSignedUrl(path, 60 * 10);
-  if (error) throw error;
+  const response = await fetch(`/api/s3-presign-view?key=${encodeURIComponent(value)}`);
+  
+  if (!response.ok) {
+     const errorData = await response.json().catch(() => ({}));
+     throw new Error(errorData.error || 'Failed to get file URL');
+  }
 
-  window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  const { viewUrl } = await response.json();
+  window.open(viewUrl, '_blank', 'noopener,noreferrer');
 }
 
 export async function openIdCard(value: string) {
-  const path = extractPaymentsPath(value); // Reuses same extraction logic as they share bucket
-  if (!path) {
-    throw new Error('ID card path is missing.');
+  if (!value) throw new Error('ID card path is missing.');
+
+  if (value.startsWith('http')) {
+     window.open(value, '_blank', 'noopener,noreferrer');
+     return;
   }
 
-  const { data, error } = await supabase.storage.from('payments').createSignedUrl(path, 60 * 10);
-  if (error) throw error;
+  const response = await fetch(`/api/s3-presign-view?key=${encodeURIComponent(value)}`);
+  
+  if (!response.ok) {
+     const errorData = await response.json().catch(() => ({}));
+     throw new Error(errorData.error || 'Failed to get file URL');
+  }
 
-  window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+  const { viewUrl } = await response.json();
+  window.open(viewUrl, '_blank', 'noopener,noreferrer');
 }

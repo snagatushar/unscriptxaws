@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { ShieldAlert, Info, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { useGeneralRules } from '../hooks/useSupabase';
+import { useGeneralRules } from '../hooks/useAwsData';
 
 const ruleCategories = [
   {

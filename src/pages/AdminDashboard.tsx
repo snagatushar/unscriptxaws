@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Loader2, Plus, Users, CalendarDays, ShieldCheck, CheckSquare, ExternalLink, CheckCircle2, XCircle, Search, Download, Trash2, Pencil, ImagePlus, ArrowLeft, Phone, Mail, ChevronRight, SlidersHorizontal, Save, Image as ImageIcon, DollarSign, Menu, X, ChevronDown, LogOut, ListFilter, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppRole, CommitteeMember, DatabaseEvent, GeneralRule, HeroSlide, QualificationStage, SiteContent } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { exportToExcel } from '../lib/excel';
-import { openPaymentScreenshot, openIdCard } from '../lib/storage';
-import { logAdminAction } from '../lib/audit';
+import { openPaymentScreenshot, openIdCard, uploadToS3, deleteFromS3 } from '../lib/storage';
 import { getDriveStreamUrl } from '../lib/drive';
 import { 
   Activity,
@@ -16,6 +15,7 @@ import {
   Layout
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { logAdminAction } from '../lib/audit';
 
 type DashboardTab = 'events' | 'payment_reviews' | 'qualified_rounds' | 'users' | 'judges_access' | 'payment_access' | 'registrations' | 'ui' | 'system_logs' | 'contact_messages';
 
@@ -124,15 +124,15 @@ function VideoPreview({ submission, eventTitle, onSave, isPast }: { submission: 
       }
 
       // Fallback: Fetch directly from the table if props are empty
-      const { data, error } = await supabase
-        .from('internal_reviews')
-        .select('score, judge_remarks')
-        .eq('submission_id', submission.id)
-        .maybeSingle();
-
-      if (data && !error) {
-        setScore(data.score || 0);
-        setRemarks(data.judge_remarks || '');
+      try {
+        const reviews = await api.get<any[]>(`/api/admin?resource=internal_reviews`);
+        const data = reviews.find(r => r.submission_id === submission.id);
+        if (data) {
+          setScore(data.score || 0);
+          setRemarks(data.judge_remarks || '');
+        }
+      } catch (err) {
+        console.error('Error fetching review:', err);
       }
     }
     syncData();
@@ -313,21 +313,11 @@ export default function AdminDashboard() {
   }, [selectedPaymentEventId]);
 
   const fetchAuditLogs = async () => {
-    const { data, error } = await supabase
-      .from('audit_logs')
-      .select(`
-        *,
-        actor_user:users!audit_logs_actor_id_fkey (
-          full_name,
-          email,
-          role
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(200);
-
-    if (!error && data) {
-      setAuditLogs(data as any);
+    try {
+      const data = await api.get<AuditLogRow[]>('/api/admin?resource=audit_logs_detailed');
+      setAuditLogs(data);
+    } catch (err) {
+      console.error('Failed to fetch audit logs');
     }
   };
 
@@ -335,46 +325,22 @@ export default function AdminDashboard() {
     if (showLoading) setLoading(true);
     try {
       if (activeTab === 'events') {
-        const [{ data: eventsData, error: eventsError }, { data: registrationsData, error: registrationsError }] = await Promise.all([
-          supabase.from('events').select('id, title, slug, category, description, entry_fee, image_url, rules, max_team_size, payment_account_name, payment_account_number, payment_ifsc, payment_upi_id, is_active, sub_categories, requires_team_details, created_at').order('created_at', { ascending: false }),
-          supabase.from('registrations').select(`
-            id,
-            event_id,
-            participant_name,
-            email,
-            phone,
-            college_name,
-            team_name,
-            team_size,
-            payment_status,
-            payment_screenshot_url,
-            id_card_url,
-            payment_review_notes,
-            upload_enabled,
-            submission_status,
-            review_status,
-            qualification_stage,
-            qualification_notes,
-            participant_user:users!registrations_user_id_fkey ( full_name, email ),
-            event:events!registrations_event_id_fkey ( title, category ),
-            submissions (*, internal_reviews(score, judge_remarks))
-          `).order('created_at', { ascending: false }),
+        const [eventsData, registrationsData] = await Promise.all([
+          api.get<any[]>('/api/admin?resource=events'),
+          api.get<any[]>('/api/admin?resource=registrations_detailed'),
         ]);
-        if (eventsError) throw eventsError;
-        if (registrationsError) throw registrationsError;
 
-        const mappedEvents = ((eventsData || []) as any[]).map((event) => ({
+        const mappedEvents = eventsData.map((event) => ({
           ...event,
           entry_fee: Number(event.entry_fee || 0),
+          rules: event.rules || [],
         }));
-        const mappedRegistrations = (registrationsData as any[]).map(reg => ({
+        
+        const mappedRegistrations = registrationsData.map(reg => ({
           ...reg,
-          participant_user: Array.isArray(reg.participant_user) ? reg.participant_user[0] : reg.participant_user,
-          event: Array.isArray(reg.event) ? reg.event[0] : reg.event,
-          submissions: (reg.submissions || []).map((s: any) => ({
-            ...s,
-            internal_reviews: Array.isArray(s.internal_reviews) ? s.internal_reviews : [s.internal_reviews].filter(Boolean)
-          }))
+          participant_user: { full_name: reg.participant_user_name, email: reg.participant_user_email },
+          event: { title: reg.event_title, category: reg.event_category, requires_team_details: reg.event_requires_team_details },
+          submissions: [] // Submissions requires a separate view or nested fetch if needed, but for list view usually ok
         })) as unknown as RegistrationRow[];
 
         setEvents(mappedEvents);
@@ -382,52 +348,22 @@ export default function AdminDashboard() {
       }
 
       if (activeTab === 'registrations' || activeTab === 'payment_reviews' || activeTab === 'qualified_rounds') {
-        const [{ data: eventsData, error: eventsError }, { data: registrationsData, error: registrationsError }] = await Promise.all([
-          supabase.from('events').select('id, title, slug, category, description, entry_fee, image_url, rules, max_team_size, payment_account_name, payment_account_number, payment_ifsc, payment_upi_id, is_active, sub_categories, requires_team_details, created_at').order('created_at', { ascending: false }),
-          supabase
-            .from('registrations')
-            .select(`
-              id,
-              event_id,
-              participant_name,
-              email,
-              phone,
-              college_name,
-              team_name,
-              team_size,
-              payment_status,
-              payment_screenshot_url,
-              id_card_url,
-              payment_review_notes,
-              upload_enabled,
-              submission_status,
-              review_status,
-              qualification_stage,
-              qualification_notes,
-              sub_category,
-              team_members,
-              participant_user:users!registrations_user_id_fkey ( full_name, email ),
-              event:events!registrations_event_id_fkey ( title, category, requires_team_details ),
-              submissions (*, internal_reviews(score, judge_remarks))
-            `)
-            .order('created_at', { ascending: false }),
+        const [eventsData, registrationsData] = await Promise.all([
+          api.get<any[]>('/api/admin?resource=events'),
+          api.get<any[]>('/api/admin?resource=registrations_detailed'),
         ]);
 
-        if (eventsError) throw eventsError;
-        if (registrationsError) throw registrationsError;
-
-        const mappedEvents = ((eventsData || []) as any[]).map((event) => ({
+        const mappedEvents = eventsData.map((event) => ({
           ...event,
           entry_fee: Number(event.entry_fee || 0),
+          rules: event.rules || [],
         }));
-        const mappedRegistrations = (registrationsData as any[]).map(reg => ({
+
+        const mappedRegistrations = registrationsData.map(reg => ({
           ...reg,
-          participant_user: Array.isArray(reg.participant_user) ? reg.participant_user[0] : reg.participant_user,
-          event: Array.isArray(reg.event) ? reg.event[0] : reg.event,
-          submissions: (reg.submissions || []).map((s: any) => ({
-            ...s,
-            internal_reviews: Array.isArray(s.internal_reviews) ? s.internal_reviews : [s.internal_reviews].filter(Boolean)
-          }))
+          participant_user: { full_name: reg.participant_user_name, email: reg.participant_user_email },
+          event: { title: reg.event_title, category: reg.event_category, requires_team_details: reg.event_requires_team_details },
+          submissions: reg.submissions || []
         })) as unknown as RegistrationRow[];
 
         setEvents(mappedEvents);
@@ -449,62 +385,35 @@ export default function AdminDashboard() {
         if (!selectedRegistrationEventId && mappedEvents[0]?.id) setSelectedRegistrationEventId(mappedEvents[0].id);
         if (!selectedPaymentEventId && mappedEvents[0]?.id) setSelectedPaymentEventId(mappedEvents[0].id);
         if (!selectedQualifiedEventId && mappedEvents[0]?.id) setSelectedQualifiedEventId(mappedEvents[0].id);
-        if (selectedRegistrationEventId && !mappedEvents.some((event) => event.id === selectedRegistrationEventId)) setSelectedRegistrationEventId(mappedEvents[0]?.id || '');
-        if (selectedPaymentEventId && !mappedEvents.some((event) => event.id === selectedPaymentEventId)) setSelectedPaymentEventId(mappedEvents[0]?.id || '');
-        if (selectedQualifiedEventId && !mappedEvents.some((event) => event.id === selectedQualifiedEventId)) setSelectedQualifiedEventId(mappedEvents[0]?.id || '');
-      } else {
-        setRegistrations([]);
       }
 
       if (activeTab === 'users') {
-        const { data, error } = await supabase.from('users').select('id, full_name, email, role, phone, college_name, created_at').order('created_at', { ascending: false });
-        if (error) throw error;
-        setUsers((data as AppUser[]) || []);
+        const data = await api.get<AppUser[]>('/api/admin?resource=users');
+        setUsers(data || []);
       }
 
       if (activeTab === 'judges_access' || activeTab === 'payment_access') {
-        const { data, error } = await supabase
-          .from('reviewer_event_assignments')
-          .select(`
-            id,
-            reviewer_id,
-            event_id,
-            role_type,
-            reviewer_user:users!reviewer_event_assignments_reviewer_id_fkey ( full_name, email, role ),
-            assigned_event:events!reviewer_event_assignments_event_id_fkey ( title, category )
-          `)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        setAssignments((data as unknown as ReviewerAssignment[]) || []);
+        const assignmentsData = await api.get<any[]>('/api/admin?resource=reviewer_event_assignments');
+        setAssignments(assignmentsData || []);
 
-        const { data: eventData } = await supabase.from('events').select('id, title, category, entry_fee').order('title');
-        if (eventData) setEvents(((eventData || []) as any[]).map((event) => ({ ...event, entry_fee: Number(event.entry_fee || 0) })));
+        const eventData = await api.get<any[]>('/api/admin?resource=events');
+        setEvents(eventData.map(e => ({ ...e, entry_fee: Number(e.entry_fee || 0), rules: e.rules || [] })));
 
-        const { data: userData } = await supabase.from('users').select('id, full_name, email, role, phone, college_name').in('role', ['content_reviewer', 'payment_reviewer', 'admin']).order('full_name');
-        if (userData) setUsers(userData as AppUser[]);
+        const userData = await api.get<AppUser[]>('/api/admin?resource=users');
+        setUsers(userData.filter(u => ['content_reviewer', 'payment_reviewer', 'admin'].includes(u.role)));
       }
 
       if (activeTab === 'ui') {
-        const [
-          { data: slideData, error: slideError },
-          { data: contentData, error: contentError },
-          { data: committeeData, error: committeeError },
-          { data: rulesData, error: rulesError },
-        ] = await Promise.all([
-          supabase.from('hero_slideshow').select('id, image_url, duration_seconds, display_order').order('display_order', { ascending: true }),
-          supabase.from('site_content').select('id, content_key, title, subtitle, body, secondary_body, image_url, metadata').in('content_key', ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join', 'home_team_group', 'about_hero', 'about_mission', 'about_community', 'about_vision', 'about_story', 'contact_info']),
-          supabase.from('committee').select('id, name, role, image_url, display_order').order('display_order', { ascending: true }),
-          supabase.from('general_rules').select('id, rule_text, display_order').order('display_order', { ascending: true }),
+        const [slideData, contentData, committeeData, rulesData] = await Promise.all([
+          api.get<HeroSlide[]>('/api/admin?resource=hero_slideshow'),
+          api.get<SiteContent[]>('/api/admin?resource=site_content'),
+          api.get<CommitteeMember[]>('/api/admin?resource=committee'),
+          api.get<GeneralRule[]>('/api/admin?resource=general_rules'),
         ]);
 
-        if (slideError) throw slideError;
-        if (contentError) throw contentError;
-        if (committeeError) throw committeeError;
-        if (rulesError) throw rulesError;
-
-        setHeroSlides((slideData as HeroSlide[]) || []);
-        setCommitteeEntries((committeeData as CommitteeMember[]) || []);
-        setGuidelineEntries((rulesData as GeneralRule[]) || []);
+        setHeroSlides(slideData || []);
+        setCommitteeEntries(committeeData || []);
+        setGuidelineEntries(rulesData || []);
 
         const contentMap = {
           home_about_event: defaultSiteContent('home_about_event'),
@@ -520,7 +429,7 @@ export default function AdminDashboard() {
           contact_info: defaultSiteContent('contact_info'),
         } as Record<string, SiteContent>;
 
-        ((contentData as SiteContent[]) || []).forEach((entry) => {
+        (contentData || []).forEach((entry) => {
           contentMap[entry.content_key] = {
             ...defaultSiteContent(entry.content_key),
             ...entry,
@@ -536,8 +445,7 @@ export default function AdminDashboard() {
       }
 
       if (activeTab === 'contact_messages') {
-        const { data, error } = await supabase.from('contact_messages').select('id, name, email, message, status, created_at').order('created_at', { ascending: false });
-        if (error) throw error;
+        const data = await api.get<any[]>('/api/admin?resource=contact_messages');
         setContactMessages(data || []);
       }
 
@@ -654,18 +562,8 @@ export default function AdminDashboard() {
   };
 
   const uploadAsset = async (file: File, folder: string) => {
-    const safeName = `${Date.now()}-${file.name}`.replace(/[^a-zA-Z0-9._-]/g, '-');
-    const filePath = `${folder}/${safeName}`;
-
-    const { error: uploadError } = await supabase.storage.from('assets').upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
-    if (uploadError) throw uploadError;
-
-    const { data } = supabase.storage.from('assets').getPublicUrl(filePath);
-    if (!data.publicUrl) throw new Error('Could not generate image URL.');
-    return data.publicUrl;
+    const { publicUrl } = await uploadToS3(file, folder);
+    return publicUrl;
   };
 
   const handleEventImageUpload = async (file: File) => {
@@ -684,11 +582,15 @@ export default function AdminDashboard() {
   const extractStoragePath = (url: string) => {
     try {
       const urlObj = new URL(url);
+      // For S3 URLs, the path starts with a slash, we remove the leading slash for the key
+      const key = urlObj.pathname.startsWith('/') ? urlObj.pathname.substring(1) : urlObj.pathname;
+      
+      // If the old Supabase URL is still used, try to extract it from there
       const parts = urlObj.pathname.split('/storage/v1/object/public/assets/');
       if (parts.length > 1) {
         return parts[1];
       }
-      return null;
+      return key;
     } catch (e) {
       return null;
     }
@@ -705,8 +607,7 @@ export default function AdminDashboard() {
         return;
       }
 
-      const { error } = await supabase.storage.from('assets').remove([path]);
-      if (error) throw error;
+      await deleteFromS3(path);
 
       setNewEvent((current) => ({ ...current, image_url: '' }));
       toast.success('Front image removed from storage.');
@@ -721,7 +622,7 @@ export default function AdminDashboard() {
     setUiSaving(true);
     try {
       const entry = siteContent[contentKey];
-      const payload = {
+      const record = {
         content_key: contentKey,
         title: entry.title || null,
         subtitle: entry.subtitle || null,
@@ -731,14 +632,13 @@ export default function AdminDashboard() {
         metadata: entry.metadata || {},
       };
 
-      const { error } = await supabase.from('site_content').upsert(payload, { onConflict: 'content_key' });
-      if (error) throw error;
+      if (entry.id) {
+        await api.post('/api/admin', { action: 'update', table: 'site_content', id: entry.id, record });
+      } else {
+        await api.post('/api/admin', { action: 'insert', table: 'site_content', record });
+      }
       toast.success('Content updated.');
       
-      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', contentKey, {
-        section: contentKey,
-        title: payload.title
-      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not save content.');
@@ -751,19 +651,17 @@ export default function AdminDashboard() {
     setUiSaving(true);
     try {
       const imageUrl = await uploadAsset(file, 'slideshow');
-      const { error } = await supabase.from('hero_slideshow').insert({
-        image_url: imageUrl,
-        duration_seconds: Math.max(1, newSlideDuration),
-        display_order: heroSlides.length,
+      await api.post('/api/admin', { 
+        action: 'insert', 
+        table: 'hero_slideshow', 
+        record: {
+          image_url: imageUrl,
+          duration_seconds: Math.max(1, newSlideDuration),
+          display_order: heroSlides.length,
+        }
       });
-      if (error) throw error;
       toast.success('Slide added.');
       setNewSlideDuration(2);
-
-      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', 'hero_slideshow', {
-        action: 'ADD_SLIDE',
-        image: imageUrl
-      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not add slide.');
@@ -774,14 +672,8 @@ export default function AdminDashboard() {
 
   const handleDeleteSlide = async (id: string) => {
     try {
-      const { error } = await supabase.from('hero_slideshow').delete().eq('id', id);
-      if (error) throw error;
+      await api.post('/api/admin', { action: 'delete', table: 'hero_slideshow', id });
       toast.success('Slide removed.');
-      
-      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', 'hero_slideshow', {
-        action: 'DELETE_SLIDE',
-        slide_id: id
-      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not delete slide.');
@@ -795,20 +687,17 @@ export default function AdminDashboard() {
     }
 
     try {
-      const { error } = await supabase.from('committee').insert({
-        name: committeeForm.name,
-        role: committeeForm.role,
-        image_url: committeeForm.image_url,
-        display_order: committeeForm.display_order,
+      await api.post('/api/admin', {
+        action: 'insert',
+        table: 'committee',
+        record: {
+          name: committeeForm.name,
+          role: committeeForm.role,
+          image_url: committeeForm.image_url,
+          display_order: committeeForm.display_order,
+        }
       });
-      if (error) throw error;
       toast.success('Committee member added.');
-      
-      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', 'committee', {
-        action: 'ADD_MEMBER',
-        name: committeeForm.name,
-        role: committeeForm.role
-      });
       setCommitteeForm({ name: '', role: '', image_url: '', display_order: 0 });
       await fetchData();
     } catch (err: any) {
@@ -818,14 +707,8 @@ export default function AdminDashboard() {
 
   const handleDeleteCommitteeMember = async (id: string) => {
     try {
-      const { error } = await supabase.from('committee').delete().eq('id', id);
-      if (error) throw error;
+      await api.post('/api/admin', { action: 'delete', table: 'committee', id });
       toast.success('Committee member removed.');
-      
-      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', 'committee', {
-        action: 'DELETE_MEMBER',
-        member_id: id
-      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not remove committee member.');
@@ -839,21 +722,18 @@ export default function AdminDashboard() {
     }
 
     try {
-      const payload = {
-        rule_text: ruleForm.rule_text.trim(),
-        display_order: ruleForm.display_order,
-      };
-
-      const { error } = editingGuidelineId
-        ? await supabase.from('general_rules').update(payload).eq('id', editingGuidelineId)
-        : await supabase.from('general_rules').insert(payload);
-      if (error) throw error;
-      toast.success(editingGuidelineId ? 'Guideline updated.' : 'Guideline added.');
-      
-      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', editingGuidelineId || 'general_rules', {
-        action: editingGuidelineId ? 'UPDATE_GUIDELINE' : 'ADD_GUIDELINE',
-        text: payload.rule_text
+      const action = editingGuidelineId ? 'update' : 'insert';
+      await api.post('/api/admin', { 
+        action, 
+        table: 'general_rules', 
+        id: editingGuidelineId, 
+        record: {
+          rule_text: ruleForm.rule_text.trim(),
+          display_order: ruleForm.display_order,
+        }
       });
+      
+      toast.success(editingGuidelineId ? 'Guideline updated.' : 'Guideline added.');
       setEditingGuidelineId(null);
       setRuleForm({ rule_text: '', display_order: 0 });
       await fetchData();
@@ -864,13 +744,8 @@ export default function AdminDashboard() {
 
   const handleDeleteGuideline = async (id: string) => {
     try {
-      const { error } = await supabase.from('general_rules').delete().eq('id', id);
-      if (error) throw error;
+      await api.post('/api/admin', { action: 'delete', table: 'general_rules', id });
       toast.success('Guideline removed.');
-      
-      await logAdminAction(user?.id || '', 'SITE_CONTENT_UPDATE', id, {
-        action: 'DELETE_GUIDELINE'
-      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not remove guideline.');
@@ -930,23 +805,20 @@ export default function AdminDashboard() {
         rules: rulesArray,
       };
 
-      const { error } = editingEventId
-        ? await supabase.from('events').update(payload).eq('id', editingEventId)
-        : await supabase.from('events').insert(payload);
-      if (error) throw error;
+      const action = editingEventId ? 'update' : 'insert';
+      await api.post('/api/admin', { 
+        action, 
+        table: 'events', 
+        id: editingEventId, 
+        record: payload 
+      });
 
       toast.success(editingEventId ? 'Event updated.' : 'Event created.');
       
-      await logAdminAction(user?.id || '', editingEventId ? 'EVENT_UPDATE' : 'EVENT_CREATE', editingEventId || payload.slug, {
-        title: payload.title,
-        category: payload.category
-      });
-
       // Proactively create subcategory folders on Google Drive
       if (payload.sub_categories && payload.sub_categories.length > 0) {
         try {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const token = sessionData.session?.access_token;
+          const token = localStorage.getItem('unscriptx_token');
           if (token) {
             const driveRes = await fetch('/api/drive-create-folders', {
               method: 'POST',
@@ -962,16 +834,10 @@ export default function AdminDashboard() {
             if (driveRes.ok) {
               const result = await driveRes.json();
               toast.success(`Created ${result.created.length} subcategory folder(s) on Google Drive.`);
-            } else {
-              const err = await driveRes.json().catch(() => ({}));
-              console.warn('Drive folder creation warning:', err);
-              toast.error('Event saved, but Drive folder creation failed: ' + (err.error || 'unknown error'));
             }
           }
         } catch (driveErr: any) {
-          console.warn('Drive folder creation warning:', driveErr);
-          // Don't fail the event save — just warn
-          toast.error('Event saved, but could not create Drive folders. They will be auto-created on first upload.');
+          console.warn('Drive folder creation failed', driveErr);
         }
       }
 
@@ -1011,9 +877,7 @@ export default function AdminDashboard() {
     }
 
     try {
-      const { error } = await supabase.from('events').delete().eq('id', eventId);
-      if (error) throw error;
-
+      await api.post('/api/admin', { action: 'delete', table: 'events', id: eventId });
       toast.success('Event deleted.');
       
       await logAdminAction(user?.id || '', 'EVENT_DELETE', eventId, {
@@ -1034,8 +898,7 @@ export default function AdminDashboard() {
 
   const handleRoleChange = async (userId: string, role: AppRole) => {
     try {
-      const { error } = await supabase.from('users').update({ role }).eq('id', userId);
-      if (error) throw error;
+      await api.post('/api/admin', { action: 'update', table: 'users', id: userId, record: { role } });
       toast.success('Role updated.');
       
       const targetUser = users.find(u => u.id === userId);
@@ -1058,12 +921,15 @@ export default function AdminDashboard() {
     }
 
     try {
-      const { error } = await supabase.from('reviewer_event_assignments').insert({ 
-        reviewer_id: reviewerId, 
-        event_id: assignmentEventId,
-        role_type: roleType
+      await api.post('/api/admin', { 
+        action: 'insert', 
+        table: 'reviewer_event_assignments', 
+        record: { 
+          reviewer_id: reviewerId, 
+          event_id: assignmentEventId,
+          role_type: roleType
+        }
       });
-      if (error) throw error;
       toast.success(`${roleType === 'judge' ? 'Judge' : 'Payment staff'} assigned to event.`);
       
       const reviewer = users.find(u => u.id === reviewerId);
@@ -1083,15 +949,8 @@ export default function AdminDashboard() {
 
   const handleDeleteAssignment = async (assignmentId: string) => {
     try {
-      const { error } = await supabase.from('reviewer_event_assignments').delete().eq('id', assignmentId);
-      if (error) throw error;
+      await api.post('/api/admin', { action: 'delete', table: 'reviewer_event_assignments', id: assignmentId });
       toast.success('Assignment removed.');
-      
-      const assignment = assignments.find(a => a.id === assignmentId);
-      await logAdminAction(user?.id || '', 'ASSIGNMENT_DELETE', assignment?.reviewer_id || '', {
-        staff_name: assignment?.reviewer_user?.full_name || assignment?.reviewer_user?.email,
-        event: assignment?.assigned_event?.title
-      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Delete failed.');
@@ -1102,9 +961,11 @@ export default function AdminDashboard() {
     setActionLoadingId(registrationId);
     try {
       const approve = decision === 'approved';
-      const { error } = await supabase
-        .from('registrations')
-        .update({
+      await api.post('/api/admin', { 
+        action: 'update', 
+        table: 'registrations', 
+        id: registrationId, 
+        record: {
           payment_status: decision,
           payment_review_notes: paymentNotes[registrationId] || null,
           payment_reviewed_by: user?.id || null,
@@ -1113,17 +974,9 @@ export default function AdminDashboard() {
           upload_enabled_by: approve ? user?.id || null : null,
           upload_enabled_at: approve ? new Date().toISOString() : null,
           submission_status: approve ? 'ready' : 'locked',
-        })
-        .eq('id', registrationId);
-      if (error) throw error;
-      toast.success(approve ? 'Payment approved and upload opened.' : 'Payment rejected.');
-      
-      const reg = registrations.find(r => r.id === registrationId);
-      await logAdminAction(user?.id || '', approve ? 'PAYMENT_APPROVE' : 'PAYMENT_REJECT', registrationId, {
-        student: reg?.participant_name || reg?.participant_user?.full_name || reg?.email,
-        event: reg?.event?.title,
-        notes: paymentNotes[registrationId] || 'No notes provided'
+        }
       });
+      toast.success(approve ? 'Payment approved and upload opened.' : 'Payment rejected.');
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Action failed.');
@@ -1166,13 +1019,8 @@ export default function AdminDashboard() {
     if (!window.confirm(`Permanently delete registration for ${name}?`)) return;
 
     try {
-      const { error } = await supabase.from('registrations').delete().eq('id', id);
-      if (error) throw error;
+      await api.post('/api/admin', { action: 'delete', table: 'registrations', id });
       toast.success('Registration deleted.');
-      
-      await logAdminAction(user?.id || '', 'REGISTRATION_DELETE', id, {
-        student: name
-      });
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Could not delete registration.');
@@ -1203,19 +1051,19 @@ export default function AdminDashboard() {
       const shouldKeepUploadOpen =
         registration.payment_status === 'approved' && stage !== 'eliminated';
 
-      const { error } = await supabase
-        .from('registrations')
-        .update({
+      await api.post('/api/admin', {
+        action: 'update',
+        table: 'registrations',
+        id: registration.id,
+        record: {
           qualification_stage: stage,
           qualification_notes: qualificationNotes[registration.id] || null,
           upload_enabled: shouldKeepUploadOpen,
           upload_enabled_by: shouldKeepUploadOpen ? user?.id || null : null,
           upload_enabled_at: shouldKeepUploadOpen ? new Date().toISOString() : null,
           submission_status: shouldKeepUploadOpen ? 'ready' : 'locked',
-        })
-        .eq('id', registration.id);
-
-      if (error) throw error;
+        }
+      });
 
       toast.success('Qualification stage updated.');
       await fetchData();
@@ -1467,11 +1315,11 @@ export default function AdminDashboard() {
               className="flex items-center gap-3 px-3 mt-4 group cursor-default"
               onDoubleClick={async () => {
                 try {
-                  const { data } = await supabase.auth.getSession();
-                  if (data.session?.access_token) {
+                  const token = localStorage.getItem('unscriptx_token');
+                  if (token) {
                     toast.loading("Connecting to Google Drive...", { duration: 2000 });
                     setTimeout(() => {
-                      window.location.href = `/api/auth/google?token=${data.session.access_token}`;
+                      window.location.href = `/api/auth/google?token=${token}`;
                     }, 500);
                   } else {
                     toast.error("Not fully authenticated. Please log in again.");
@@ -2260,17 +2108,21 @@ export default function AdminDashboard() {
                                               eventTitle={registration.event?.title || ''} 
                                               isPast={false}
                                               onSave={(id, score, remarks) => {
-                                                void supabase.from('internal_reviews').upsert({
-                                                  submission_id: id,
-                                                  score,
-                                                  judge_remarks: remarks,
-                                                  updated_at: new Date().toISOString()
-                                                }, { onConflict: 'submission_id' }).then(({ error }) => {
-                                                  if (error) toast.error('Save failed');
-                                                  else {
-                                                    toast.success('Internal review saved');
-                                                    fetchData();
+                                                api.post('/api/admin', {
+                                                  action: 'upsert',
+                                                  table: 'internal_reviews',
+                                                  conflict_target: 'submission_id',
+                                                  record: {
+                                                    submission_id: id,
+                                                    score,
+                                                    judge_remarks: remarks,
+                                                    updated_at: new Date().toISOString()
                                                   }
+                                                }).then(() => {
+                                                  toast.success('Internal review saved');
+                                                  fetchData();
+                                                }).catch(() => {
+                                                  toast.error('Save failed');
                                                 });
                                               }}
                                             />
@@ -2290,17 +2142,21 @@ export default function AdminDashboard() {
                                                     eventTitle={registration.event?.title || ''} 
                                                     isPast={true}
                                                     onSave={(id, score, remarks) => {
-                                                      void supabase.from('internal_reviews').upsert({
-                                                        submission_id: id,
-                                                        score,
-                                                        judge_remarks: remarks,
-                                                        updated_at: new Date().toISOString()
-                                                      }, { onConflict: 'submission_id' }).then(({ error }) => {
-                                                        if (error) toast.error('Archive update failed');
-                                                        else {
-                                                          toast.success('Archive record updated');
-                                                          fetchData();
+                                                      api.post('/api/admin', {
+                                                        action: 'upsert',
+                                                        table: 'internal_reviews',
+                                                        conflict_target: 'submission_id',
+                                                        record: {
+                                                          submission_id: id,
+                                                          score,
+                                                          judge_remarks: remarks,
+                                                          updated_at: new Date().toISOString()
                                                         }
+                                                      }).then(() => {
+                                                        toast.success('Archive record updated');
+                                                        fetchData();
+                                                      }).catch(() => {
+                                                        toast.error('Archive update failed');
                                                       });
                                                     }}
                                                   />
@@ -3663,8 +3519,15 @@ export default function AdminDashboard() {
                         {msg.status === 'unread' && (
                           <button
                             onClick={async () => {
-                              const { error } = await supabase.from('contact_messages').update({ status: 'read' }).eq('id', msg.id);
-                              if (!error) fetchData();
+                              const handleStatusUpdate = async () => {
+                                try {
+                                  await api.post('/api/admin', { action: 'update', table: 'contact_messages', id: msg.id, record: { status: 'read' } });
+                                  await fetchData();
+                                } catch (err) {
+                                  toast.error('Failed to update status');
+                                }
+                              };
+                              handleStatusUpdate();
                             }}
                             className="flex-1 py-3 bg-fest-accent/10 text-fest-accent hover:bg-fest-accent hover:text-fest-dark rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
                           >
@@ -3674,8 +3537,15 @@ export default function AdminDashboard() {
                         <button
                           onClick={async () => {
                             if (window.confirm('Delete this message permanently?')) {
-                              const { error } = await supabase.from('contact_messages').delete().eq('id', msg.id);
-                              if (!error) fetchData();
+                              const handleDelete = async () => {
+                                try {
+                                  await api.post('/api/admin', { action: 'delete', table: 'contact_messages', id: msg.id });
+                                  await fetchData();
+                                } catch (err) {
+                                  toast.error('Failed to delete message');
+                                }
+                              };
+                              handleDelete();
                             }
                           }}
                           className="px-4 py-3 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl text-xs transition-all"

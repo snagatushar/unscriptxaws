@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, UploadCloud, Loader2, PlayCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { QualificationStage } from '../types';
 import toast from 'react-hot-toast';
@@ -19,7 +19,7 @@ interface VideoUploadModalProps {
 }
 
 export default function VideoUploadModal({ isOpen, onClose, registrationId, round, roundName, eventTitle, subCategory, onSuccess }: VideoUploadModalProps) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -28,7 +28,6 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
   const handleUpload = async () => {
     if (!file || !user) return;
 
-    // BUG-03 FIX: Validate file type and size before upload
     const MAX_VIDEO_SIZE = 800 * 1024 * 1024; // 800MB
     const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
     if (!allowedTypes.includes(file.type)) {
@@ -43,13 +42,11 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
     setUploading(true);
     setUploadProgress(0);
     try {
-      const { data: regData } = await supabase
-        .from('registrations')
-        .select('participant_name')
-        .eq('id', registrationId)
-        .single();
-
-      const finalUserName = regData?.participant_name || profile?.full_name || user.email || 'Student';
+      // Get participant name from registrations
+      // Actually, we can just let the drive upload handle the name or fetch it via our user API
+      const registrations = await api.get<any[]>('/api/user?resource=registrations');
+      const reg = registrations.find(r => r.id === registrationId);
+      const finalUserName = reg?.participant_name || user.full_name || user.email || 'Student';
 
       const driveUpload = await uploadVideoToDrive({
         file,
@@ -62,16 +59,13 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
         onProgress: setUploadProgress,
       });
 
-      const { error: dbError } = await supabase.from('submissions').insert({
-        registration_id: registrationId,
-        round: round,
-        video_url: driveUpload.fileId,
-        video_path: driveUpload.fileId,
-        notes: notes || null,
-        status: 'submitted'
+      await api.post('/api/user', {
+        resource: 'submission',
+        registrationId,
+        round,
+        videoUrl: driveUpload.fileId,
+        notes: notes || null
       });
-
-      if (dbError) throw dbError;
 
       toast.success('Video uploaded successfully!');
       onSuccess();

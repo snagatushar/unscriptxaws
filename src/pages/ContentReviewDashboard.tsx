@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { Loader2, CheckCircle2, XCircle, Search, Video, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -124,45 +124,20 @@ export default function ContentReviewDashboard() {
   const fetchSubmissions = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
-      let assignedEventIds: string[] = [];
-      if (user?.role !== 'admin') {
-        const { data: assignments } = await supabase
-          .from('reviewer_event_assignments')
-          .select('event_id')
-          .eq('reviewer_id', user?.id)
-          .eq('role_type', 'judge');
-        assignedEventIds = (assignments || []).map(a => a.event_id);
-        
-        if (assignedEventIds.length === 0) {
-          setSubmissions([]);
-          setLoading(false);
-          return;
-        }
-      }
+      const rowsData = await api.get<any[]>('/api/admin?resource=content_review_data');
+      
+      const rows = rowsData.map(reg => ({
+        ...reg,
+        participant_user: { full_name: reg.participant_user_name, email: reg.participant_user_email },
+        events: { id: reg.event_id, title: reg.event_title, category: reg.event_category },
+        submissions: reg.submissions || []
+      })) as ContentReview[];
 
-      let query = supabase
-        .from('registrations')
-        .select(`
-          *,
-          events!registrations_event_id_fkey ( title, category ),
-          submissions (*, internal_reviews(score, judge_remarks))
-        `)
-        .eq('payment_status', 'approved');
-
-      if (user?.role !== 'admin') {
-        query = query.in('event_id', assignedEventIds);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const rows = (data as unknown as ContentReview[]) || [];
-      setSubmissions(rows);
+      setSubmissions(rows || []);
       
       const existingNotes: Record<string, string> = {};
       const existingScores: Record<string, number> = {};
-      rows.forEach((reg: any) => {
+      rows?.forEach((reg: any) => {
         reg.submissions?.forEach((s: any) => {
           if (s.internal_reviews && s.internal_reviews[0]) {
             existingScores[s.id] = s.internal_reviews[0].score || 0;
@@ -173,7 +148,7 @@ export default function ContentReviewDashboard() {
       setNotes(existingNotes);
       setScores(existingScores);
     } catch (err: any) {
-      toast.error('Failed to load submissions: ' + err.message);
+      toast.error('Failed to load submissions.');
     } finally {
       setLoading(false);
     }
@@ -202,16 +177,17 @@ export default function ContentReviewDashboard() {
   const saveReviewData = async (submissionId: string) => {
     setSavingScoreId(submissionId);
     try {
-      const { error } = await supabase
-        .from('internal_reviews')
-        .upsert({
+      await api.post('/api/admin', {
+        action: 'upsert',
+        table: 'internal_reviews',
+        conflict_target: 'submission_id',
+        record: {
           submission_id: submissionId,
           score: scores[submissionId] || 0,
           judge_remarks: notes[submissionId] || '',
           updated_at: new Date().toISOString()
-        }, { onConflict: 'submission_id' });
-
-      if (error) throw error;
+        }
+      });
       
       if (user) {
         const reg = submissions.find(r => r.submissions.some(s => s.id === submissionId));
@@ -227,7 +203,7 @@ export default function ContentReviewDashboard() {
 
       toast.success('Internal review saved.');
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save review.');
+      toast.error('Failed to save review.');
     } finally {
       setSavingScoreId(null);
     }
@@ -249,12 +225,12 @@ export default function ContentReviewDashboard() {
         updatePayload.review_status = 'eliminated';
       }
 
-      const { error } = await supabase
-        .from('registrations')
-        .update(updatePayload)
-        .eq('id', registrationId);
-
-      if (error) throw error;
+      await api.post('/api/admin', {
+        action: 'update',
+        table: 'registrations',
+        id: registrationId,
+        record: updatePayload
+      });
 
       if (user) {
         const reg = submissions.find(r => r.id === registrationId);
@@ -276,7 +252,7 @@ export default function ContentReviewDashboard() {
       toast.success(`Participant ${decision === 'selected' ? 'promoted' : 'eliminated'}.`);
       fetchSubmissions();
     } catch (err: any) {
-      toast.error('Action failed: ' + err.message);
+      toast.error('Action failed.');
     } finally {
       setActionLoading(null);
     }
@@ -312,14 +288,14 @@ export default function ContentReviewDashboard() {
     e.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  const currentEventSubmissions = submissions.filter(s => s.event_id === selectedEventId).filter((reg) => {
+  const currentEventSubmissions = submissions.filter(s => s.event_id === selectedEventId).filter((reg: any) => {
     const participant = reg.participant_name || reg.participant_user?.full_name || reg.participant_user?.email || '';
     const matchesSearch = participant.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
 
     if (activeTab === 'pending') {
       return reg.qualification_stage !== 'eliminated' && reg.qualification_stage !== 'winner' && 
-             reg.submissions.some(s => {
+             reg.submissions.some((s: any) => {
                if (s.round === 'round_1_qualified' && reg.qualification_stage === 'not_started') return true;
                if (s.round === 'round_2_qualified' && reg.qualification_stage === 'round_1_qualified') return true;
                if (s.round === 'semifinal' && reg.qualification_stage === 'round_2_qualified') return true;

@@ -2,7 +2,6 @@ import { motion } from 'motion/react';
 import React, { useState } from 'react';
 import { ShieldCheck, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 export default function AdminLogin() {
@@ -18,39 +17,33 @@ export default function AdminLogin() {
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login', email: normalizedEmail, password })
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Authentication failed');
 
-      let { data: profile, error: profileError } = await supabase
-        .from('users')
-        .select('id, email, role')
-        .eq('id', authData.user.id)
-        .maybeSingle();
-
-      // SECURITY: Strict lookup by auth ID only — no fallback
-      if (!profile || profileError) {
-        await supabase.auth.signOut();
-        throw new Error('Admin profile not found. Contact the system administrator.');
-      }
-
+      const { user, token } = data;
+      localStorage.setItem('unscriptx_token', token);
 
       const adminRoles = ['admin', 'payment_reviewer', 'content_reviewer'];
-      if (profileError || !adminRoles.includes(profile?.role)) {
-        await supabase.auth.signOut();
-        throw new Error(profileError ? `Admin profile lookup failed: ${profileError.message}` : 'Access Denied: Administrative privileges required.');
+      if (!adminRoles.includes(user.role)) {
+        localStorage.removeItem('unscriptx_token');
+        throw new Error('Access Denied: Administrative privileges required.');
       }
 
       toast.success('Admin Authenticated');
       
       // Smart redirect
-      if (profile.role === 'admin') navigate('/admin');
-      else if (profile.role === 'payment_reviewer') navigate('/payments');
-      else if (profile.role === 'content_reviewer') navigate('/content');
+      if (user.role === 'admin') navigate('/admin');
+      else if (user.role === 'payment_reviewer') navigate('/payments');
+      else if (user.role === 'content_reviewer') navigate('/content');
       
+      // Trigger context refresh
+      window.dispatchEvent(new Event('unscriptx_auth_change'));
     } catch (err: any) {
       toast.error(err.message || 'Authentication failed');
     } finally {

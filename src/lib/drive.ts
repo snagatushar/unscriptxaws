@@ -1,19 +1,16 @@
-import { supabase } from './supabase';
+async function getToken() {
+  return localStorage.getItem('unscriptx_token') || '';
+}
 
-type UploadToDriveParams = {
+export interface UploadToDriveParams {
   file: File;
   eventTitle: string;
   userId: string;
   registrationId: string;
   round: string;
   userName: string;
-  subCategory?: string;
+  subCategory?: string | null;
   onProgress?: (percent: number) => void;
-};
-
-async function getToken() {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.access_token || '';
 }
 
 /**

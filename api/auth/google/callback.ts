@@ -1,5 +1,5 @@
 import { createOAuthClient, saveGoogleTokens } from '../../_lib/google-oauth.js';
-import { verifyAdmin } from '../../_lib/supabase-admin.js';
+import { verifyAdmin } from '../../_lib/auth-util.js';
 
 function parseCookies(rawCookie = '') {
   return rawCookie.split(';').reduce((acc: Record<string, string>, part: string) => {

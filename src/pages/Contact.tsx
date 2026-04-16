@@ -1,12 +1,12 @@
 import { motion } from 'motion/react';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
 import { useState, FormEvent } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 
 /**
  * Static contact page — contact info is hardcoded (no Supabase read egress).
- * The form still saves messages to Supabase (write-only, no egress cost).
+ * The form still saves messages to AWS (write-only).
  * To update contact details, edit the CONTACT_INFO constant below.
  */
 
@@ -33,14 +33,12 @@ export default function Contact() {
     const message = (form.elements.namedItem('message') as HTMLTextAreaElement)?.value;
 
     try {
-      const { error } = await supabase.from('contact_messages').insert({
+      await api.post('/api/contact', {
         name,
         email,
-        message,
-        status: 'unread'
-      });
+        message
+      }, false); // Set useAuth to false as contact is public
 
-      if (error) throw error;
       setSubmitted(true);
       form.reset();
     } catch (err: any) {

@@ -1,14 +1,20 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { resolve } from 'path';
 
-// Load environment variables
-dotenv.config();
+// ... rest of the imports ...
 
 const app = express();
 const PORT = process.env.BACKEND_PORT || 3000;
+
+if (!process.env.DATABASE_URL) {
+  console.error('\n❌ ERROR: DATABASE_URL is missing from environment variables!');
+  console.error('   Please check your .env or .env.local file.\n');
+}
 
 // Enable CORS for frontend development
 app.use(cors({
@@ -31,6 +37,16 @@ async function loadApiRoutes() {
     { path: '/api/drive-files', file: './api/drive-files.ts' },
     { path: '/api/drive-list-event', file: './api/drive-list-event.ts' },
     { path: '/api/drive-view', file: './api/drive-view.ts' },
+    { path: '/api/s3-presign', file: './api/s3-presign.ts' },
+    { path: '/api/s3-presign-view', file: './api/s3-presign-view.ts' },
+    { path: '/api/s3-delete', file: './api/s3-delete.ts' },
+    { path: '/api/auth', file: './api/auth.ts' },
+    { path: '/api/public', file: './api/public.ts' },
+    { path: '/api/user', file: './api/user.ts' },
+    { path: '/api/admin', file: './api/admin.ts' },
+    { path: '/api/contact', file: './api/contact.ts' },
+    { path: '/api/register-event', file: './api/register-event.ts' },
+    { path: '/api/event-registration-data', file: './api/event-registration-data.ts' },
     { path: '/api/auth/google', file: './api/auth/google/index.ts' },
     { path: '/api/auth/google/callback', file: './api/auth/google/callback.ts' },
   ];
@@ -38,11 +54,10 @@ async function loadApiRoutes() {
   for (const route of apiFiles) {
     try {
       // Import the Vercel handler
+      console.log(`⏳ Loading route: ${route.path}...`);
       const handlerModule = await import(route.file);
+      console.log(`✅ Loaded module: ${route.file}`);
       const handler = handlerModule.default;
-
-      if (typeof handler === 'function') {
-        console.log(`Loaded route: ${route.path} -> ${route.file}`);
         
         // Register the route with express
         // Note: Vercel functions handle both GET/POST/etc in one handler
@@ -54,7 +69,6 @@ async function loadApiRoutes() {
               res.status(500).json({ error: err.message || 'Internal Server Error' });
             });
         });
-      }
     } catch (err) {
       console.error(`Failed to load route ${route.path} from ${route.file}:`, err);
     }

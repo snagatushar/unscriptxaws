@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { getSupabaseAdmin } from './supabase-admin.js';
+import { query } from './db.js';
 
 const TOKEN_ROW_ID = 'google_drive_owner';
 const DRIVE_SCOPE = ['https://www.googleapis.com/auth/drive.file'];
@@ -12,50 +12,56 @@ function requiredEnv(name: string) {
   return value;
 }
 
-export function createOAuthClient() {
+export function createOAuthClient(redirectUri?: string) {
   return new google.auth.OAuth2(
     requiredEnv('GOOGLE_CLIENT_ID'),
     requiredEnv('GOOGLE_CLIENT_SECRET'),
-    requiredEnv('GOOGLE_REDIRECT_URI')
+    redirectUri || requiredEnv('GOOGLE_REDIRECT_URI')
   );
 }
 
-export function buildGoogleAuthUrl(state: string) {
-  const oauth2Client = createOAuthClient();
+export function buildGoogleAuthUrl(state: string, options?: { redirectUri?: string, scopes?: string[] }) {
+  const oauth2Client = createOAuthClient(options?.redirectUri);
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
-    scope: DRIVE_SCOPE,
+    scope: options?.scopes || DRIVE_SCOPE,
     state,
   });
 }
 
 export async function saveGoogleTokens(tokens: any) {
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from('google_oauth_tokens').upsert(
-    {
-      id: TOKEN_ROW_ID,
-      access_token: tokens.access_token || null,
-      refresh_token: tokens.refresh_token || null,
-      scope: tokens.scope || null,
-      token_type: tokens.token_type || null,
-      expiry_date: tokens.expiry_date || null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'id' }
-  );
-  if (error) throw error;
+  const sql = `
+    INSERT INTO google_oauth_tokens (id, access_token, refresh_token, scope, token_type, expiry_date, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    ON CONFLICT (id) DO UPDATE SET
+      access_token = EXCLUDED.access_token,
+      refresh_token = COALESCE(EXCLUDED.refresh_token, google_oauth_tokens.refresh_token),
+      scope = EXCLUDED.scope,
+      token_type = EXCLUDED.token_type,
+      expiry_date = EXCLUDED.expiry_date,
+      updated_at = EXCLUDED.updated_at
+  `;
+  
+  await query(sql, [
+    TOKEN_ROW_ID,
+    tokens.access_token || null,
+    tokens.refresh_token || null,
+    tokens.scope || null,
+    tokens.token_type || null,
+    tokens.expiry_date || null,
+    new Date().toISOString()
+  ]);
 }
 
 export async function getStoredGoogleTokens() {
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from('google_oauth_tokens')
-    .select('access_token, refresh_token, expiry_date, scope, token_type')
-    .eq('id', TOKEN_ROW_ID)
-    .maybeSingle();
+  const result = await query(
+    'SELECT access_token, refresh_token, expiry_date, scope, token_type FROM google_oauth_tokens WHERE id = $1',
+    [TOKEN_ROW_ID]
+  );
+  
+  const data = result.rows[0];
 
-  if (error) throw error;
   if (!data?.refresh_token && !data?.access_token) {
     throw new Error('Google Drive OAuth is not connected. Visit /api/auth/google first.');
   }
@@ -88,10 +94,6 @@ export async function getDriveClientWithOAuth() {
   return google.drive({ version: 'v3', auth: oauth2Client });
 }
 
-/**
- * Returns a valid Google OAuth2 access token (refreshing if needed).
- * Useful for direct REST API calls (e.g. initiating a resumable upload).
- */
 export async function getGoogleAccessToken(): Promise<string> {
   const oauth2Client = createOAuthClient();
   const stored = await getStoredGoogleTokens();

@@ -3,7 +3,7 @@ import { unlink } from 'node:fs/promises';
 import formidable from 'formidable';
 import type { File as FormidableFile, Fields } from 'formidable';
 import { getDriveClientWithOAuth } from './_lib/google-oauth.js';
-import { verifyUserToken } from './_lib/supabase-admin.js';
+import { verifyUserToken } from './_lib/auth-util.js';
 
 type ParsedUpload = {
   fields: Fields;

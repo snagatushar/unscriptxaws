@@ -45,14 +45,7 @@ export interface DatabaseEvent {
   requires_team_details?: boolean;
 }
 
-export interface Faculty {
-  id?: string;
-  name: string;
-  designation: string;
-  image_url?: string;
-  image?: string;
-  department?: string;
-}
+
 
 export interface CommitteeMember {
   id: string;

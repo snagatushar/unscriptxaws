@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Loader2, IndianRupee } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { DatabaseEvent, QualificationStage } from '../types';
 
 type PublicEventResult = {
@@ -26,38 +26,19 @@ export default function EventDetail() {
       if (!id) return;
 
       try {
-        const { data, error } = await supabase
-          .from('events')
-          .select('*, registrations(count)')
-          .eq('id', id)
-          .single();
-
-        if (error) throw error;
-
-        const participantsCount = data.registrations?.[0]?.count || 0;
+        const eventData = await api.get<any>(`/api/public?resource=events&id=${id}`, false);
+        
         setEvent({
-          id: data.id,
-          title: data.title,
-          slug: data.slug,
-          category: data.category,
-          description: data.description,
-          entry_fee: Number(data.entry_fee || 0),
-          image_url: data.image_url,
-          rules: data.rules || [],
-          max_team_size: data.max_team_size,
-          payment_account_name: data.payment_account_name,
-          payment_account_number: data.payment_account_number,
-          payment_ifsc: data.payment_ifsc,
-          payment_upi_id: data.payment_upi_id,
-          is_active: data.is_active,
-          participants_count: participantsCount,
+          ...eventData,
+          entry_fee: Number(eventData.entry_fee || 0),
+          rules: eventData.rules || [],
         });
 
-        const { data: resultData, error: resultError } = await supabase.rpc('get_public_event_results', {
-          target_event_id: data.id,
-        });
-        if (!resultError) {
-          setResults((resultData as PublicEventResult[]) || []);
+        try {
+          const resultData = await api.get<PublicEventResult[]>(`/api/public?resource=event_results&target_event_id=${id}`, false);
+          setResults(resultData || []);
+        } catch (e) {
+          console.warn('Results not available');
         }
       } catch (err) {
         console.error('Failed to fetch event details', err);

@@ -13,7 +13,6 @@ const EventDetail = lazy(() => import('./pages/EventDetail'));
 import Register from './pages/Register';
 // const Register = lazy(() => import('./pages/Register'));
 const Rules = lazy(() => import('./pages/Rules'));
-const Faculty = lazy(() => import('./pages/Faculty'));
 const About = lazy(() => import('./pages/About'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Login = lazy(() => import('./pages/Login'));
@@ -60,7 +59,6 @@ function AnimatedRoutes() {
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/register/:eventId" element={<ProtectedRoute><Register /></ProtectedRoute>} />
             <Route path="/rules" element={<Rules />} />
-            <Route path="/faculty" element={<Faculty />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
