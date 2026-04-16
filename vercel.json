@@ -16,6 +16,9 @@
           "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https://*.supabase.co https://*.picsum.photos data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.googleapis.com https://www.googleapis.com; media-src 'self' blob:; frame-ancestors 'none'"
         }
       ]
-    }
+  ],
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
