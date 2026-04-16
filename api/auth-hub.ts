@@ -18,23 +18,52 @@ function setCors(res: any) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+async function getRawBody(req: VercelRequest): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+async function getJsonBody(req: VercelRequest): Promise<any> {
+  const body = await getRawBody(req);
+  if (!body.length) return {};
+  try {
+    return JSON.parse(body.toString('utf-8'));
+  } catch {
+    return {};
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const action = req.query.action || req.body?.action;
-
   try {
+    const action = req.query.action; // High reliability: action always from URL query for dispatch
+
     // 1. Signup, Login, Me... (Standard handlers)
     if (action === 'signup' && req.method === 'POST') {
-      const { email, password, name } = req.body;
-      const domain = email.split('@')[1]?.toLowerCase();
+      const body = await getJsonBody(req);
+      const { email, password, name } = body;
+      
+      const domain = email?.split('@')[1]?.toLowerCase();
       if (domain) {
         const blockedRes = await query('SELECT domain FROM blocked_domains WHERE domain = $1', [domain]);
         if (blockedRes.rows.length > 0) return res.status(400).json({ error: 'Temporary or disposable emails are not allowed.' });
       }
-      const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+
+      const existing = await query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email]);
       if (existing.rows.length > 0) return res.status(400).json({ error: 'Email already exists' });
+      
       const hashedPassword = await bcrypt.hash(password, 10);
       const insertRes = await query(
         `INSERT INTO users (id, full_name, email, role, password_hash) VALUES (gen_random_uuid(), $1, $2, 'user', $3) RETURNING id, role`,
@@ -46,18 +75,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === 'login' && req.method === 'POST') {
-      const { email, password } = req.body;
-      const result = await query('SELECT id, email, role, password_hash FROM users WHERE email = $1', [email]);
-      if (result.rows.length === 0) return res.status(400).json({ error: 'Invalid credentials' });
+      const body = await getJsonBody(req);
+      const { email, password } = body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
+      const result = await query('SELECT id, email, role, password_hash FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+      if (result.rows.length === 0) {
+        return res.status(400).json({ error: 'Email not found. Please sign up first.' });
+      }
+
       const user = result.rows[0];
       const isValid = await bcrypt.compare(password, user.password_hash || '');
-      if (!isValid) return res.status(400).json({ error: 'Invalid credentials' });
+      if (!isValid) {
+        return res.status(400).json({ error: 'Incorrect password. Please try again.' });
+      }
+
       const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
       return res.status(200).json({ success: true, token, user: { id: user.id, email: user.email, role: user.role } });
     }
 
     if (action === 'me') {
-      const token = req.body?.token || req.headers.authorization?.replace('Bearer ', '');
+      const body = await getJsonBody(req);
+      const token = body?.token || req.headers.authorization?.replace('Bearer ', '');
       if (!token) return res.status(401).json({ error: 'No token provided' });
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       const result = await query('SELECT id, email, role, full_name, phone, college_name FROM users WHERE id = $1', [decoded.id]);
@@ -70,7 +112,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const statePrefix = action === 'google-login' ? 'admin' : 'user';
       const state = `${statePrefix}:${randomBytes(16).toString('hex')}`;
       
-      // For admins, we might want to store the existing token in state to preserve session
       const existingToken = req.query.token || '';
       const finalState = existingToken ? `${state}:${existingToken}` : state;
 
@@ -101,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Flow A: Student Login
       if (String(state).startsWith('user:')) {
-        let userResult = await query('SELECT id, email, role FROM users WHERE email = $1', [payload.email]);
+        let userResult = await query('SELECT id, email, role FROM users WHERE LOWER(email) = LOWER($1)', [payload.email]);
         let user = userResult.rows[0];
 
         if (!user) {
@@ -119,7 +160,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Flow B: Admin Connect Drive
       if (String(state).startsWith('admin:')) {
         const parts = String(state).split(':');
-        const adminToken = parts[2]; // Passed through state
+        const adminToken = parts[2]; 
 
         if (!adminToken) return res.status(401).send('Admin session missing');
         const decodedAdmin = jwt.verify(adminToken, JWT_SECRET) as any;
