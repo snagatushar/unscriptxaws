@@ -2,8 +2,8 @@ export async function uploadToS3(file: File, folder: string): Promise<{ key: str
   const fileType = file.type || 'application/octet-stream';
   const fileName = file.name;
 
-  // 1. Get presigned URL
-  const response = await fetch('/api/s3-presign', {
+  // 1. Get presigned URL via Hub
+  const response = await fetch('/api/storage-hub?action=presign', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fileName, fileType, folder })
@@ -14,7 +14,7 @@ export async function uploadToS3(file: File, folder: string): Promise<{ key: str
     throw new Error(errorData.error || 'Failed to get upload URL');
   }
 
-  const { uploadUrl, key, publicUrl } = await response.json();
+  const { uploadUrl, key } = await response.json();
 
   // 2. Upload file directly to S3
   const uploadResponse = await fetch(uploadUrl, {
@@ -27,11 +27,11 @@ export async function uploadToS3(file: File, folder: string): Promise<{ key: str
     throw new Error('Failed to upload file to S3');
   }
 
-  return { key, publicUrl };
+  return { key, publicUrl: `/api/storage-hub?action=view&key=${encodeURIComponent(key)}` };
 }
 
 export async function deleteFromS3(key: string): Promise<void> {
-  const response = await fetch('/api/s3-delete', {
+  const response = await fetch('/api/storage-hub?action=delete', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ key })
@@ -46,21 +46,20 @@ export async function deleteFromS3(key: string): Promise<void> {
 export async function openPaymentScreenshot(value: string) {
   if (!value) throw new Error('Payment screenshot path is missing.');
 
-  // Check if it's already a full http URL (e.g. from an older storage structure)
   if (value.startsWith('http')) {
      window.open(value, '_blank', 'noopener,noreferrer');
      return;
   }
 
-  const response = await fetch(`/api/s3-presign-view?key=${encodeURIComponent(value)}`);
+  const response = await fetch(`/api/storage-hub?action=view&key=${encodeURIComponent(value)}`);
   
   if (!response.ok) {
      const errorData = await response.json().catch(() => ({}));
      throw new Error(errorData.error || 'Failed to get file URL');
   }
 
-  const { viewUrl } = await response.json();
-  window.open(viewUrl, '_blank', 'noopener,noreferrer');
+  const { url } = await response.json();
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 export async function openIdCard(value: string) {
@@ -71,13 +70,13 @@ export async function openIdCard(value: string) {
      return;
   }
 
-  const response = await fetch(`/api/s3-presign-view?key=${encodeURIComponent(value)}`);
+  const response = await fetch(`/api/storage-hub?action=view&key=${encodeURIComponent(value)}`);
   
   if (!response.ok) {
      const errorData = await response.json().catch(() => ({}));
      throw new Error(errorData.error || 'Failed to get file URL');
   }
 
-  const { viewUrl } = await response.json();
-  window.open(viewUrl, '_blank', 'noopener,noreferrer');
+  const { url } = await response.json();
+  window.open(url, '_blank', 'noopener,noreferrer');
 }

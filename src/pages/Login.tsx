@@ -74,10 +74,10 @@ export default function Login() {
       if (!isLogin && !name.trim()) throw new Error('Name is required for signup');
       if (!isLogin && await isBlockedEmail(email)) throw new Error('Temporary or disposable emails are not allowed.');
 
-      const response = await fetch('/api/auth', {
+      const response = await fetch(`/api/auth-hub?action=${action}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, email, password, name })
+        body: JSON.stringify({ email, password, name })
       });
 
       const data = await response.json();
@@ -167,10 +167,10 @@ export default function Login() {
                     return;
                   }
                   try {
-                    const response = await fetch('/api/auth', {
+                    const response = await fetch('/api/auth-hub?action=reset-password', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ action: 'reset-password', email: email.trim() })
+                      body: JSON.stringify({ email: email.trim() })
                     });
                     if (!response.ok) throw new Error('Reset request failed');
                     toast.success('Password reset link sent to your email (simulated)!');
@@ -212,7 +212,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = '/api/auth/google/user-login';
+                window.location.href = '/api/auth-hub?action=user-google-login';
               }}
               className="w-full py-4 bg-white/5 border border-white/10 rounded-xl font-bold uppercase tracking-widest text-[10px] hover:bg-white/10 hover:border-white/20 transition-all flex items-center justify-center gap-3 group"
             >

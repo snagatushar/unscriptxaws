@@ -38,7 +38,7 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
 
   // ── Phase 1: Initiate the resumable upload ──────────────────────────────
   const token = await getToken();
-  const initRes = await fetch('/api/drive-init-upload', {
+  const initRes = await fetch('/api/drive-hub?action=init-upload', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
     const chunk = file.slice(start, end + 1);
     const contentRange = `bytes ${start}-${end}/${totalSize}`;
 
-    const chunkRes = await fetch('/api/drive-upload-chunk', {
+    const chunkRes = await fetch('/api/drive-hub?action=chunk', {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -130,7 +130,7 @@ export async function getDriveStreamUrl(fileId: string): Promise<string> {
   }
   const token = await getToken();
   // Fetch the video stream through our authenticated proxy
-  const response = await fetch(`/api/drive-view?fileId=${encodeURIComponent(fileId)}`, {
+  const response = await fetch(`/api/drive-hub?action=view&fileId=${encodeURIComponent(fileId)}`, {
     headers: { 'Authorization': `Bearer ${token}` },
   });
   if (!response.ok) {
@@ -143,7 +143,7 @@ export async function getDriveStreamUrl(fileId: string): Promise<string> {
 
 export async function getEventDriveFiles(eventTitle: string) {
   const token = await getToken();
-  const url = `/api/drive-list-event?eventTitle=${encodeURIComponent(eventTitle)}`;
+  const url = `/api/drive-hub?action=files&q=${encodeURIComponent(`'${process.env.GDRIVE_ROOT_FOLDER_ID}' in parents and name contains '${eventTitle}' and trashed=false`)}`;
   const response = await fetch(url, {
     headers: { 'Authorization': `Bearer ${token}` },
   });

@@ -80,8 +80,8 @@ export default function UserDashboard() {
   const fetchRegistrations = async () => {
     if (!user) return;
     try {
-      const rows = await api.get<UserRegistration[]>('/api/user?resource=registrations');
-      setRegistrations(rows || []);
+      const registrations = await api.get<UserRegistration[]>('/api/participant-hub?action=registrations');
+      setRegistrations(registrations || []);
     } catch {
       toast.error('Failed to load dashboard.');
     } finally {

@@ -44,7 +44,7 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
     try {
       // Get participant name from registrations
       // Actually, we can just let the drive upload handle the name or fetch it via our user API
-      const registrations = await api.get<any[]>('/api/user?resource=registrations');
+      const registrations = await api.get<any[]>('/api/participant-hub?action=registrations');
       const reg = registrations.find(r => r.id === registrationId);
       const finalUserName = reg?.participant_name || user.full_name || user.email || 'Student';
 
@@ -59,8 +59,7 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
         onProgress: setUploadProgress,
       });
 
-      await api.post('/api/user', {
-        resource: 'submission',
+      await api.post('/api/participant-hub?action=submission', {
         registrationId,
         round,
         videoUrl: driveUpload.fileId,

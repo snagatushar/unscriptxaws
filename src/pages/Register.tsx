@@ -37,7 +37,7 @@ export default function Register() {
       if (!eventId) return;
 
       try {
-        const url = `/api/event-registration-data?eventId=${eventId}` + (user ? `&userId=${user.id}` : '');
+        const url = `/api/participant-hub?action=event-data&eventId=${eventId}` + (user ? `&userId=${user.id}` : '');
         const res = await fetch(url);
         if (!res.ok) throw new Error('Could not load event data');
         const data = await res.json();
@@ -130,7 +130,7 @@ export default function Register() {
         id_card_url: idCardKey,
       };
 
-      const res = await fetch('/api/register-event', {
+      const res = await fetch('/api/participant-hub?action=register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

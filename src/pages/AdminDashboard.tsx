@@ -1317,10 +1317,7 @@ export default function AdminDashboard() {
                 try {
                   const token = localStorage.getItem('unscriptx_token');
                   if (token) {
-                    toast.loading("Connecting to Google Drive...", { duration: 2000 });
-                    setTimeout(() => {
-                      window.location.href = `/api/auth/google?token=${token}`;
-                    }, 500);
+                    window.location.href = `/api/auth-hub?action=google-login&token=${token}`;
                   } else {
                     toast.error("Not fully authenticated. Please log in again.");
                   }

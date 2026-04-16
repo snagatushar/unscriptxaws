@@ -47,13 +47,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const res = await fetch(`${backendUrl}/api/auth`, {
+      const response = await fetch('/api/auth-hub?action=login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'me', token })
       });
       
-      const data = await res.json();
+      const data = await response.json();
       if (data.success && data.user) {
         setUser(data.user);
       } else {
