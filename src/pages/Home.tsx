@@ -3,21 +3,68 @@ import Hero from '../components/Hero';
 import EventCard from '../components/EventCard';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Music, Zap, Palette, Loader2 } from 'lucide-react';
-import { useEvents, useCommittee, useGeneralRules, useSiteContentBatch } from '../hooks/useSupabase';
+import { useEvents, useSiteContentBatch } from '../hooks/useSupabase';
 
-// Batched content keys — fetched in a single Supabase query instead of 5 separate ones
-const HOME_CONTENT_KEYS = ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join', 'home_team_group'];
+// Batched content keys — fetched in a single Supabase query instead of N separate ones
+const HOME_CONTENT_KEYS = ['home_about_event', 'home_about_college', 'home_about_school'];
+
+/**
+ * Hardcoded universal guidelines — no Supabase egress.
+ * To update rules, edit this array directly.
+ */
+const GENERAL_RULES = [
+  'All participants must carry a valid college ID card at all times during the event.',
+  'Registration is mandatory for all events. Spot registrations are subject to availability.',
+  'Any form of malpractice, plagiarism, or misconduct will result in immediate disqualification.',
+  'The decision of the judges and organizing committee will be final and binding.',
+  'Participants must report to the event venue at least 15 minutes before the scheduled time.',
+  'Use of any prohibited substances on the campus is strictly forbidden.',
+  'The organizing committee reserves the right to modify event schedules without prior notice.',
+  'All participants must adhere to the code of conduct and maintain decorum throughout the fest.',
+];
+
+/**
+ * Hardcoded Organizing Committee — no Supabase egress.
+ * To update committee members, edit this array directly.
+ * Place images in the /public folder (e.g. /public/committee/member1.jpg).
+ */
+const COMMITTEE_MEMBERS = [
+  { id: 1, name: 'Dr. Salur Srikant Patnaik', role: 'Dean of School of Technology, IFIM College', image_url: '/Srikanth.jpeg' },
+  { id: 2, name: 'Dr. Vishal', role: 'Head of the Department School of Technology, IFIM', image_url: '/vishalai.jpeg' },
+  { id: 3, name: 'Dr. Sunethra', role: 'Assistant Professor, IFIM College', image_url: '/sunethra.jpeg' },
+];
+
+/**
+ * Hardcoded "Why Join" Section.
+ */
+const WHY_JOIN = {
+  title: "[Why wait for the future] when you can create it?",
+  body: "UNSCRIPTX is more than just a fest. It's a platform where creativity meets competition, and passion meets performance. Join thousands of students in the biggest celebration of talent.",
+  image_url: "/music.png", // Place your image in public/why-join.jpg
+  features: [
+    { id: 'f1', title: 'Musical Nights', color: 'text-fest-primary' },
+    { id: 'f2', title: 'High Energy', color: 'text-fest-accent' },
+    { id: 'f3', title: 'Star Guests', color: 'text-fest-primary' },
+    { id: 'f4', title: 'Artistic Souls', color: 'text-white' },
+  ]
+};
+
+/**
+ * Hardcoded Event Management Team Section.
+ */
+const EVENT_TEAM = {
+  subtitle: 'Event Management Team',
+  title: 'The Powerhouse Behind UNSCRIPTX',
+  body: 'A dedicated collective of visionaries and executors working tirelessly to bring you the most spectacular festival experience.',
+  image_url: '/team.jpg', // Place your image in public/team.jpg
+};
 
 export default function Home() {
   const { events, loading: eventsLoading } = useEvents();
-  const { committee, loading: committeeLoading } = useCommittee();
-  const { rules, loading: rulesLoading } = useGeneralRules();
   const { contentMap } = useSiteContentBatch(HOME_CONTENT_KEYS);
   const aboutEvent = contentMap['home_about_event'] || null;
   const aboutCollege = contentMap['home_about_college'] || null;
   const aboutSchool = contentMap['home_about_school'] || null;
-  const whyJoin = contentMap['home_why_join'] || null;
-  const teamSection = contentMap['home_team_group'] || null;
 
   const parseTitle = (raw: string | null | undefined) => {
     const text = raw ? raw.replace(/\[|\]/g, '') : "Why wait for the future when you can create it?";
@@ -165,33 +212,23 @@ export default function Home() {
               </div>
 
               <div className="lg:col-span-2 space-y-4">
-                {rulesLoading ? (
-                  <div className="flex justify-center py-10">
-                    <Loader2 className="animate-spin text-fest-primary/20" size={32} />
-                  </div>
-                ) : rules.length > 0 ? (
-                  rules.map((rule, index) => (
-                    <motion.div
-                      key={rule.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      viewport={{ once: true }}
-                      className="flex gap-6 p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-colors group"
-                    >
-                      <span className="text-2xl font-display font-black text-white/10 group-hover:text-fest-primary transition-colors">
-                        {(index + 1).toString().padStart(2, '0')}
-                      </span>
-                      <p className="text-white/70 text-sm md:text-base leading-relaxed pt-1">
-                        {rule.rule_text}
-                      </p>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="p-12 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                    <p className="text-white/20 uppercase tracking-widest text-xs font-bold">Standard rules pending upload</p>
-                  </div>
-                )}
+                {GENERAL_RULES.map((rule, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                    className="flex gap-6 p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-colors group"
+                  >
+                    <span className="text-2xl font-display font-black text-white/10 group-hover:text-fest-primary transition-colors">
+                      {(index + 1).toString().padStart(2, '0')}
+                    </span>
+                    <p className="text-white/70 text-sm md:text-base leading-relaxed pt-1">
+                      {rule}
+                    </p>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>
@@ -212,12 +249,8 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
-            {committeeLoading ? (
-              <div className="col-span-full flex justify-center py-20">
-                <Loader2 className="animate-spin text-fest-primary" size={48} />
-              </div>
-            ) : committee.length > 0 ? (
-              committee.map((member, i) => (
+            {COMMITTEE_MEMBERS.length > 0 ? (
+              COMMITTEE_MEMBERS.map((member, i) => (
                 <motion.div
                   key={member.id}
                   initial={{ opacity: 0, y: 30 }}
@@ -259,18 +292,18 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-4xl md:text-6xl font-display font-extrabold tracking-tighter mb-8 leading-tight">
-                {parseTitle(whyJoin?.title)}
+                {parseTitle(WHY_JOIN.title)}
               </h2>
               <p className="text-white/60 text-lg mb-12 leading-relaxed">
-                {whyJoin?.body || "UNSCRIPTX is more than just a fest. It's a platform where creativity meets competition, and passion meets performance. Join thousands of students in the biggest celebration of talent."}
+                {WHY_JOIN.body}
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {[
-                  { icon: Music, title: whyJoin?.metadata?.f1 || 'Musical Nights', color: 'text-fest-primary' },
-                  { icon: Zap, title: whyJoin?.metadata?.f2 || 'High Energy', color: 'text-fest-accent' },
-                  { icon: Sparkles, title: whyJoin?.metadata?.f3 || 'Star Guests', color: 'text-fest-primary' },
-                  { icon: Palette, title: whyJoin?.metadata?.f4 || 'Artistic Souls', color: 'text-white' },
+                  { icon: Music, title: WHY_JOIN.features[0].title, color: WHY_JOIN.features[0].color },
+                  { icon: Zap, title: WHY_JOIN.features[1].title, color: WHY_JOIN.features[1].color },
+                  { icon: Sparkles, title: WHY_JOIN.features[2].title, color: WHY_JOIN.features[2].color },
+                  { icon: Palette, title: WHY_JOIN.features[3].title, color: WHY_JOIN.features[3].color },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl glass flex items-center justify-center ${item.color}`}>
@@ -289,7 +322,7 @@ export default function Home() {
                 className="absolute inset-0 border-2 border-dashed border-white/10 rounded-full"
               />
               <img
-                src={whyJoin?.image_url || "https://picsum.photos/seed/crowd/800/800"}
+                src={WHY_JOIN.image_url}
                 alt="Fest Crowd"
                 className="rounded-full w-full aspect-square object-cover border-8 border-white/5"
                 referrerPolicy="no-referrer"
@@ -300,58 +333,57 @@ export default function Home() {
       </section>
 
       {/* Event Management Team Section */}
-      {(teamSection?.title || teamSection?.image_url) && (
-        <section className="py-24 px-6 relative overflow-hidden bg-black/30 border-y border-white/5">
-          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-fest-primary/20 to-transparent" />
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 md:gap-24">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="flex-1 space-y-8"
-            >
-              <div>
-                <h2 className="text-fest-accent font-display font-bold uppercase tracking-[0.3em] mb-4 text-xs md:text-sm">
-                  {teamSection?.subtitle || 'Event Management Team'}
-                </h2>
-                <h3 className="text-4xl md:text-7xl font-display font-extrabold tracking-tighter leading-tight">
-                  {teamSection?.title || 'The Powerhouse Behind UNSCRIPTX'}
-                </h3>
-              </div>
-              <p className="text-white/50 text-lg md:text-xl leading-relaxed max-w-xl">
-                {teamSection?.body || 'A dedicated collective of visionaries and executors working tirelessly to bring you the most spectacular festival experience.'}
-              </p>
-            </motion.div>
+      {/*
+      <section className="py-24 px-6 relative overflow-hidden bg-black/30 border-y border-white/5">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-fest-primary/20 to-transparent" />
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 md:gap-24">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex-1 space-y-8"
+          >
+            <div>
+              <h2 className="text-fest-accent font-display font-bold uppercase tracking-[0.3em] mb-4 text-xs md:text-sm">
+                {EVENT_TEAM.subtitle}
+              </h2>
+              <h3 className="text-4xl md:text-7xl font-display font-extrabold tracking-tighter leading-tight">
+                {EVENT_TEAM.title}
+              </h3>
+            </div>
+            <p className="text-white/50 text-lg md:text-xl leading-relaxed max-w-xl">
+              {EVENT_TEAM.body}
+            </p>
+          </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
-              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-              viewport={{ once: true }}
-              className="flex-1 relative group"
-            >
-              {/* Decorative elements */}
-              <div className="absolute -inset-4 bg-fest-primary/10 rounded-[3rem] blur-3xl group-hover:bg-fest-primary/20 transition-all duration-700" />
-              <div className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-fest-primary/30 rounded-tr-[3rem] -mr-4 -mt-4" />
-              <div className="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-fest-primary/30 rounded-bl-[3rem] -ml-4 -mb-4" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
+            whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+            viewport={{ once: true }}
+            className="flex-1 relative group"
+          >
+            <div className="absolute -inset-4 bg-fest-primary/10 rounded-[3rem] blur-3xl group-hover:bg-fest-primary/20 transition-all duration-700" />
+            <div className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-fest-primary/30 rounded-tr-[3rem] -mr-4 -mt-4" />
+            <div className="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-fest-primary/30 rounded-bl-[3rem] -ml-4 -mb-4" />
 
-              <div className="relative glass rounded-[2.5rem] p-3 border border-white/10 overflow-hidden shadow-2xl">
-                <img
-                  src={teamSection?.image_url || 'https://picsum.photos/seed/team/1200/800'}
-                  alt="Event Management Team"
-                  className="w-full aspect-[4/3] object-cover rounded-[1.8rem] shadow-inner"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center pb-8">
-                  <span className="text-fest-primary text-xs font-black uppercase tracking-[0.4em] text-shadow-glow">
-                    UNSCRIPTX 2026 STAFF
-                  </span>
-                </div>
+            <div className="relative glass rounded-[2.5rem] p-3 border border-white/10 overflow-hidden shadow-2xl">
+              <img
+                src={EVENT_TEAM.image_url}
+                alt="Event Management Team"
+                className="w-full aspect-[4/3] object-cover rounded-[1.8rem] shadow-inner"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center pb-8">
+                <span className="text-fest-primary text-xs font-black uppercase tracking-[0.4em] text-shadow-glow">
+                  UNSCRIPTX 2026 STAFF
+                </span>
               </div>
-            </motion.div>
-          </div>
-          <div className="absolute bottom-0 right-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-        </section>
-      )}
+            </div>
+          </motion.div>
+        </div>
+        <div className="absolute bottom-0 right-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+      </section>
+      */}
 
       {/* CTA Section */}
       <section className="py-20 md:py-32 px-6 text-center">

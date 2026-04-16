@@ -11,9 +11,8 @@ import toast from 'react-hot-toast';
  */
 
 const CONTACT_INFO = {
-  email_1: 'hello@UNSCRIPTXfest.com',
-  email_2: 'support@UNSCRIPTXfest.com',
-  phone_1: '+91 9999999999',
+  email_1: 'unscriptx@gmail.com',
+  phone_1: '+91 8240981218',
   phone_2: '+91 8660911643',
   address_title: 'IFIM SCHOOL OF TECHNOLOGY',
   address_body: 'Electronic City Phase 1, Bangalore, Karnataka - 560100',
@@ -40,7 +39,7 @@ export default function Contact() {
         message,
         status: 'unread'
       });
-      
+
       if (error) throw error;
       setSubmitted(true);
       form.reset();
@@ -87,7 +86,7 @@ export default function Contact() {
                 <div>
                   <h4 className="text-xl font-display font-bold uppercase tracking-widest mb-2">Email Us</h4>
                   <p className="text-white/60">{CONTACT_INFO.email_1}</p>
-                  <p className="text-white/60">{CONTACT_INFO.email_2}</p>
+
                 </div>
               </div>
 

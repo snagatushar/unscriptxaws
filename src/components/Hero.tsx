@@ -7,9 +7,12 @@ import { motion, AnimatePresence } from 'motion/react';
  * No Supabase egress — images are served statically from the build.
  */
 const HERO_SLIDES: { image_url: string; duration_seconds: number }[] = [
-  { image_url: '/slides/slide1.jpg', duration_seconds: 5 },
-  { image_url: '/slides/slide2.jpg', duration_seconds: 5 },
-  { image_url: '/slides/slide3.jpg', duration_seconds: 5 },
+  { image_url: '/slides/codingslide.jpeg', duration_seconds: 3 },
+  { image_url: '/slides/danceslide.jpeg', duration_seconds: 3 },
+  { image_url: '/slides/dramaticsslide.jpeg', duration_seconds: 3 },
+  { image_url: '/slides/fashionslide.jpeg', duration_seconds: 3 },
+  { image_url: '/slides/musicslide.jpeg', duration_seconds: 3 },
+  { image_url: '/slides/sketchingslide.jpeg', duration_seconds: 3 },
 ];
 
 const Hero = () => {
@@ -55,14 +58,14 @@ const Hero = () => {
               animate={{ opacity: 0.75 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 2, ease: "easeInOut" }}
-              className="absolute inset-0 w-full h-full object-cover object-center"
+              className="absolute inset-0 w-full h-full object-cover object-top"
               referrerPolicy="no-referrer"
               loading="eager"
               decoding="async"
               fetchPriority={currentSlide === 0 ? "high" : "auto"}
             />
           ) : (
-             <div className="absolute inset-0 bg-fest-dark-light/20" />
+            <div className="absolute inset-0 bg-fest-dark-light/20" />
           )}
         </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-b from-fest-dark/60 via-fest-dark/20 to-fest-dark/70 pointer-events-none" />

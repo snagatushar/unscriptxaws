@@ -20,8 +20,8 @@ const CARDS = [
 
 const STORY = {
   title: 'The Story Behind The',
-  subtitle: 'Script',
-  body: "Founded in 2018, UNSCRIPTX began as a small gathering of passionate students who wanted something different. They wanted a space where the unexpected was celebrated and where every voice could be heard.",
+  subtitle: 'UNSCRIPTX',
+  body: "Founded in 2026, UNSCRIPTX began as a small gathering of passionate students who wanted something different. They wanted a space where the unexpected was celebrated and where every voice could be heard.",
   secondary_body: "Today, it has grown into one of the most anticipated events in the academic calendar, attracting thousands of participants from across the region.",
   image_url: '/about-story.jpg', // Place your image in public/about-story.jpg
 };
