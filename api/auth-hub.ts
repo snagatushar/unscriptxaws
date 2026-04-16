@@ -3,7 +3,7 @@ import { query } from './_lib/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
-import { buildGoogleAuthUrl, createOAuthClient } from './_lib/google-oauth.js';
+import { buildGoogleAuthUrl, createOAuthClient, USER_IDENTITY_SCOPE, DRIVE_SCOPE } from './_lib/google-oauth.js';
 import { verifyAdmin } from './_lib/auth-util.js';
 import { google } from 'googleapis';
 
@@ -117,7 +117,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const finalState = existingToken ? `${state}:${existingToken}` : state;
 
       res.setHeader('Set-Cookie', `google_oauth_state=${state}; HttpOnly; Path=/; SameSite=Lax; Max-Age=300`);
-      return res.redirect(buildGoogleAuthUrl(finalState));
+      
+      // Determine scopes: Admins connecting drive need both identity + drive. Students only need identity.
+      const scopes = (statePrefix === 'admin') ? [...USER_IDENTITY_SCOPE, ...DRIVE_SCOPE] : USER_IDENTITY_SCOPE;
+      
+      return res.redirect(buildGoogleAuthUrl(finalState, { scopes }));
     }
 
     // 3. Google OAuth: Unified Callback

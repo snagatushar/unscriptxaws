@@ -2,7 +2,12 @@ import { google } from 'googleapis';
 import { query } from './db.js';
 
 const TOKEN_ROW_ID = 'google_drive_owner';
-const DRIVE_SCOPE = ['https://www.googleapis.com/auth/drive.file'];
+export const DRIVE_SCOPE = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly'];
+export const USER_IDENTITY_SCOPE = [
+  'openid',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/userinfo.profile'
+];
 
 function requiredEnv(name: string) {
   const value = process.env[name];
