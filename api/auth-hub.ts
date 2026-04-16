@@ -108,6 +108,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, user: result.rows[0] });
     }
 
+    if (action === 'reset-password' && req.method === 'POST') {
+      const body = await getJsonBody(req);
+      const { email } = body;
+      if (!email) return res.status(400).json({ error: 'Email is required' });
+
+      // 1. Verify user exists
+      const result = await query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+      if (result.rows.length === 0) {
+        return res.status(400).json({ error: 'Account not found with this email' });
+      }
+      const user = result.rows[0];
+
+      // 2. Generate secure reset token (Stateless JWT)
+      const resetToken = jwt.sign(
+        { id: user.id, email: email.toLowerCase(), type: 'password-reset' },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      // 3. Dispatch real email via AWS SES
+      const { sendResetEmail } = await import('./_lib/ses-util.js');
+      const origin = process.env.SITE_ORIGIN || 'https://unscriptxaws.vercel.app';
+      const resetLink = `${origin}/reset-password?token=${resetToken}`;
+      
+      try {
+        await sendResetEmail(email, resetLink);
+        return res.status(200).json({ success: true, message: 'Password reset link sent to your inbox' });
+      } catch (err: any) {
+        console.error('SES Failure:', err);
+        return res.status(500).json({ error: 'Failed to send email. Please ensure your AWS SES verified identity is set up.' });
+      }
+    }
+
+    if (action === 'update-password' && req.method === 'POST') {
+      const body = await getJsonBody(req);
+      const { password, token } = body;
+
+      if (!password || !token) return res.status(400).json({ error: 'Missing password or verification token' });
+
+      try {
+        // 1. Verify token
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        if (decoded.type !== 'password-reset') throw new Error('Invalid token type');
+
+        // 2. Hash new password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // 3. Update DB
+        await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, decoded.id]);
+
+        return res.status(200).json({ success: true, message: 'Password updated successfully' });
+      } catch (err: any) {
+        console.error('Update password error:', err);
+        return res.status(400).json({ error: 'Invalid or expired reset token' });
+      }
+    }
+
     // 2. Google OAuth: Flow Initiation
     if (action === 'google-login' || action === 'user-google-login') {
       const statePrefix = action === 'google-login' ? 'admin' : 'user';

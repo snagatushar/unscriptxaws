@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export default function ResetPassword() {
@@ -11,23 +10,33 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+
+  useEffect(() => {
+    if (!token) {
+      toast.error('Invalid or missing reset token.');
+      navigate('/login');
+    }
+  }, [token, navigate]);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      return toast.error('Password must be at least 6 characters.');
-    }
-    if (password !== confirmPassword) {
-      return toast.error('Passwords do not match.');
-    }
+    if (!token) return toast.error('Verification token is missing.');
+    if (password.length < 6) return toast.error('Password must be at least 6 characters.');
+    if (password !== confirmPassword) return toast.error('Passwords do not match.');
 
     setLoading(true);
     try {
-      await api.post('/api/auth', { 
-        action: 'update-password',
-        password 
+      const response = await fetch('/api/auth-hub?action=update-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, token })
       });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update password');
 
       setSuccess(true);
       toast.success('Password updated successfully!');
