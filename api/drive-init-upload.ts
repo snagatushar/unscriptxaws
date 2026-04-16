@@ -61,6 +61,36 @@ async function getOrCreateEventFolderId(drive: any, eventTitle: string) {
   return createResponse.data.id;
 }
 
+/**
+ * Gets or creates a subcategory folder inside the event folder.
+ * e.g., Root > Music > Solo Singing
+ */
+async function getOrCreateSubCategoryFolderId(drive: any, parentFolderId: string, subCategory: string) {
+  const safeName = sanitize(subCategory, 'General');
+  const listResponse = await drive.files.list({
+    q: `mimeType='application/vnd.google-apps.folder' and '${parentFolderId}' in parents and name='${safeName}' and trashed=false`,
+    fields: 'files(id,name)',
+    pageSize: 1,
+  });
+
+  const existing = listResponse.data.files?.[0];
+  if (existing?.id) return existing.id;
+
+  const createResponse = await drive.files.create({
+    requestBody: {
+      name: safeName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentFolderId],
+    },
+    fields: 'id,name',
+  });
+
+  if (!createResponse.data.id) {
+    throw new Error(`Failed to create subcategory folder for "${subCategory}"`);
+  }
+  return createResponse.data.id;
+}
+
 function sanitize(value: string | undefined, fallback: string) {
   return (value || fallback).replace(/[^a-zA-Z0-9 ]/g, '').trim() || fallback;
 }
@@ -83,7 +113,7 @@ export default async function handler(req: any, res: any) {
   try {
     await verifyUserToken(req);
 
-    const { eventTitle, userName, round, mimeType, fileName, fileSize } = req.body || {};
+    const { eventTitle, userName, round, subCategory, mimeType, fileName, fileSize } = req.body || {};
 
     if (!eventTitle) {
       return res.status(400).json({ error: 'eventTitle is required' });
@@ -99,7 +129,12 @@ export default async function handler(req: any, res: any) {
       || 'https://www.unscriptx.com';
 
     const drive = await getDriveClientWithOAuth();
-    const folderId = await getOrCreateEventFolderId(drive, eventTitle);
+    let folderId = await getOrCreateEventFolderId(drive, eventTitle);
+
+    // If a subcategory is provided, create/find a subfolder inside the event folder
+    if (subCategory && subCategory.trim()) {
+      folderId = await getOrCreateSubCategoryFolderId(drive, folderId, subCategory);
+    }
 
     // Build the file name for Google Drive
     const ext = fileName.split('.').pop()?.toLowerCase() || 'mp4';

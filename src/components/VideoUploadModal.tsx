@@ -14,10 +14,11 @@ interface VideoUploadModalProps {
   round: QualificationStage;
   roundName: string;
   eventTitle: string; // New: To find the correct bucket
+  subCategory?: string; // Subcategory for Drive subfolder routing
   onSuccess: () => void;
 }
 
-export default function VideoUploadModal({ isOpen, onClose, registrationId, round, roundName, eventTitle, onSuccess }: VideoUploadModalProps) {
+export default function VideoUploadModal({ isOpen, onClose, registrationId, round, roundName, eventTitle, subCategory, onSuccess }: VideoUploadModalProps) {
   const { user, profile } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [notes, setNotes] = useState('');
@@ -57,6 +58,7 @@ export default function VideoUploadModal({ isOpen, onClose, registrationId, roun
         registrationId,
         round,
         userName: finalUserName,
+        subCategory: subCategory || undefined,
         onProgress: setUploadProgress,
       });
 

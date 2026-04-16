@@ -107,6 +107,36 @@ async function getOrCreateEventFolderId(drive: any, eventTitle: string) {
   return createResponse.data.id;
 }
 
+/**
+ * Gets or creates a subcategory folder inside the event folder.
+ * e.g., Root > Music > Solo Singing
+ */
+async function getOrCreateSubCategoryFolderId(drive: any, parentFolderId: string, subCategory: string) {
+  const safeName = sanitize(subCategory, 'General');
+  const listResponse = await drive.files.list({
+    q: `mimeType='application/vnd.google-apps.folder' and '${parentFolderId}' in parents and name='${safeName}' and trashed=false`,
+    fields: 'files(id,name)',
+    pageSize: 1,
+  });
+
+  const existing = listResponse.data.files?.[0];
+  if (existing?.id) return existing.id;
+
+  const createResponse = await drive.files.create({
+    requestBody: {
+      name: safeName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentFolderId],
+    },
+    fields: 'id,name',
+  });
+
+  if (!createResponse.data.id) {
+    throw new Error(`Failed to create subcategory folder for "${subCategory}"`);
+  }
+  return createResponse.data.id;
+}
+
 export default async function handler(req: any, res: any) {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -121,6 +151,7 @@ export default async function handler(req: any, res: any) {
     const eventTitle = getValue(fields.eventTitle, '').trim();
     const round = getValue(fields.round, '');
     const userName = getValue(fields.userName, 'Student');
+    const subCategory = getValue(fields.subCategory, '').trim();
     const mimeType = file.mimetype || 'application/octet-stream';
     const extension = getExtension(file.originalFilename);
 
@@ -129,7 +160,12 @@ export default async function handler(req: any, res: any) {
     }
 
     const drive = await getDriveClientWithOAuth();
-    const folderId = await getOrCreateEventFolderId(drive, eventTitle);
+    let folderId = await getOrCreateEventFolderId(drive, eventTitle);
+
+    // If a subcategory is provided, create/find a subfolder inside the event folder
+    if (subCategory) {
+      folderId = await getOrCreateSubCategoryFolderId(drive, folderId, subCategory);
+    }
 
     const safeFileName = `${sanitize(userName, 'Student')} - ${sanitize(eventTitle, 'Event')} - ${sanitizeRound(round)} - ${Date.now()}.${extension}`;
 

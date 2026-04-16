@@ -1,13 +1,17 @@
 import { motion } from 'motion/react';
 import { Sparkles, Target, Users } from 'lucide-react';
-import { useSiteContent } from '../hooks/useSupabase';
+import { useSiteContentBatch } from '../hooks/useSupabase';
+
+// Batched content keys — fetched in a single Supabase query instead of 5 separate ones
+const ABOUT_CONTENT_KEYS = ['about_hero', 'about_mission', 'about_community', 'about_vision', 'about_story'];
 
 export default function About() {
-  const { content: hero } = useSiteContent('about_hero');
-  const { content: mission } = useSiteContent('about_mission');
-  const { content: community } = useSiteContent('about_community');
-  const { content: vision } = useSiteContent('about_vision');
-  const { content: story } = useSiteContent('about_story');
+  const { contentMap } = useSiteContentBatch(ABOUT_CONTENT_KEYS);
+  const hero = contentMap['about_hero'] || null;
+  const mission = contentMap['about_mission'] || null;
+  const community = contentMap['about_community'] || null;
+  const vision = contentMap['about_vision'] || null;
+  const story = contentMap['about_story'] || null;
   return (
     <main className="pt-32 pb-24 px-6 min-h-screen">
       <div className="max-w-7xl mx-auto">

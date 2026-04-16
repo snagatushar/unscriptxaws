@@ -25,10 +25,12 @@ export default function Register() {
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
   const [idCardFile, setIdCardFile] = useState<File | null>(null);
   const [subCategory, setSubCategory] = useState('');
+  const [registeredSubCategories, setRegisteredSubCategories] = useState<string[]>([]);
   const [teamMembers, setTeamMembers] = useState<{ name: string; game_id: string }[]>(
     Array(5).fill(null).map(() => ({ name: '', game_id: '' }))
   );
 
+  // Fetch event details and user's existing registrations for this event
   useEffect(() => {
     async function init() {
       if (!eventId) return;
@@ -38,6 +40,22 @@ export default function Register() {
         if (error) throw error;
         setEvent(data as DatabaseEvent);
         setTeamSize(1);
+
+        // Fetch user's existing registrations for this event to know which subcategories are taken
+        if (user) {
+          const { data: existingRegs } = await supabase
+            .from('registrations')
+            .select('sub_category')
+            .eq('user_id', user.id)
+            .eq('event_id', eventId);
+
+          if (existingRegs) {
+            const registered = existingRegs
+              .map(r => r.sub_category)
+              .filter((v): v is string => v !== null && v !== '');
+            setRegisteredSubCategories(registered);
+          }
+        }
       } catch {
         toast.error('Could not load event details.');
       } finally {
@@ -46,7 +64,7 @@ export default function Register() {
     }
 
     init();
-  }, [eventId]);
+  }, [eventId, user]);
 
   useEffect(() => {
     setPhone(profile?.phone || '');
@@ -129,7 +147,9 @@ export default function Register() {
       const { error: insertError } = await supabase.from('registrations').insert(payload);
       if (insertError) {
         if (insertError.code === '23505') {
-          throw new Error('You have already registered for this event.');
+          throw new Error(subCategory
+            ? `You have already registered for the "${subCategory}" category in this event.`
+            : 'You have already registered for this event.');
         }
         throw new Error('Registration failed. Please try again or contact support.');
       }
@@ -143,6 +163,10 @@ export default function Register() {
       }
 
       toast.success('Registration successful. Wait up to 24 hours for payment approval.');
+      // Track the newly registered subcategory
+      if (subCategory) {
+        setRegisteredSubCategories(prev => [...prev, subCategory]);
+      }
       setSubmitted(true);
     } catch (err: any) {
       // BUG-09 FIX: Don't leak raw Supabase error details
@@ -163,6 +187,10 @@ export default function Register() {
     );
   }
 
+  // Check if there are still unregistered subcategories
+  const hasMoreSubCategories = event?.sub_categories && event.sub_categories.length > 0 &&
+    event.sub_categories.some(cat => !registeredSubCategories.includes(cat));
+
   if (submitted) {
     return (
       <main className="pt-32 pb-24 px-6 min-h-screen flex items-center justify-center">
@@ -180,12 +208,28 @@ export default function Register() {
             {subCategory && <span> in the <strong className="text-fest-primary">{subCategory}</strong> category</span>}.
             Wait for 24 hours for payment approval.
           </p>
-          <Link
-            to="/dashboard"
-            className="w-full inline-block py-4 bg-fest-primary text-fest-dark rounded-2xl font-bold uppercase tracking-widest hover:bg-fest-primary-light transition-all"
-          >
-            Open Registered Events
-          </Link>
+          <div className="space-y-4">
+            <Link
+              to="/dashboard"
+              className="w-full inline-block py-4 bg-fest-primary text-fest-dark rounded-2xl font-bold uppercase tracking-widest hover:bg-fest-primary-light transition-all"
+            >
+              Open Registered Events
+            </Link>
+            {hasMoreSubCategories && (
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  setSubCategory('');
+                  setPaymentFile(null);
+                  setIdCardFile(null);
+                  setTeamMembers(Array(5).fill(null).map(() => ({ name: '', game_id: '' })));
+                }}
+                className="w-full py-4 border-2 border-fest-primary/40 text-fest-primary rounded-2xl font-bold uppercase tracking-widest hover:bg-fest-primary/10 transition-all"
+              >
+                Register for Another Category
+              </button>
+            )}
+          </div>
         </motion.div>
       </main>
     );
@@ -389,11 +433,26 @@ export default function Register() {
                   className="w-full bg-transparent border-b-2 border-white/10 py-3 focus:outline-none focus:border-fest-primary transition-colors text-white"
                 >
                   <option value="" className="bg-fest-dark text-white/50">Select Category / Slot</option>
-                  {event.sub_categories.map((cat, idx) => (
-                    <option key={idx} value={cat} className="bg-fest-dark text-white">{cat}</option>
-                  ))}
+                  {event.sub_categories.map((cat, idx) => {
+                    const alreadyRegistered = registeredSubCategories.includes(cat);
+                    return (
+                      <option
+                        key={idx}
+                        value={cat}
+                        disabled={alreadyRegistered}
+                        className={`bg-fest-dark ${alreadyRegistered ? 'text-white/30' : 'text-white'}`}
+                      >
+                        {cat}{alreadyRegistered ? ' (Already Registered)' : ''}
+                      </option>
+                    );
+                  })}
                 </select>
                 <label className="absolute left-0 -top-4 text-fest-primary text-xs">Category / Slot Selection (Required)</label>
+                {registeredSubCategories.length > 0 && (
+                  <p className="text-xs text-fest-primary/60 mt-2">
+                    You've already registered for: {registeredSubCategories.join(', ')}
+                  </p>
+                )}
               </div>
             )}
 

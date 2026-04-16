@@ -7,6 +7,7 @@ type UploadToDriveParams = {
   registrationId: string;
   round: string;
   userName: string;
+  subCategory?: string;
   onProgress?: (percent: number) => void;
 };
 
@@ -36,7 +37,7 @@ const CHUNK_SIZE = 4 * 1024 * 1024;
  *           Each request is under Vercel's limit and goes through our domain.
  */
 export async function uploadVideoToDrive(params: UploadToDriveParams) {
-  const { file, eventTitle, userId, registrationId, round, userName, onProgress } = params;
+  const { file, eventTitle, userId, registrationId, round, userName, subCategory, onProgress } = params;
 
   // ── Phase 1: Initiate the resumable upload ──────────────────────────────
   const token = await getToken();
@@ -52,6 +53,7 @@ export async function uploadVideoToDrive(params: UploadToDriveParams) {
       registrationId,
       round,
       userName,
+      subCategory: subCategory || undefined,
       mimeType: file.type || 'application/octet-stream',
       fileName: file.name,
       fileSize: file.size,

@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       let { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, full_name, email, role, phone, college_name')
         .eq('id', userId)
         .single();
 
@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             const retry = await supabase
               .from('users')
-              .select('*')
+              .select('id, full_name, email, role, phone, college_name')
               .eq('id', userId)
               .single();
 

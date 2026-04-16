@@ -71,12 +71,13 @@ export default function UserDashboard() {
   const { user } = useAuth();
   const [registrations, setRegistrations] = useState<UserRegistration[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploadModal, setUploadModal] = useState<{ isOpen: boolean; regId: string; round: QualificationStage; roundName: string; eventTitle: string }>({
+  const [uploadModal, setUploadModal] = useState<{ isOpen: boolean; regId: string; round: QualificationStage; roundName: string; eventTitle: string; subCategory: string }>({
     isOpen: false,
     regId: '',
     round: 'not_started',
     roundName: '',
     eventTitle: '',
+    subCategory: '',
   });
 
   const fetchRegistrations = async () => {
@@ -235,7 +236,8 @@ export default function UserDashboard() {
                               regId: registration.id,
                               round: next.id,
                               roundName: next.name,
-                              eventTitle: registration.events.title
+                              eventTitle: registration.events.title,
+                              subCategory: registration.sub_category || '',
                             })}
                             className="w-full py-4 bg-fest-primary text-fest-dark rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-fest-primary-light transition-all flex items-center justify-center gap-2 glow-primary"
                           >
@@ -280,6 +282,7 @@ export default function UserDashboard() {
           round={uploadModal.round}
           roundName={uploadModal.roundName}
           eventTitle={uploadModal.eventTitle}
+          subCategory={uploadModal.subCategory}
           onSuccess={fetchRegistrations}
         />
       </div>

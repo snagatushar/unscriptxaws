@@ -336,7 +336,7 @@ export default function AdminDashboard() {
     try {
       if (activeTab === 'events') {
         const [{ data: eventsData, error: eventsError }, { data: registrationsData, error: registrationsError }] = await Promise.all([
-          supabase.from('events').select('*').order('created_at', { ascending: false }),
+          supabase.from('events').select('id, title, slug, category, description, entry_fee, image_url, rules, max_team_size, payment_account_name, payment_account_number, payment_ifsc, payment_upi_id, is_active, sub_categories, requires_team_details, created_at').order('created_at', { ascending: false }),
           supabase.from('registrations').select(`
             id,
             event_id,
@@ -383,7 +383,7 @@ export default function AdminDashboard() {
 
       if (activeTab === 'registrations' || activeTab === 'payment_reviews' || activeTab === 'qualified_rounds') {
         const [{ data: eventsData, error: eventsError }, { data: registrationsData, error: registrationsError }] = await Promise.all([
-          supabase.from('events').select('*').order('created_at', { ascending: false }),
+          supabase.from('events').select('id, title, slug, category, description, entry_fee, image_url, rules, max_team_size, payment_account_name, payment_account_number, payment_ifsc, payment_upi_id, is_active, sub_categories, requires_team_details, created_at').order('created_at', { ascending: false }),
           supabase
             .from('registrations')
             .select(`
@@ -457,7 +457,7 @@ export default function AdminDashboard() {
       }
 
       if (activeTab === 'users') {
-        const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('users').select('id, full_name, email, role, phone, college_name, created_at').order('created_at', { ascending: false });
         if (error) throw error;
         setUsers((data as AppUser[]) || []);
       }
@@ -477,10 +477,10 @@ export default function AdminDashboard() {
         if (error) throw error;
         setAssignments((data as unknown as ReviewerAssignment[]) || []);
 
-        const { data: eventData } = await supabase.from('events').select('*').order('title');
+        const { data: eventData } = await supabase.from('events').select('id, title, category, entry_fee').order('title');
         if (eventData) setEvents(((eventData || []) as any[]).map((event) => ({ ...event, entry_fee: Number(event.entry_fee || 0) })));
 
-        const { data: userData } = await supabase.from('users').select('*').in('role', ['content_reviewer', 'payment_reviewer', 'admin']).order('full_name');
+        const { data: userData } = await supabase.from('users').select('id, full_name, email, role, phone, college_name').in('role', ['content_reviewer', 'payment_reviewer', 'admin']).order('full_name');
         if (userData) setUsers(userData as AppUser[]);
       }
 
@@ -491,10 +491,10 @@ export default function AdminDashboard() {
           { data: committeeData, error: committeeError },
           { data: rulesData, error: rulesError },
         ] = await Promise.all([
-          supabase.from('hero_slideshow').select('*').order('display_order', { ascending: true }),
-          supabase.from('site_content').select('*').in('content_key', ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join', 'home_team_group', 'about_hero', 'about_mission', 'about_community', 'about_vision', 'about_story', 'contact_info']),
-          supabase.from('committee').select('*').order('display_order', { ascending: true }),
-          supabase.from('general_rules').select('*').order('display_order', { ascending: true }),
+          supabase.from('hero_slideshow').select('id, image_url, duration_seconds, display_order').order('display_order', { ascending: true }),
+          supabase.from('site_content').select('id, content_key, title, subtitle, body, secondary_body, image_url, metadata').in('content_key', ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join', 'home_team_group', 'about_hero', 'about_mission', 'about_community', 'about_vision', 'about_story', 'contact_info']),
+          supabase.from('committee').select('id, name, role, image_url, display_order').order('display_order', { ascending: true }),
+          supabase.from('general_rules').select('id, rule_text, display_order').order('display_order', { ascending: true }),
         ]);
 
         if (slideError) throw slideError;
@@ -536,7 +536,7 @@ export default function AdminDashboard() {
       }
 
       if (activeTab === 'contact_messages') {
-        const { data, error } = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('contact_messages').select('id, name, email, message, status, created_at').order('created_at', { ascending: false });
         if (error) throw error;
         setContactMessages(data || []);
       }
@@ -941,6 +941,40 @@ export default function AdminDashboard() {
         title: payload.title,
         category: payload.category
       });
+
+      // Proactively create subcategory folders on Google Drive
+      if (payload.sub_categories && payload.sub_categories.length > 0) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData.session?.access_token;
+          if (token) {
+            const driveRes = await fetch('/api/drive-create-folders', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                eventTitle: payload.title,
+                subCategories: payload.sub_categories,
+              }),
+            });
+            if (driveRes.ok) {
+              const result = await driveRes.json();
+              toast.success(`Created ${result.created.length} subcategory folder(s) on Google Drive.`);
+            } else {
+              const err = await driveRes.json().catch(() => ({}));
+              console.warn('Drive folder creation warning:', err);
+              toast.error('Event saved, but Drive folder creation failed: ' + (err.error || 'unknown error'));
+            }
+          }
+        } catch (driveErr: any) {
+          console.warn('Drive folder creation warning:', driveErr);
+          // Don't fail the event save — just warn
+          toast.error('Event saved, but could not create Drive folders. They will be auto-created on first upload.');
+        }
+      }
+
       resetEventForm();
       await fetchData();
     } catch (err: any) {

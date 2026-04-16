@@ -3,17 +3,21 @@ import Hero from '../components/Hero';
 import EventCard from '../components/EventCard';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Music, Zap, Palette, Loader2 } from 'lucide-react';
-import { useEvents, useCommittee, useGeneralRules, useSiteContent } from '../hooks/useSupabase';
+import { useEvents, useCommittee, useGeneralRules, useSiteContentBatch } from '../hooks/useSupabase';
+
+// Batched content keys — fetched in a single Supabase query instead of 5 separate ones
+const HOME_CONTENT_KEYS = ['home_about_event', 'home_about_college', 'home_about_school', 'home_why_join', 'home_team_group'];
 
 export default function Home() {
   const { events, loading: eventsLoading } = useEvents();
   const { committee, loading: committeeLoading } = useCommittee();
   const { rules, loading: rulesLoading } = useGeneralRules();
-  const { content: aboutEvent } = useSiteContent('home_about_event');
-  const { content: aboutCollege } = useSiteContent('home_about_college');
-  const { content: aboutSchool } = useSiteContent('home_about_school');
-  const { content: whyJoin } = useSiteContent('home_why_join');
-  const { content: teamSection } = useSiteContent('home_team_group');
+  const { contentMap } = useSiteContentBatch(HOME_CONTENT_KEYS);
+  const aboutEvent = contentMap['home_about_event'] || null;
+  const aboutCollege = contentMap['home_about_college'] || null;
+  const aboutSchool = contentMap['home_about_school'] || null;
+  const whyJoin = contentMap['home_why_join'] || null;
+  const teamSection = contentMap['home_team_group'] || null;
 
   const parseTitle = (raw: string | null | undefined) => {
     const text = raw ? raw.replace(/\[|\]/g, '') : "Why wait for the future when you can create it?";
